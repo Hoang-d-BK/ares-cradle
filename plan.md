@@ -1,106 +1,65 @@
-# Development Execution Plan
-## Ares Cradle: Extraterrestrial Outpost Simulator (Demo)
-
-This plan outlines the sequential tasks required to build, test, and deploy the demo version on Vercel, adhering to the Hallmark aesthetic and modular architecture.
+# Development Execution Plan (v2.0 - Survival Action & Advanced Enhancements)
+## Ares Cradle: Extraterrestrial Outpost Simulator & Explorer
 
 ---
 
-### Phase 1: Project Scaffolding & Design Foundation
-- [x] **1.1 Initialize Vite React 18 Application**
-  - Setup TypeScript, Tailwind CSS, and Lucide React icons.
-  - Configure path aliases (`@/modules/*`, `@/services/*`, `@/styles/*`).
-- [x] **1.2 Install Core Runtime Dependencies**
-  - Install `@react-three/fiber`, `@react-three/drei`, `three`, and `@types/three`.
-  - Install `framer-motion` for tactile micro-interactions and UI animations.
-  - Install `zustand` for high-performance reactive simulation state.
-- [x] **1.3 Configure Hallmark & Impeccable Design Tokens**
-  - Define Mars color palette (Martian rust, deep space charcoal, luminescent cyan, warning amber).
-  - Implement tactile button styling, spring physics presets, and anti-slop CSS rules in `src/styles/hallmark-tokens.css`.
+### Module 1: Core Game Loop & Prototype Engine (COMPLETED - ARCHIVED)
+> [!NOTE]
+> Toàn bộ các hạng mục nền tảng của Prototype (Phase 1 đến Phase 7) gồm: Character WASD controller, Isometric Camera rig, Không gian kép Interior/Exterior & cửa Airlock, Minimal HUD Minecraft, Web Audio Arcade Synth, Hệ thống tinh thể rơi & nâng cấp trạm, Robot đồng hành Chipi-Bot, và kiểm tra build TypeScript đã hoàn thành và kiểm chứng thành công. Module này được đóng gói lưu trữ nhằm giải phóng token context.
 
 ---
 
-### Phase 2: Domain Simulation Engine & Service Layer
-- [x] **2.1 Define Domain TypeScript Types**
-  - Define `ResourceState` (Solar, Battery, O₂, Temperature, DustLevel).
-  - Define `StageConfig`, `GameEvent`, and `DebriefReport` in `src/modules/simulation-engine/types.ts`.
-- [x] **2.2 Implement Deterministic Resource Math**
-  - Code `formulas.ts` implementing power generation, battery drain, thermal decay, and oxygen scrubbing.
-  - Ensure zero division errors and strict clamping between 0 and maximum capacities.
-- [x] **2.3 Create Zustand Outpost Store**
-  - Implement `useOutpostStore.ts` managing active stage, Sol clock, resource values, and user allocations.
-  - Implement time-step actions (`tick()`, `setPowerAllocation()`, `cleanDust()`, `emergencyCut()`).
-- [x] **2.4 Build Modular Service Adapter**
-  - Define `IMissionService.ts` contract.
-  - Implement `MockMissionService.ts` supplying initial data for Stages 1, 2, and 3.
+### Module 2: Advanced Ecosystem Enhancements (ACTIVE)
+
+> [!IMPORTANT]
+> **Quy Tắc Mở Rộng Động (Dynamic Tool Adoption Invariant):**
+> Trong suốt quá trình thực thi các split task dưới đây, nếu Antigravity hoặc bất kỳ Agent/Harness nào tìm thấy công cụ, thư viện, hoặc repository tối ưu hơn trên GitHub/Web so với công cụ được liệt kê, Agent có toàn quyền chủ động tải về (`curl`/`git`) và tích hợp trực tiếp vào dự án.
+
+#### Phase 8: UI/UX Tactile Polish & Anti-AI-Slop Gate (Trụ Cột 1)
+- [ ] **8.1 Thiết lập Token-Based Design System & Linter chống Slop (`Nutlope/hallmark`)**
+  - Chuyển đổi toàn bộ màu sắc hard-coded sang hệ thống CSS variables / Tailwind tokens (`--color-mars-rust`: `#C1440E`, `--color-cyan-visor`: `#00F0FF`, `--color-amber-hazard`: `#FFB020`).
+  - Kiểm định theo tiêu chuẩn của Hallmark: loại bỏ triệt để `transition: all`, cấm animate thuộc tính layout (`width`, `height`), cấm gradient AI tím-xanh rập khuôn.
+- [ ] **8.2 Thẩm Định Visual Hierarchy & Trạng Thái Xúc Giác (`pbakaus/impeccable`)**
+  - Hoàn thiện 6 trạng thái xúc giác chuẩn (default, hover, active, focus-visible, disabled, loading skeletons) cho nút bấm, slot ô đồ balo và công tắc trạm.
+  - Tích hợp các mẫu thiết kế nhận diện từ [namethatui.com](https://namethatui.com) và linh kiện tactile từ [uiverse.io](https://uiverse.io) / [21st.dev](https://21st.dev).
+- [ ] **8.3 Chuyển Động Vật Lý Lò Xo & Pháo Hoa Ăn Mừng (`framer-motion` & `canvas-confetti`)**
+  - Áp dụng spring physics cho thao tác bung mở Balo Minecraft và hiệu ứng nổ pháo hoa đa sắc khi vượt qua đợt bão cát hoặc mở rương quà.
 
 ---
 
-### Phase 3: Three.js Mars Outpost 3D Diorama
-- [x] **3.1 Mars Canvas & Camera Rig**
-  - Build `MarsCanvas.tsx` with customized OrbitControls (restricted elevation and zoom limits suitable for children).
-  - Configure cinematic lighting (warm directional Martian sunlight + deep ambient sky fill).
-- [x] **3.2 Outpost Procedural Assets & Meshes**
-  - Build `MarsTerrain.tsx` with stylized Martian surface and crater formations.
-  - Build `HabitatDome.tsx` with glowing interior bioluminescence showing life activity.
-  - Build `SolarArray.tsx` with interactive click handler to wipe dust.
-  - Build `BatteryBank.tsx` with dynamic visual LED charge indicators.
-- [x] **3.3 Environmental Weather System**
-  - Build `DustStormParticles.tsx` driven by store state (activates particle swirl when storm event triggers).
-  - Implement smooth transition between daytime sky and cold starry night.
+#### Phase 9: 3D Graphics, Low-Poly Assets & R3F Performance (Trụ Cột 2)
+- [ ] **9.1 Tích Hợp Mô Hình 3D Low-Poly Bản Quyền CC0 (Kenney Space Kit & `pmndrs/gltfjsx`)**
+  - Tải bộ mô hình không gian CC0 từ Kenney (astronaut, solar array, rover, craters, minerals) và biên dịch sang component React Three Fiber typed bằng `gltfjsx`.
+- [ ] **9.2 Nhúng Mô Hình NASA Chính Thống Làm Hologram Blueprint (`nasa/NASA-3D-Resources`)**
+  - Nhúng mô hình 3D rover Perseverance / trạm InSight lander từ NASA 3D Resources vào màn hình tương tác trong trạm để học sinh khám phá.
+- [ ] **9.3 Tối Ưu Hóa Pipeline Hậu Kỳ & Shader Bão Bụi (`pmndrs/react-postprocessing` & `pmndrs/drei`)**
+  - Tích hợp `Sparkles`, `Billboard` từ `@react-three/drei` và hiệu ứng GPU hậu kỳ (Bloom tinh thể, Noise/Grain bão bụi, Vignette cảnh báo sụt điện).
+  - Tích hợp `pmndrs/leva` (chế độ query `?debug=true`) để cân chỉnh ánh sáng và camera trực tiếp trên trình duyệt.
 
 ---
 
-### Phase 4: Hallmark Mission Control UI & Tactile HUD
-- [x] **4.1 Primary Telemetry Gauges**
-  - Build `ResourceDial.tsx` with Framer Motion animated needles/arcs for Battery, O₂, and Temperature.
-  - Add color-coded warning states (Emerald = Safe, Amber = Warning, Crimson = Critical).
-- [x] **4.2 Tactile Power Distribution Deck**
-  - Build `PowerDistributor.tsx` allowing players to prioritize Power to Life Support vs. Heaters.
-  - Include spring-animated push toggles with haptic visual feedback.
-- [x] **4.3 Sol Status & Objective Banner**
-  - Build `StageBanner.tsx` displaying the current mission goal, Sol time-of-day clock, and day counter.
-- [x] **4.4 Emergency Alert & Debrief Modals**
-  - Build `EventModal.tsx` for pop-up hazard alerts (e.g., "Dust Storm Approaching!").
-  - Build `DebriefModal.tsx` displaying the end-of-stage scorecard and trade-off lesson learned.
+#### Phase 10: Storyline, Educational Lore & NASA Real-Time Telemetry (Trụ Cột 3)
+- [ ] **10.1 Tích Hợp Dữ Liệu Thời Tiết Sao Hỏa Thời Gian Thực (NASA InSight Weather API)**
+  - Kết nối NASA Open API lấy dữ liệu nhiệt độ và tốc độ gió thực tế từ Elysium Planitia, biến đổi thành thông số bão cát động trong game.
+- [ ] **10.2 Cây Hội Thoại Hài Hước & Bài Học Khoa Học Cho Chipi-Bot (JSON Dialogue Engine)**
+  - Viết bộ kịch bản thoại ngắn ngộ nghĩnh (< 10 từ/câu) giải thích dễ hiểu các thử thách kỹ thuật của NASA (chu trình O₂ Sabatier, điện hạt nhân Kilopower, bảo dưỡng pin mặt trời).
+- [ ] **10.3 Bầu Trời Đêm Vũ Trụ Với Quỹ Đạo Mặt Trăng Phobos (NASA Eyes on Mars)**
+  - Mô phỏng chuyển động của mặt trăng Phobos và chòm sao theo góc nhìn từ vòm kính trạm quan sát.
 
 ---
 
-### Phase 5: Mission Stage Content & Web Audio Sound Engine
-- [x] **5.1 Mission Stage 1: "Sol 1: The Frigid Night"**
-  - Configure stage parameters: calm daytime transition into sub-zero night (-60°C).
-  - Verify win condition (battery survived through sunrise) and loss condition (freezing/hypoxia).
-- [x] **5.2 Mission Stage 2: "Sol 5: Red Dust Approaching"**
-  - Trigger dust storm event at Sol 5 Noon; solar efficiency drops by 60%.
-  - Require player to clean panels and throttle non-essential systems.
-- [x] **5.3 Mission Stage 3: "Sol 12: Hull Micro-Fracture"**
-  - Trigger oxygen leak event; oxygen depletes at double speed.
-  - Require player to surge oxygen power while managing battery survival.
-- [x] **5.4 Web Audio Synthesizer**
-  - Build `soundEngine.ts` with synthesized sound effects (click chimes, power hum, warning sirens).
-  - Add mute/unmute control in the top navigation bar.
+#### Phase 11: Backend, Classroom Room-PIN & Live Leaderboard (Trụ Cột 4)
+- [ ] **11.1 Xây Dựng API Phòng Đấu Thi Đấu Lớp Học (Classroom Room PIN Code)**
+  - Nâng cấp backend Django (`backend/apps/simulation/`): Giáo viên tạo phòng thi đấu với mã PIN 6 số để học sinh cùng tham gia một đợt bão cát thử thách.
+- [ ] **11.2 Bảng Xếp Hạng & Telemetry Đánh Giá Kỹ Năng Kỹ Thuật (`backend/apps/telemetry/`)**
+  - Ghi nhận telemetry: lượng điện tiết kiệm, thời gian phản ứng khi có bão, số Sol sinh tồn cao nhất. Xuất báo cáo tóm tắt cho giáo viên.
+- [ ] **11.3 Kiến Trúc Hybrid Fallback Hoàn Toàn Tự Động**
+  - Tự động chuyển đổi mượt sang LocalStorage / Vercel Edge Serverless khi không có kết nối server Django cục bộ, đảm bảo zero-downtime cho người chơi web.
 
 ---
 
-### Phase 6: Verification, Performance & Vercel Deployment
-- [x] **6.1 Quality & Accessibility Review**
-  - Verify WCAG AAA color contrast on all text gauges and HUD elements.
-  - Test responsive layout on mobile, tablet, and desktop viewports.
-  - Confirm touch-screen compatibility for panel cleaning and slider controls.
-- [x] **6.2 Performance Tuning & Asset Budget**
-  - Verify 60 FPS rendering on integrated GPUs.
-  - Confirm total bundle payload < 350KB initial gzipped JS.
-- [x] **6.3 GitHub & Vercel Setup**
-  - Create `vercel.json` with SPA routing and static caching headers.
-  - Verify production build via `npm run build`.
-
----
-
-### Phase 7: Django Backend Roadmap (`feat/django-backend`)
-- [x] **7.1 Scaffold Django 5.x App**
-  - Initialize Django with Django REST Framework (DRF) and `django-cors-headers`.
-- [x] **7.2 Implement Models & Endpoints**
-  - Create `StageConfig`, `CadetSession`, and `TelemetryLog` models.
-  - Expose `/api/v1/stages/` and `/api/v1/sessions/` endpoints.
-- [x] **7.3 Connect Django Service Adapter**
-  - Implement `DjangoMissionService.ts` calling the DRF backend.
-  - Toggle service selection via `VITE_USE_BACKEND=true` environment variable.
+#### Phase 12: Automated Canvas Regression & Multi-Device Verification (Trụ Cột 5)
+- [ ] **12.1 Kiểm Thử Tự Động Canvas WebGL Bằng Playwright / Puppeteer**
+  - Viết kịch bản tự động chụp ảnh màn hình canvas 3D định kỳ sau các commit, kiểm tra tụt frame (< 60 FPS) hoặc lỗi tràn vỡ mesh.
+- [ ] **12.2 Xác Minh Đa Thiết Bị (Chromebook, iPad, Tablet Cảm Ứng)**
+  - Đảm bảo trải nghiệm mượt mà 60 FPS trên GPU tích hợp Intel UHD và tương thích 100% giữa bàn phím WASD và Joystick cảm ứng.
