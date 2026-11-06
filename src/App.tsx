@@ -10,9 +10,6 @@ export const App: React.FC = () => {
 
       {/* Hallmark Mission Control Tactical HUD */}
       <MissionControlOverlay />
-
-      {/* Subtle CRT Scanline Texture Layer (Anti-slop polish) */}
-      <div className="absolute inset-0 scanlines pointer-events-none opacity-40" />
     </main>
   );
 };

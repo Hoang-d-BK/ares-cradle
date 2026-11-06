@@ -4,12 +4,8 @@ import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { 
   EffectComposer, 
-  Bloom, 
-  Noise, 
-  Vignette, 
-  ChromaticAberration 
+  Bloom 
 } from '@react-three/postprocessing';
-import { BlendFunction } from 'postprocessing';
 import { useControls, Leva } from 'leva';
 import { useOutpostStore } from '@/modules/store/useOutpostStore';
 
@@ -45,72 +41,34 @@ function SimulationLoopDriver() {
 }
 
 /**
- * Task 9.3: GPU Post-Processing Pipeline
- * - Bloom for energy crystals, LEDs and habitat dome
- * - Noise & Vignette (red/orange) dynamically surging with dust storms
- * - Chromatic Aberration during power brownouts / voltage dips
+ * Task 9.3 & Fine-Tune Polish: Eye-Friendly Soft Lighting Pipeline
+ * - Gentle, low-intensity Bloom (< 0.28) exclusively for dome glass and crystal emissives
+ * - Zero Noise, Zero Chromatic Aberration, Zero harsh neon flicker for maximum visual comfort
  */
 function PostProcessingPipeline({ isDebug }: { isDebug: boolean }) {
-  const activeEvents = useOutpostStore((state) => state.activeEvents);
-  const dustCoverage = useOutpostStore((state) => state.dustCoverage);
-  const battery = useOutpostStore((state) => state.battery);
-  const emergencyPowerSaver = useOutpostStore((state) => state.emergencyPowerSaver);
   const solPhase = useOutpostStore((state) => state.solPhase);
 
-  const isStormActive = activeEvents.some(
-    (e) => e.active && !e.resolved && e.type === 'dust_storm'
-  );
-  const isBrownout = battery <= 0;
-
-  // Real-time calculated dynamic baseline
-  const calcBloom = solPhase === 'Night' || solPhase === 'Sunset' ? 1.6 : 0.9;
-  const calcNoise = isStormActive ? 0.35 : dustCoverage > 0.3 ? 0.2 : 0.05;
-  const calcVignette = isStormActive ? 0.8 : dustCoverage > 0.3 ? 0.55 : 0.38;
-  const calcAberration = isBrownout ? 0.006 : emergencyPowerSaver ? 0.0025 : 0.0008;
+  // Soft, eye-pleasing subtle bloom baseline
+  const calcBloom = solPhase === 'Night' ? 0.26 : 0.18;
 
   // Interactive GUI for developer calibration (Active when URL has ?debug=true)
   const [controls] = useControls(
-    'Mars Post-Processing & Storm Shader',
+    'Mars Post-Processing & Lighting',
     () => ({
-      bloomIntensity: { value: calcBloom, min: 0, max: 3.5, step: 0.1 },
-      noiseOpacity: { value: calcNoise, min: 0, max: 1.0, step: 0.02 },
-      vignetteDarkness: { value: calcVignette, min: 0, max: 1.5, step: 0.05 },
-      chromaticAberration: { value: calcAberration, min: 0, max: 0.02, step: 0.001 }
+      bloomIntensity: { value: calcBloom, min: 0, max: 1.0, step: 0.02 }
     }),
-    { collapsed: false }
+    { collapsed: true }
   );
 
   const bloomIntensity = isDebug ? controls.bloomIntensity : calcBloom;
-  const noiseOpacity = isDebug ? controls.noiseOpacity : calcNoise;
-  const vignetteDarkness = isDebug ? controls.vignetteDarkness : calcVignette;
-  const aberrationAmount = isDebug ? controls.chromaticAberration : calcAberration;
-
-  const aberrationOffset = useMemo(
-    () => new THREE.Vector2(aberrationAmount, aberrationAmount),
-    [aberrationAmount]
-  );
 
   return (
     <EffectComposer multisampling={0} enableNormalPass={false}>
       <Bloom
-        luminanceThreshold={0.22}
-        luminanceSmoothing={0.8}
+        luminanceThreshold={0.72}
+        luminanceSmoothing={0.65}
         intensity={bloomIntensity}
         mipmapBlur
-      />
-      <Noise
-        opacity={noiseOpacity}
-        blendFunction={BlendFunction.OVERLAY}
-      />
-      <Vignette
-        eskil={false}
-        offset={0.22}
-        darkness={vignetteDarkness}
-      />
-      <ChromaticAberration
-        offset={aberrationOffset}
-        radialModulation={false}
-        modulationOffset={0}
       />
     </EffectComposer>
   );
