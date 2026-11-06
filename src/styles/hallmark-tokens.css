@@ -1,0 +1,186 @@
+/**
+ * Ares Cradle - Hallmark & Impeccable Design Tokens
+ * Aesthetic Standard: Anti-Slop Tactile Space Craft
+ * Palette: Mars Outpost (Rust #C1440E, Deep Charcoal #0B0E14, Cyan #00F0FF, Warning Amber #FFB020)
+ */
+
+:root {
+  /* Mars Outpost Primary Colors */
+  --mars-rust: #C1440E;
+  --mars-rust-hover: #D9531E;
+  --mars-rust-dark: #8F2E07;
+  --mars-charcoal: #0B0E14;
+  --mars-surface: #121620;
+  --mars-elevated: #1A2130;
+  --mars-border: #232D42;
+  --mars-border-bright: #3B4B6E;
+
+  /* Telemetry Status Colors */
+  --mars-cyan: #00F0FF;
+  --mars-cyan-dim: rgba(0, 240, 255, 0.15);
+  --mars-cyan-glow: rgba(0, 240, 255, 0.35);
+  --mars-amber: #FFB020;
+  --mars-amber-dim: rgba(255, 176, 32, 0.15);
+  --mars-amber-glow: rgba(255, 176, 32, 0.35);
+  --mars-emerald: #10B981;
+  --mars-emerald-glow: rgba(16, 185, 129, 0.35);
+  --mars-crimson: #EF4444;
+  --mars-crimson-glow: rgba(239, 68, 68, 0.4);
+
+  /* Typography */
+  --font-mono: "Share Tech Mono", "Fira Code", monospace;
+  --font-display: "Rajdhani", system-ui, -apple-system, sans-serif;
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+
+  /* Tactile Physics Constants (Used in Framer Motion & CSS) */
+  --spring-snappy: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --spring-gentle: cubic-bezier(0.25, 1, 0.5, 1);
+  --tactile-easing: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-tactile: 120ms;
+  --duration-normal: 220ms;
+
+  /* Elevation & Bevel Shadows */
+  --shadow-tactile-raised: 0 4px 6px -1px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --shadow-tactile-depressed: inset 0 3px 6px rgba(0, 0, 0, 0.7), inset 0 0 0 1px rgba(0, 240, 255, 0.25);
+  --shadow-cyan-glow: 0 0 14px rgba(0, 240, 255, 0.3);
+  --shadow-amber-glow: 0 0 14px rgba(255, 176, 32, 0.3);
+  --shadow-rust-glow: 0 0 18px rgba(193, 68, 14, 0.4);
+}
+
+/* ==========================================================================
+   Anti-Slop Foundations & Strict UI Principles
+   ========================================================================== */
+
+/* High-precision mechanical borders */
+.hud-panel {
+  background: rgba(18, 22, 32, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--mars-border);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
+  position: relative;
+}
+
+.hud-panel::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 8px;
+  right: 8px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.4), transparent);
+  pointer-events: none;
+}
+
+/* Corner bracket accents (Technical HUD Aesthetic) */
+.hud-corner-brackets {
+  position: relative;
+}
+
+.hud-corner-brackets::before,
+.hud-corner-brackets::after {
+  content: "";
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-color: var(--mars-cyan);
+  pointer-events: none;
+}
+
+.hud-corner-brackets::before {
+  top: -1px;
+  left: -1px;
+  border-top: 2px solid var(--mars-cyan);
+  border-left: 2px solid var(--mars-cyan);
+}
+
+.hud-corner-brackets::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 2px solid var(--mars-cyan);
+  border-right: 2px solid var(--mars-cyan);
+}
+
+/* Tactile push button (Mechanical feel, physical depression) */
+.btn-tactile {
+  position: relative;
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, #242D3F 0%, #171E2B 100%);
+  border: 1px solid var(--mars-border-bright);
+  color: #E2E8F0;
+  box-shadow: var(--shadow-tactile-raised);
+  transition: transform var(--duration-tactile) var(--spring-snappy),
+              box-shadow var(--duration-tactile) var(--tactile-easing),
+              border-color var(--duration-tactile) ease;
+  user-select: none;
+  cursor: pointer;
+}
+
+.btn-tactile:hover {
+  border-color: var(--mars-cyan);
+  color: #FFFFFF;
+  box-shadow: var(--shadow-tactile-raised), var(--shadow-cyan-glow);
+}
+
+.btn-tactile:active {
+  transform: translateY(2px) scale(0.98);
+  box-shadow: var(--shadow-tactile-depressed);
+  background: linear-gradient(180deg, #131924 0%, #1D2535 100%);
+}
+
+/* Tactile Mars Rust Action Button */
+.btn-tactile-rust {
+  background: linear-gradient(180deg, #D9531E 0%, #C1440E 100%);
+  border: 1px solid #FF773D;
+  color: #FFFFFF;
+  box-shadow: var(--shadow-tactile-raised), var(--shadow-rust-glow);
+}
+
+.btn-tactile-rust:hover {
+  background: linear-gradient(180deg, #E6632E 0%, #D04C16 100%);
+  border-color: #FFA07A;
+}
+
+.btn-tactile-rust:active {
+  transform: translateY(2px) scale(0.98);
+  background: linear-gradient(180deg, #8F2E07 0%, #AB3709 100%);
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.7);
+}
+
+/* Sub-grid Mars Telemetry Background */
+.bg-grid-telemetry {
+  background-size: 24px 24px;
+  background-image: 
+    linear-gradient(to right, rgba(35, 45, 66, 0.25) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(35, 45, 66, 0.25) 1px, transparent 1px);
+}
+
+/* Scanline Overlay (Subtle 2% texture) */
+.scanlines {
+  background: linear-gradient(
+    rgba(18, 22, 32, 0) 50%, 
+    rgba(0, 0, 0, 0.25) 50%
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+}
+
+/* CRT / Monospace readouts */
+.telemetry-readout {
+  font-family: var(--font-mono);
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 8px currentColor;
+}
+
+/* Accessibility: Respect Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
