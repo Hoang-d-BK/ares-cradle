@@ -52,6 +52,12 @@ class HybridApiClient {
    * Non-throwing quick probe to check if Django server is reachable.
    */
   private async checkBackendHealth(): Promise<boolean> {
+    // Zero-friction Vercel production deployment: Avoid Mixed Content blocks when served over HTTPS
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:' && this.baseUrl.startsWith('http://')) {
+      this.isBackendHealthy = false;
+      return false;
+    }
+
     const now = Date.now();
     // Cache health status for 10 seconds to avoid spamming
     if (this.isBackendHealthy !== null && now - this.lastHealthCheck < 10000) {
