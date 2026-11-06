@@ -1,0 +1,37 @@
+{
+  "idle": [
+    "Cadet Leo, check the life support gauges now!",
+    "Oxygen level nominal! Great work keeping us breathing!",
+    "Base temperature cozy! Hydroponics plants are happy today!",
+    "Look up! Phobos is speeding across the sky!",
+    "Power balanced nicely! We are true Martian engineers!"
+  ],
+  "dust_storm": [
+    "Bão bụi rồi! Lấy chổi quét tấm pin mau!",
+    "Dust storm incoming! Wipe the solar panels quickly!",
+    "Sand covers panels! Solar power is dropping fast!"
+  ],
+  "night": [
+    "Night is freezing! Kilopower reactor keeps us warm!",
+    "Sun has set! Switch power to thermal heaters!",
+    "Dark outside! Watch battery reserve through the night!"
+  ],
+  "low_oxygen": [
+    "Breathe in! Sabatier turns CO₂ into fresh air!",
+    "Oxygen dropping fast! Divert power to the scrubbers!",
+    "Cadet Leo, seal the hull before oxygen depletes!"
+  ],
+  "low_battery": [
+    "Battery running low! Conserve our precious power!",
+    "Emergency protocol! Dim non-essential base lighting now!",
+    "Warning brownout! Turn off heaters to save battery!"
+  ],
+  "crystals": [
+    "Piezo-crystals harvested! More energy for our base!",
+    "Shiny blue crystals! Martian minerals are super useful!"
+  ],
+  "victory": [
+    "Sol completed! Another day conquered on Mars!",
+    "Mission accomplished, Cadet! NASA ground control is cheering!"
+  ]
+}

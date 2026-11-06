@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
-from apps.simulation.models import StageConfig, GameEvent
+from apps.simulation.models import StageConfig, GameEvent, ClassroomSession
 
 class SimulationAPITests(TestCase):
     def setUp(self):
@@ -59,3 +59,41 @@ class SimulationAPITests(TestCase):
         url = reverse('stage-detail', kwargs={'id': 99})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    # Task 11.1 Classroom PIN Tests
+    def test_create_classroom_room(self):
+        url = reverse('room-create')
+        payload = {
+            'teacher_name': 'Dr. Eleanor Arroway',
+            'difficulty_modifier': 1.2
+        }
+        response = self.client.post(url, payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn('pin', response.data)
+        self.assertEqual(len(response.data['pin']), 6)
+        self.assertEqual(response.data['teacher_name'], 'Dr. Eleanor Arroway')
+        self.assertEqual(response.data['difficulty_modifier'], 1.2)
+        self.assertTrue(response.data['is_active'])
+
+        # Check DB
+        room = ClassroomSession.objects.get(pin=response.data['pin'])
+        self.assertEqual(room.teacher_name, 'Dr. Eleanor Arroway')
+
+    def test_join_classroom_room_valid(self):
+        room = ClassroomSession.objects.create(
+            pin='MARS88',
+            teacher_name='Teacher John',
+            is_active=True
+        )
+        url = reverse('room-join')
+        response = self.client.post(url, {'pin': 'mars88'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['valid'])
+        self.assertEqual(response.data['pin'], 'MARS88')
+        self.assertEqual(response.data['teacher_name'], 'Teacher John')
+
+    def test_join_classroom_room_invalid(self):
+        url = reverse('room-join')
+        response = self.client.post(url, {'pin': 'NOPE99'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertFalse(response.data['valid'])

@@ -169,6 +169,77 @@ class SoundEngine {
   }
 
   /**
+   * Pneumatic decompression hiss for airlock cycle (pssshh).
+   */
+  public playAirlock() {
+    if (this.isMuted) return;
+    this.initCtx();
+    if (!this.ctx) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      // White noise buffer for pneumatic blast
+      const bufferSize = this.ctx.sampleRate * 0.45;
+      const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = Math.random() * 2 - 1;
+      }
+
+      const whiteNoise = this.ctx.createBufferSource();
+      whiteNoise.buffer = noiseBuffer;
+
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(1200, now);
+      filter.frequency.exponentialRampToValueAtTime(350, now + 0.45);
+      filter.Q.setValueAtTime(3.0, now);
+
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0.01, now);
+      gain.gain.linearRampToValueAtTime(0.2, now + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+      whiteNoise.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      whiteNoise.start(now);
+      whiteNoise.stop(now + 0.46);
+    } catch (_) {}
+  }
+
+  /**
+   * Pentatonic arpeggio chime for crystal harvesting.
+   */
+  public playCrystalPickup() {
+    if (this.isMuted) return;
+    this.initCtx();
+    if (!this.ctx) return;
+
+    try {
+      const notes = [659.25, 783.99, 987.77, 1318.51]; // E5, G5, B5, E6
+      notes.forEach((freq, idx) => {
+        const startTime = this.ctx!.currentTime + idx * 0.06;
+        const osc = this.ctx!.createOscillator();
+        const gain = this.ctx!.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, startTime);
+
+        gain.gain.setValueAtTime(0.18, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.28);
+
+        osc.connect(gain);
+        gain.connect(this.ctx!.destination);
+
+        osc.start(startTime);
+        osc.stop(startTime + 0.3);
+      });
+    } catch (_) {}
+  }
+
+  /**
    * Failure drone tone for colony life support breach.
    */
   public playFailureTone() {

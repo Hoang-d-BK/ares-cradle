@@ -5,21 +5,27 @@
  */
 
 :root {
+  /* Hallmark Anti-Slop Mandatory Design Tokens */
+  --color-mars-rust: #C1440E;
+  --color-space-charcoal: #0B0E14;
+  --color-cyan-visor: #00F0FF;
+  --color-amber-hazard: #FFB020;
+
   /* Mars Outpost Primary Colors */
-  --mars-rust: #C1440E;
+  --mars-rust: var(--color-mars-rust);
   --mars-rust-hover: #D9531E;
   --mars-rust-dark: #8F2E07;
-  --mars-charcoal: #0B0E14;
+  --mars-charcoal: var(--color-space-charcoal);
   --mars-surface: #121620;
   --mars-elevated: #1A2130;
   --mars-border: #232D42;
   --mars-border-bright: #3B4B6E;
 
   /* Telemetry Status Colors */
-  --mars-cyan: #00F0FF;
+  --mars-cyan: var(--color-cyan-visor);
   --mars-cyan-dim: rgba(0, 240, 255, 0.15);
   --mars-cyan-glow: rgba(0, 240, 255, 0.35);
-  --mars-amber: #FFB020;
+  --mars-amber: var(--color-amber-hazard);
   --mars-amber-dim: rgba(255, 176, 32, 0.15);
   --mars-amber-glow: rgba(255, 176, 32, 0.35);
   --mars-emerald: #10B981;
@@ -101,6 +107,16 @@
   border-right: 2px solid var(--mars-cyan);
 }
 
+/* ==========================================================================
+   pbakaus/impeccable: 6 Tactile States for Push Buttons & Switches
+   State 1: default
+   State 2: hover
+   State 3: active (tactile depression)
+   State 4: focus-visible (clear accessible outline)
+   State 5: disabled
+   State 6: loading / skeleton
+   ========================================================================== */
+
 /* Tactile push button (Mechanical feel, physical depression) */
 .btn-tactile {
   position: relative;
@@ -114,21 +130,45 @@
   box-shadow: var(--shadow-tactile-raised);
   transition: transform var(--duration-tactile) var(--spring-snappy),
               box-shadow var(--duration-tactile) var(--tactile-easing),
-              border-color var(--duration-tactile) ease;
+              border-color var(--duration-tactile) ease,
+              color var(--duration-tactile) ease,
+              opacity var(--duration-tactile) ease;
   user-select: none;
   cursor: pointer;
+  outline: none;
 }
 
-.btn-tactile:hover {
+.btn-tactile:hover:not(:disabled):not([data-loading="true"]) {
   border-color: var(--mars-cyan);
   color: #FFFFFF;
   box-shadow: var(--shadow-tactile-raised), var(--shadow-cyan-glow);
 }
 
-.btn-tactile:active {
+.btn-tactile:active:not(:disabled):not([data-loading="true"]) {
   transform: translateY(2px) scale(0.98);
   box-shadow: var(--shadow-tactile-depressed);
   background: linear-gradient(180deg, #131924 0%, #1D2535 100%);
+}
+
+.btn-tactile:focus-visible {
+  outline: 2px solid var(--color-cyan-visor);
+  outline-offset: 2px;
+}
+
+.btn-tactile:disabled,
+.btn-tactile[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+  filter: grayscale(0.6);
+  box-shadow: none;
+}
+
+.btn-tactile[data-loading="true"],
+.btn-tactile.is-loading {
+  cursor: wait;
+  opacity: 0.8;
+  pointer-events: none;
 }
 
 /* Tactile Mars Rust Action Button */
@@ -137,17 +177,99 @@
   border: 1px solid #FF773D;
   color: #FFFFFF;
   box-shadow: var(--shadow-tactile-raised), var(--shadow-rust-glow);
+  outline: none;
 }
 
-.btn-tactile-rust:hover {
+.btn-tactile-rust:hover:not(:disabled):not([data-loading="true"]) {
   background: linear-gradient(180deg, #E6632E 0%, #D04C16 100%);
   border-color: #FFA07A;
 }
 
-.btn-tactile-rust:active {
+.btn-tactile-rust:active:not(:disabled):not([data-loading="true"]) {
   transform: translateY(2px) scale(0.98);
   background: linear-gradient(180deg, #8F2E07 0%, #AB3709 100%);
   box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.7);
+}
+
+.btn-tactile-rust:focus-visible {
+  outline: 2px solid var(--color-amber-hazard);
+  outline-offset: 2px;
+}
+
+.btn-tactile-rust:disabled,
+.btn-tactile-rust[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+  box-shadow: none;
+}
+
+/* ==========================================================================
+   pbakaus/impeccable: 6 Tactile States for Backpack / Inventory Minecraft Slots
+   State 1: default
+   State 2: hover
+   State 3: active
+   State 4: focus-visible
+   State 5: disabled (locked)
+   State 6: loading (shimmer)
+   ========================================================================== */
+.slot-tactile {
+  position: relative;
+  background: #0D121B;
+  border: 2px solid #1E293B;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--duration-tactile) var(--spring-snappy),
+              border-color var(--duration-tactile) ease,
+              box-shadow var(--duration-tactile) ease,
+              background-color var(--duration-tactile) ease;
+  user-select: none;
+  cursor: pointer;
+  outline: none;
+}
+
+.slot-tactile:hover:not(:disabled):not(.slot-locked):not(.slot-loading) {
+  border-color: var(--mars-cyan);
+  background: #131A26;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6), 0 0 10px rgba(0, 240, 255, 0.35);
+  transform: translateY(-1px);
+}
+
+.slot-tactile:active:not(:disabled):not(.slot-locked):not(.slot-loading) {
+  transform: translateY(2px) scale(0.96);
+  background: #080B10;
+  box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.95);
+  border-color: var(--mars-cyan-dim);
+}
+
+.slot-tactile:focus-visible {
+  outline: 2px solid var(--color-cyan-visor);
+  outline-offset: 2px;
+}
+
+.slot-tactile:disabled,
+.slot-tactile.slot-locked {
+  background: #080A0F;
+  border-color: #171F2E;
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.slot-tactile.slot-loading {
+  background: linear-gradient(90deg, #0D121B 25%, #1A2436 50%, #0D121B 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  cursor: wait;
+  pointer-events: none;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
 /* Sub-grid Mars Telemetry Background */

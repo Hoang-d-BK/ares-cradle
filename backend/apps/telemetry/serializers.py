@@ -1,5 +1,29 @@
 from rest_framework import serializers
-from .models import CadetSession, TelemetryLog, DebriefResult
+from .models import CadetSession, TelemetryLog, DebriefResult, StudentSurvivalLog
+
+class StudentSurvivalLogSerializer(serializers.ModelSerializer):
+    sessionPin = serializers.CharField(source='session_pin')
+    cadetName = serializers.CharField(source='cadet_name', required=False, default='Cadet Leo')
+    solsSurvived = serializers.IntegerField(source='sols_survived', required=False, default=1)
+    powerSavedKwh = serializers.FloatField(source='power_saved_kwh', required=False, default=0.0)
+    crystalsHarvested = serializers.IntegerField(source='crystals_harvested', required=False, default=0)
+    brownoutCount = serializers.IntegerField(source='brownout_count', required=False, default=0)
+
+    class Meta:
+        model = StudentSurvivalLog
+        fields = [
+            'id',
+            'sessionPin',
+            'cadetName',
+            'solsSurvived',
+            'powerSavedKwh',
+            'crystalsHarvested',
+            'brownoutCount',
+            'score',
+            'timestamp'
+        ]
+        read_only_fields = ['id', 'timestamp']
+
 
 class CadetSessionSerializer(serializers.ModelSerializer):
     cadetName = serializers.CharField(source='cadet_name', required=False)

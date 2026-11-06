@@ -1,6 +1,27 @@
 import uuid
 from django.db import models
 
+class StudentSurvivalLog(models.Model):
+    """
+    Task 11.2: Student Survival Telemetry & Classroom Leaderboard
+    Records cadet performance metrics during a classroom session.
+    """
+    session_pin = models.CharField(max_length=6, db_index=True)
+    cadet_name = models.CharField(max_length=100, default='Cadet Leo')
+    sols_survived = models.IntegerField(default=1)
+    power_saved_kwh = models.FloatField(default=0.0)
+    crystals_harvested = models.IntegerField(default=0)
+    brownout_count = models.IntegerField(default=0)
+    score = models.IntegerField(default=0)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-score', '-sols_survived', '-timestamp']
+
+    def __str__(self):
+        return f"{self.cadet_name} ({self.session_pin}) - Score {self.score}"
+
+
 class CadetSession(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     cadet_name = models.CharField(max_length=100, default='Cadet Leo')

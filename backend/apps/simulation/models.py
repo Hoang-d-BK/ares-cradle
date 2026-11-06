@@ -1,4 +1,25 @@
+import string
+import random
 from django.db import models
+
+def generate_pin(length=6):
+    chars = string.ascii_uppercase + string.digits
+    # Exclude easily confused characters
+    chars = chars.replace('0', '').replace('O', '').replace('1', '').replace('I', '')
+    return ''.join(random.choices(chars, k=length))
+
+class ClassroomSession(models.Model):
+    pin = models.CharField(max_length=6, unique=True, db_index=True)
+    teacher_name = models.CharField(max_length=120, default='Commander Teacher')
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+    difficulty_modifier = models.FloatField(default=1.0)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Classroom PIN: {self.pin} ({self.teacher_name})"
 
 class StageConfig(models.Model):
     id = models.IntegerField(primary_key=True)

@@ -1,5 +1,11 @@
 from rest_framework import serializers
-from .models import StageConfig, GameEvent
+from .models import StageConfig, GameEvent, ClassroomSession
+
+class ClassroomSessionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClassroomSession
+        fields = ['pin', 'teacher_name', 'created_at', 'is_active', 'difficulty_modifier']
+        read_only_fields = ['pin', 'created_at']
 
 class GameEventSerializer(serializers.ModelSerializer):
     id = serializers.CharField(source='event_id')

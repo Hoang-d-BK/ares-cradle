@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Zap, Heart, Thermometer } from 'lucide-react';
 import { useOutpostStore } from '@/modules/store/useOutpostStore';
@@ -8,6 +8,11 @@ import PowerDistributor from './PowerDistributor';
 import StageBanner from './StageBanner';
 import EventModal from './EventModal';
 import DebriefModal from './DebriefModal';
+import BackpackModal from '@/modules/survival-ui/BackpackModal';
+import RewardCelebration from '@/modules/survival-ui/RewardCelebration';
+import AstroBotCompanion from '@/modules/survival-ui/AstroBotCompanion';
+import ClassroomModal from '@/modules/survival-ui/ClassroomModal';
+import VirtualJoystick from '@/modules/character/VirtualJoystick';
 
 const springPhysics = {
   type: 'spring' as const,
@@ -22,6 +27,14 @@ export const MissionControlOverlay: React.FC = () => {
   const batteryCapacityKwh = useOutpostStore((state) => state.batteryCapacityKwh);
   const oxygen = useOutpostStore((state) => state.oxygen);
   const temperature = useOutpostStore((state) => state.temperature);
+  const initMarsWeather = useOutpostStore((state) => state.initMarsWeather);
+  const isClassroomOpen = useOutpostStore((state) => state.isClassroomOpen);
+  const closeClassroom = useOutpostStore((state) => state.closeClassroom);
+
+  // Initialize real-time NASA Elysium Planitia weather telemetry
+  useEffect(() => {
+    initMarsWeather();
+  }, [initMarsWeather]);
 
   // Determine color status for primary telemetry
   const batteryStatus: ResourceStatus = 
@@ -104,6 +117,23 @@ export const MissionControlOverlay: React.FC = () => {
 
       {/* Mission Debrief & Educational Scorecard Modal */}
       <DebriefModal />
+
+      {/* Tactile Minecraft Backpack Inventory Modal */}
+      <BackpackModal />
+
+      {/* Canvas Confetti Reward Celebration */}
+      <RewardCelebration />
+
+      {/* Task 10.2: Chipi-Bot AI Companion with NASA Lore Dialogue */}
+      <AstroBotCompanion />
+
+      {/* Task 12.2: Touch Virtual Joystick (Always active for touch / mobile / testing) */}
+      <div className="absolute bottom-28 left-4 sm:bottom-32 sm:left-6 pointer-events-auto z-30">
+        <VirtualJoystick />
+      </div>
+
+      {/* Task 11.1 & 11.2: Classroom Room-PIN & Live Leaderboard Modal */}
+      <ClassroomModal isOpen={isClassroomOpen} onClose={closeClassroom} />
     </div>
   );
 };

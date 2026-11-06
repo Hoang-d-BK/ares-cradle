@@ -57,33 +57,46 @@ export const HabitatDome: React.FC = () => {
 
   return (
     <group position={[0, 0, 0]}>
-      {/* Outer Pressurized Geodesic Dome */}
+      {/* Outer Pressurized Geodesic Dome Observation Glass */}
       <mesh ref={outerDomeRef} position={[0, 1.25, 0]} castShadow receiveShadow>
-        <sphereGeometry args={[2.3, 32, 20, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <sphereGeometry args={[2.3, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
         <meshStandardMaterial
-          color="#475569"
-          metalness={0.75}
-          roughness={0.15}
+          color="#64748B"
+          metalness={0.8}
+          roughness={0.1}
           transparent
-          opacity={0.82}
+          opacity={0.42}
+          flatShading
+        />
+      </mesh>
+
+      {/* Structural Geodesic Frame Struts */}
+      <mesh position={[0, 1.25, 0]}>
+        <sphereGeometry args={[2.31, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial
+          color="#334155"
+          metalness={0.9}
+          roughness={0.2}
+          wireframe
         />
       </mesh>
 
       {/* Structural Compression Ring Collar */}
       <mesh position={[0, 0.05, 0]}>
-        <cylinderGeometry args={[2.32, 2.38, 0.2, 32]} />
-        <meshStandardMaterial color="#334155" metalness={0.85} roughness={0.3} />
+        <cylinderGeometry args={[2.32, 2.38, 0.2, 24]} />
+        <meshStandardMaterial color="#1E293B" metalness={0.85} roughness={0.3} flatShading />
       </mesh>
 
-      {/* Inner Bioluminescent Hydroponics & Life Habitat Core */}
-      <mesh ref={coreRef} position={[0, 0.85, 0]}>
-        <cylinderGeometry args={[1.5, 1.7, 1.5, 24]} />
+      {/* Inner Laboratory Foundation Deck */}
+      <mesh ref={coreRef} position={[0, 0.35, 0]}>
+        <cylinderGeometry args={[1.7, 1.9, 0.5, 20]} />
         <meshStandardMaterial
           color="#0F172A"
           emissive="#00F0FF"
-          emissiveIntensity={0.6}
+          emissiveIntensity={0.4}
           roughness={0.3}
-          metalness={0.2}
+          metalness={0.4}
+          flatShading
         />
       </mesh>
 

@@ -144,7 +144,7 @@ export const PowerDistributor: React.FC = () => {
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.95 }}
         onClick={toggleEmergencySaver}
-        className={`w-full py-2.5 px-3 rounded text-xs font-display font-bold flex items-center justify-center gap-2 border transition-all ${
+        className={`w-full py-2.5 px-3 rounded text-xs font-display font-bold flex items-center justify-center gap-2 border transition-[transform,box-shadow,border-color,background-color] duration-150 ${
           emergencyPowerSaver
             ? 'btn-tactile-rust border-mars-amber shadow-[0_0_12px_rgba(255,176,32,0.4)]'
             : 'btn-tactile border-mars-border-bright text-slate-200'

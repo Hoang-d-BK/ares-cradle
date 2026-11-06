@@ -9,7 +9,9 @@ import {
   Sparkles, 
   Target, 
   Volume2, 
-  VolumeX 
+  VolumeX,
+  Backpack,
+  Users 
 } from 'lucide-react';
 import { useOutpostStore } from '@/modules/store/useOutpostStore';
 import { SolPhase } from '@/modules/simulation-engine/types';
@@ -29,10 +31,10 @@ const phaseIcons: Record<SolPhase, React.ComponentType<{ className?: string }>> 
 };
 
 const phaseColors: Record<SolPhase, { text: string; bg: string }> = {
-  Morning: { text: 'text-amber-400', bg: 'bg-amber-400/10' },
+  Morning: { text: 'text-mars-amber', bg: 'bg-mars-amber/10' },
   Noon: { text: 'text-yellow-300', bg: 'bg-yellow-300/10' },
   Sunset: { text: 'text-mars-rust', bg: 'bg-mars-rust/10' },
-  Night: { text: 'text-indigo-400', bg: 'bg-indigo-400/10' }
+  Night: { text: 'text-mars-cyan', bg: 'bg-mars-cyan/10' }
 };
 
 export const StageBanner: React.FC = () => {
@@ -48,6 +50,9 @@ export const StageBanner: React.FC = () => {
   const battery = useOutpostStore((state) => state.battery);
   const isMuted = useOutpostStore((state) => state.isMuted);
   const toggleMute = useOutpostStore((state) => state.toggleMute);
+  const toggleBackpack = useOutpostStore((state) => state.toggleBackpack);
+  const toggleClassroom = useOutpostStore((state) => state.toggleClassroom);
+  const marsWeather = useOutpostStore((state) => state.marsWeather);
 
   const PhaseIcon = phaseIcons[solPhase] || Sun;
   const phaseTheme = phaseColors[solPhase] || phaseColors.Noon;
@@ -121,6 +126,17 @@ export const StageBanner: React.FC = () => {
           <span className="text-mars-amber font-semibold">{solarIntake.toFixed(1)} kW</span>
         </div>
 
+        {/* NASA InSight Telemetry Badge */}
+        {marsWeather && (
+          <>
+            <div className="hidden lg:block h-6 w-[1px] bg-mars-border" />
+            <div className="hidden lg:flex items-center gap-1.5 text-[11px] font-mono px-2 py-0.5 rounded bg-mars-surface border border-mars-cyan/30 text-mars-cyan">
+              <span className="w-1.5 h-1.5 rounded-full bg-mars-cyan animate-pulse" />
+              <span>NASA: {marsWeather.temperatureMin}°C | {marsWeather.windSpeed}m/s</span>
+            </div>
+          </>
+        )}
+
         <div className="hidden sm:block h-6 w-[1px] bg-mars-border" />
 
         {/* Grid Health Status */}
@@ -169,6 +185,36 @@ export const StageBanner: React.FC = () => {
             </div>
           </motion.div>
         )}
+
+        {/* Tactile Backpack Button [E] */}
+        <motion.button
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ ...springPhysics, delay: 0.07 }}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.94 }}
+          onClick={toggleBackpack}
+          className="btn-tactile px-3 py-2 rounded flex items-center gap-1.5 text-xs font-display font-bold tracking-wider border border-mars-cyan/40 text-mars-cyan shadow-[0_0_8px_rgba(0,240,255,0.2)]"
+          title="Open Cadet Field Backpack [Hotkey: E]"
+        >
+          <Backpack className="w-4 h-4" />
+          <span className="hidden sm:inline">BACKPACK [E]</span>
+        </motion.button>
+
+        {/* Tactile Classroom Room-PIN Button */}
+        <motion.button
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ ...springPhysics, delay: 0.08 }}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.94 }}
+          onClick={toggleClassroom}
+          className="btn-tactile px-3 py-2 rounded flex items-center gap-1.5 text-xs font-display font-bold tracking-wider border border-mars-amber/40 text-mars-amber shadow-[0_0_8px_rgba(255,176,32,0.2)]"
+          title="Classroom Battle Session [Room PIN]"
+        >
+          <Users className="w-4 h-4" />
+          <span className="hidden sm:inline">CLASSROOM [PIN]</span>
+        </motion.button>
 
         {/* Audio Mute/Unmute Toggle Button */}
         <motion.button

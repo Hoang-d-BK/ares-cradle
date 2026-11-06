@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
-from apps.telemetry.models import CadetSession, DebriefResult
+from apps.telemetry.models import CadetSession, DebriefResult, StudentSurvivalLog
 
 class TelemetryAPITests(TestCase):
     def setUp(self):
@@ -75,3 +75,59 @@ class TelemetryAPITests(TestCase):
         self.assertGreaterEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['cadetName'], 'Cadet Star')
         self.assertEqual(response.data[0]['score'], 98)
+
+    # Task 11.2 Student Survival Log & Classroom Leaderboard Tests
+    def test_student_survival_log(self):
+        url = reverse('student-log')
+        payload = {
+            'session_pin': 'MARS01',
+            'cadet_name': 'Cadet Liam',
+            'sols_survived': 3,
+            'power_saved_kwh': 18.5,
+            'crystals_harvested': 5,
+            'brownout_count': 0,
+            'score': 150
+        }
+        response = self.client.post(url, payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(response.data['recorded'])
+        self.assertEqual(response.data['sessionPin'], 'MARS01')
+        self.assertEqual(response.data['cadetName'], 'Cadet Liam')
+
+        # Check DB
+        self.assertEqual(StudentSurvivalLog.objects.filter(session_pin='MARS01').count(), 1)
+
+    def test_room_leaderboard(self):
+        StudentSurvivalLog.objects.create(
+            session_pin='ROOM42',
+            cadet_name='Cadet Top',
+            sols_survived=5,
+            power_saved_kwh=32.0,
+            crystals_harvested=8,
+            brownout_count=0,
+            score=320
+        )
+        StudentSurvivalLog.objects.create(
+            session_pin='ROOM42',
+            cadet_name='Cadet Second',
+            sols_survived=4,
+            power_saved_kwh=20.0,
+            crystals_harvested=4,
+            brownout_count=1,
+            score=210
+        )
+        StudentSurvivalLog.objects.create(
+            session_pin='OTHER1',
+            cadet_name='Cadet Other',
+            sols_survived=1,
+            score=50
+        )
+
+        url = reverse('room-leaderboard') + '?room=ROOM42'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(response.data[0]['cadetName'], 'Cadet Top')
+        self.assertEqual(response.data[0]['rank'], 1)
+        self.assertEqual(response.data[1]['cadetName'], 'Cadet Second')
+        self.assertEqual(response.data[1]['rank'], 2)

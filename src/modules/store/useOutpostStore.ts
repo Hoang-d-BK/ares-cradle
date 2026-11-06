@@ -21,6 +21,7 @@ import {
 import { missionService } from '@/services/api';
 import { STAGES_FIXTURES } from '@/services/api/MockMissionService';
 import { soundEngine } from '@/modules/audio/soundEngine';
+import { MarsWeatherTelemetry, fetchMarsWeather } from '@/modules/story-engine/services/marsWeatherService';
 
 export interface OutpostStoreState {
   // Sol Clock & Diurnal Cycle
@@ -54,6 +55,38 @@ export interface OutpostStoreState {
   debriefReport: DebriefReport | null;
   activeWarnings: string[];
   isMuted: boolean;
+
+  // Backpack & Inventory State
+  isBackpackOpen: boolean;
+  inventory: Record<string, number>;
+  toggleBackpack: () => void;
+  openBackpack: () => void;
+  closeBackpack: () => void;
+  useItem: (itemId: string) => boolean;
+
+  // Reward Celebration State
+  isCelebrationOpen: boolean;
+  celebrationData: { title: string; subtitle: string; stars: number } | null;
+  triggerCelebration: (title: string, subtitle: string, stars?: number) => void;
+  dismissCelebration: () => void;
+
+  // Real-Time NASA Mars Weather Telemetry
+  marsWeather: MarsWeatherTelemetry | null;
+  initMarsWeather: () => Promise<void>;
+
+  // Classroom Session PIN Modal State
+  isClassroomOpen: boolean;
+  openClassroom: () => void;
+  closeClassroom: () => void;
+  toggleClassroom: () => void;
+
+  // Character, Movement & Habitat State (Phase 12)
+  playerPos: [number, number, number];
+  joystickVector: { x: number; y: number };
+  isInsideHabitat: boolean;
+  setPlayerPos: (pos: [number, number, number]) => void;
+  setJoystickVector: (vec: { x: number; y: number }) => void;
+  setIsInsideHabitat: (isInside: boolean) => void;
 
   // Actions
   tick: (deltaSeconds?: number) => void;
@@ -100,6 +133,128 @@ export const useOutpostStore = create<OutpostStoreState>((set, get) => ({
   debriefReport: null,
   activeWarnings: [],
   isMuted: false,
+
+  // Backpack & Inventory Initial State
+  isBackpackOpen: false,
+  inventory: {
+    sonic_wiper: 3,
+    space_tape: 2,
+    backup_battery: 1,
+    space_apple: 2
+  },
+  toggleBackpack: () => {
+    soundEngine.playClick(950);
+    set((state) => ({ isBackpackOpen: !state.isBackpackOpen }));
+  },
+  openBackpack: () => {
+    soundEngine.playClick(950);
+    set({ isBackpackOpen: true });
+  },
+  closeBackpack: () => {
+    soundEngine.playClick(650);
+    set({ isBackpackOpen: false });
+  },
+  useItem: (itemId: string) => {
+    const state = get();
+    const currentCount = state.inventory[itemId] ?? 0;
+    if (currentCount <= 0) return false;
+
+    soundEngine.playClick(1300);
+    const updatedInventory = { ...state.inventory, [itemId]: currentCount - 1 };
+
+    switch (itemId) {
+      case 'sonic_wiper':
+        // Clears all dust on solar array
+        set({
+          inventory: updatedInventory,
+          dustCoverage: 0
+        });
+        get().triggerCelebration('SOLAR ARRAY PURGED!', 'Sonic pulse cleared 100% of Martian dust deposits.', 3);
+        return true;
+      case 'space_tape':
+        // Restores +2% oxygen and seals micro-leaks
+        set({
+          inventory: updatedInventory,
+          oxygen: Math.min(25, state.oxygen + 2.5)
+        });
+        return true;
+      case 'backup_battery':
+        // Injects 25% battery storage
+        set({
+          inventory: updatedInventory,
+          batteryKwh: Math.min(state.batteryCapacityKwh, state.batteryKwh + state.batteryCapacityKwh * 0.25),
+          battery: Math.min(100, state.battery + 25)
+        });
+        return true;
+      case 'space_apple':
+        // Stabilizes crew vital temperature & oxygen
+        set({
+          inventory: updatedInventory,
+          temperature: 20.0,
+          oxygen: 20.9
+        });
+        return true;
+      default:
+        return false;
+    }
+  },
+
+  // Reward Celebration Initial State
+  isCelebrationOpen: false,
+  celebrationData: null,
+  triggerCelebration: (title: string, subtitle: string, stars = 3) => {
+    soundEngine.playSuccessChime();
+    set({
+      isCelebrationOpen: true,
+      celebrationData: { title, subtitle, stars }
+    });
+  },
+  dismissCelebration: () => {
+    set({ isCelebrationOpen: false, celebrationData: null });
+  },
+
+  // NASA Mars Weather Telemetry Implementation
+  marsWeather: null,
+  initMarsWeather: async () => {
+    try {
+      const weather = await fetchMarsWeather();
+      set({ marsWeather: weather });
+      if (weather.stormRisk === 'severe') {
+        set((state) => ({ dustCoverage: Math.min(0.8, state.dustCoverage + 0.15) }));
+      }
+    } catch (_err) {
+      // Resilient fallback guaranteed
+    }
+  },
+
+  // Classroom Session PIN Modal Implementation
+  isClassroomOpen: false,
+  openClassroom: () => {
+    soundEngine.playClick(1050);
+    set({ isClassroomOpen: true });
+  },
+  closeClassroom: () => {
+    soundEngine.playClick(650);
+    set({ isClassroomOpen: false });
+  },
+  toggleClassroom: () => {
+    soundEngine.playClick(1050);
+    set((state) => ({ isClassroomOpen: !state.isClassroomOpen }));
+  },
+
+  // Character, Movement & Habitat State Implementation
+  playerPos: [1.8, -0.4, 2.5],
+  joystickVector: { x: 0, y: 0 },
+  isInsideHabitat: false,
+  setPlayerPos: (pos: [number, number, number]) => set({ playerPos: pos }),
+  setJoystickVector: (vec: { x: number; y: number }) => set({ joystickVector: vec }),
+  setIsInsideHabitat: (isInside: boolean) => {
+    const prev = get().isInsideHabitat;
+    if (prev !== isInside) {
+      soundEngine.playAirlock();
+    }
+    set({ isInsideHabitat: isInside });
+  },
 
   toggleMute: () => {
     const isNowMuted = soundEngine.toggleMute();
@@ -240,6 +395,13 @@ export const useOutpostStore = create<OutpostStoreState>((set, get) => ({
     });
 
     const { nextState, warnings } = stepResult;
+
+    // Interior Habitat Sanctuary: Replenish Oxygen & Thermal Balance (architecture.md 3.2)
+    if (state.isInsideHabitat) {
+      nextState.oxygenPercent = Math.min(20.9, nextState.oxygenPercent + dt * 0.8);
+      nextState.temperatureCelsius = Math.min(20.0, nextState.temperatureCelsius + dt * 1.2);
+    }
+
     const nextPhase = determineSolPhase(nextSolTime);
 
     // 4. Evaluate Critical Failure conditions
@@ -268,6 +430,11 @@ export const useOutpostStore = create<OutpostStoreState>((set, get) => ({
       isVictory = true;
       soundEngine.playSuccessChime();
       soundEngine.stopPowerHum();
+      get().triggerCelebration(
+        `SOL ${state.stageConfig.sol} SURVIVED!`,
+        `Cadet Leo maintained base life support through all environmental challenges.`,
+        3
+      );
       const debriefMath = calculateDebriefReport(
         state.activeStageId,
         state.stageConfig.title,
@@ -341,3 +508,7 @@ export const useOutpostStore = create<OutpostStoreState>((set, get) => ({
     get().tick(delta);
   }
 }));
+
+if (typeof window !== 'undefined') {
+  (window as unknown as { __outpostStore: typeof useOutpostStore }).__outpostStore = useOutpostStore;
+}

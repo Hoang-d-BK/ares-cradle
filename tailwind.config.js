@@ -9,19 +9,24 @@ export default {
     extend: {
       colors: {
         mars: {
-          rust: '#C1440E',
-          'rust-hover': '#D9531E',
-          'rust-dark': '#8F2E07',
-          charcoal: '#0B0E14',
-          surface: '#121620',
-          elevated: '#1A2130',
-          border: '#232D42',
-          cyan: '#00F0FF',
-          'cyan-glow': 'rgba(0, 240, 255, 0.25)',
-          amber: '#FFB020',
-          'amber-glow': 'rgba(255, 176, 32, 0.25)',
-          emerald: '#10B981',
-          crimson: '#EF4444'
+          rust: 'var(--color-mars-rust, #C1440E)',
+          'rust-hover': 'var(--mars-rust-hover, #D9531E)',
+          'rust-dark': 'var(--mars-rust-dark, #8F2E07)',
+          charcoal: 'var(--color-space-charcoal, #0B0E14)',
+          surface: 'var(--mars-surface, #121620)',
+          elevated: 'var(--mars-elevated, #1A2130)',
+          border: 'var(--mars-border, #232D42)',
+          'border-bright': 'var(--mars-border-bright, #3B4B6E)',
+          cyan: 'var(--color-cyan-visor, #00F0FF)',
+          'cyan-dim': 'var(--mars-cyan-dim, rgba(0, 240, 255, 0.15))',
+          'cyan-glow': 'var(--mars-cyan-glow, rgba(0, 240, 255, 0.35))',
+          amber: 'var(--color-amber-hazard, #FFB020)',
+          'amber-dim': 'var(--mars-amber-dim, rgba(255, 176, 32, 0.15))',
+          'amber-glow': 'var(--mars-amber-glow, rgba(255, 176, 32, 0.35))',
+          emerald: 'var(--mars-emerald, #10B981)',
+          'emerald-glow': 'var(--mars-emerald-glow, rgba(16, 185, 129, 0.35))',
+          crimson: 'var(--mars-crimson, #EF4444)',
+          'crimson-glow': 'var(--mars-crimson-glow, rgba(239, 68, 68, 0.4))'
         }
       },
       fontFamily: {
