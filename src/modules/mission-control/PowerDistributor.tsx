@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { 
   Sliders, 
   Wind, 
@@ -10,14 +9,12 @@ import {
   ArrowDownRight 
 } from 'lucide-react';
 import { useOutpostStore } from '@/modules/store/useOutpostStore';
+import TactileButton from './TactileButton';
 
-const springPhysics = {
-  type: 'spring' as const,
-  stiffness: 420,
-  damping: 28,
-  mass: 0.8
-};
-
+/**
+ * Phase 14.1: Power Distributor & Routing Deck with Magnetic Tactile Buttons
+ * Enhanced with magnetic hover (delta * 0.15), click ripples, and Apple-style shimmer.
+ */
 export const PowerDistributor: React.FC = () => {
   const powerPriorityOxygen = useOutpostStore((state) => state.powerPriorityOxygen);
   const powerPriorityHeaters = useOutpostStore((state) => state.powerPriorityHeaters);
@@ -98,65 +95,58 @@ export const PowerDistributor: React.FC = () => {
         <Thermometer className="w-4 h-4 text-mars-rust shrink-0" />
       </div>
 
-      {/* Quick Tactile Preset Buttons for Young Cadets */}
+      {/* Quick Tactile Magnetic Preset Buttons for Young Cadets */}
       <div className="grid grid-cols-3 gap-1.5">
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.96 }}
+        <TactileButton
+          size="sm"
+          variant={powerPriorityOxygen === 50 ? 'primary' : 'outline'}
+          active={powerPriorityOxygen === 50}
           onClick={() => handlePreset(50)}
-          className={`py-1.5 text-[10px] font-mono font-medium rounded border transition-colors touch-manipulation active:scale-95 ${
-            powerPriorityOxygen === 50
-              ? 'bg-mars-cyan/20 border-mars-cyan text-mars-cyan shadow-[0_0_8px_rgba(0,240,255,0.3)]'
-              : 'bg-slate-950 border-mars-border text-slate-400 hover:text-slate-200'
-          }`}
+          className="font-mono text-[10px]"
+          audioFrequency={950}
         >
           50/50 BALANCED
-        </motion.button>
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.96 }}
+        </TactileButton>
+
+        <TactileButton
+          size="sm"
+          variant={powerPriorityOxygen === 75 ? 'primary' : 'outline'}
+          active={powerPriorityOxygen === 75}
           onClick={() => handlePreset(75)}
-          className={`py-1.5 text-[10px] font-mono font-medium rounded border transition-colors touch-manipulation active:scale-95 ${
-            powerPriorityOxygen === 75
-              ? 'bg-mars-cyan/20 border-mars-cyan text-mars-cyan shadow-[0_0_8px_rgba(0,240,255,0.3)]'
-              : 'bg-slate-950 border-mars-border text-slate-400 hover:text-slate-200'
-          }`}
+          className="font-mono text-[10px]"
+          audioFrequency={1050}
         >
           75/25 O₂ SURGE
-        </motion.button>
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.96 }}
+        </TactileButton>
+
+        <TactileButton
+          size="sm"
+          variant={powerPriorityOxygen === 25 ? 'rust' : 'outline'}
+          active={powerPriorityOxygen === 25}
           onClick={() => handlePreset(25)}
-          className={`py-1.5 text-[10px] font-mono font-medium rounded border transition-colors touch-manipulation active:scale-95 ${
-            powerPriorityOxygen === 25
-              ? 'bg-mars-rust/20 border-mars-rust text-mars-rust shadow-[0_0_8px_rgba(193,68,14,0.3)]'
-              : 'bg-slate-950 border-mars-border text-slate-400 hover:text-slate-200'
-          }`}
+          className="font-mono text-[10px]"
+          audioFrequency={850}
         >
           25/75 HEAT SHIELD
-        </motion.button>
+        </TactileButton>
       </div>
 
-      {/* Emergency Power Saver Push Toggle */}
-      <motion.button
-        transition={springPhysics}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.95 }}
+      {/* Emergency Power Saver Magnetic Push Toggle */}
+      <TactileButton
+        variant={emergencyPowerSaver ? 'rust' : 'primary'}
         onClick={toggleEmergencySaver}
-        className={`w-full py-2.5 px-3 rounded text-xs font-display font-bold flex items-center justify-center gap-2 border transition-[transform,box-shadow,border-color,background-color] duration-150 ${
-          emergencyPowerSaver
-            ? 'btn-tactile-rust border-mars-amber shadow-[0_0_12px_rgba(255,176,32,0.4)]'
-            : 'btn-tactile border-mars-border-bright text-slate-200'
-        }`}
+        className="w-full py-2.5"
+        audioFrequency={620}
+        icon={
+          <ShieldAlert
+            className={`w-4 h-4 ${emergencyPowerSaver ? 'text-amber-300 animate-pulse' : 'text-slate-400'}`}
+          />
+        }
       >
-        <ShieldAlert className={`w-4 h-4 ${emergencyPowerSaver ? 'text-amber-300 animate-pulse' : 'text-slate-400'}`} />
-        <span>
-          {emergencyPowerSaver
-            ? 'EMERGENCY PROTOCOL ACTIVE (-15% DRAIN)'
-            : 'ENGAGE EMERGENCY POWER SAVER'}
-        </span>
-      </motion.button>
+        {emergencyPowerSaver
+          ? 'EMERGENCY PROTOCOL ACTIVE (-15% DRAIN)'
+          : 'ENGAGE EMERGENCY POWER SAVER'}
+      </TactileButton>
     </div>
   );
 };

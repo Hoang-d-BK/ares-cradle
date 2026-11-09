@@ -3,8 +3,16 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useOutpostStore } from '@/modules/store/useOutpostStore';
 
+/**
+ * Phase 13.2: Habitat Dome with Atmospheric Corona Glow (THREE.BackSide)
+ * Changes color reactively according to life support state:
+ * - Nominal (+20°C, O₂ >= 19.5%): Gentle Cyan (#00F0FF)
+ * - Deep Freeze (< 5°C down to -60°C): Ice Blue (#4FD0E3)
+ * - Critical Hypoxia (O₂ < 19.5%): Rapid Pulsing Crimson (#EF4444)
+ */
 export const HabitatDome: React.FC = () => {
   const outerDomeRef = useRef<THREE.Mesh>(null);
+  const atmosphereRef = useRef<THREE.MeshBasicMaterial>(null);
   const coreRef = useRef<THREE.Mesh>(null);
   const beaconRef = useRef<THREE.Mesh>(null);
   const pointLightRef = useRef<THREE.PointLight>(null);
@@ -21,29 +29,42 @@ export const HabitatDome: React.FC = () => {
       coreRef.current.rotation.y += delta * 0.08;
     }
 
-    // Determine bioluminescent life support glow color & state
-    let targetColor = '#00F0FF'; // Nominal Cyan
+    // Determine reactive atmospheric colors
+    // Nominal Cyan (#00F0FF) -> Ice Blue (#4FD0E3) -> Crimson (#EF4444)
+    let targetColor = '#00F0FF';
     let pulseFrequency = 1.8;
+    let baseOpacity = 0.15;
 
-    if (oxygen < 16.0 || temperature < -20.0) {
-      targetColor = '#EF4444'; // Lethal Red
+    if (oxygen < 19.5) {
+      targetColor = '#EF4444'; // Lethal/Danger Crimson
       pulseFrequency = 6.0;    // Rapid emergency alarm pulse
-    } else if (emergencySaver || temperature < 5.0) {
-      targetColor = '#FFB020'; // Caution Amber
+      baseOpacity = 0.22;
+    } else if (temperature < 5.0) {
+      targetColor = '#4FD0E3'; // Ice Blue Freezing
+      pulseFrequency = 2.0;
+      baseOpacity = 0.18;
+    } else if (emergencySaver) {
+      targetColor = '#FFB020'; // Amber Conservation Mode
       pulseFrequency = 2.5;
     }
 
-    // Bioluminescent breathing pulse
+    // Breathing pulse calculation
     const pulseFactor = 0.5 + Math.sin(elapsed * pulseFrequency) * 0.25;
+
+    // Atmospheric BackSide Corona glow update
+    if (atmosphereRef.current) {
+      atmosphereRef.current.color.lerp(new THREE.Color(targetColor), delta * 4.0);
+      atmosphereRef.current.opacity = baseOpacity + (oxygen < 19.5 ? Math.sin(elapsed * 6.0) * 0.08 : 0);
+    }
 
     if (coreRef.current && (coreRef.current.material as THREE.MeshStandardMaterial)) {
       const mat = coreRef.current.material as THREE.MeshStandardMaterial;
-      mat.emissive.set(targetColor);
+      mat.emissive.lerp(new THREE.Color(targetColor), delta * 4.0);
       mat.emissiveIntensity = pulseFactor;
     }
 
     if (pointLightRef.current) {
-      pointLightRef.current.color.set(targetColor);
+      pointLightRef.current.color.lerp(new THREE.Color(targetColor), delta * 4.0);
       pointLightRef.current.intensity = pulseFactor * 2.2;
     }
 
@@ -65,8 +86,21 @@ export const HabitatDome: React.FC = () => {
           metalness={0.8}
           roughness={0.1}
           transparent
-          opacity={0.42}
+          opacity={0.38}
           flatShading
+        />
+      </mesh>
+
+      {/* Atmospheric Interior BackSide Corona Glow (Phase 13.2) */}
+      <mesh position={[0, 1.25, 0]}>
+        <sphereGeometry args={[2.28, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshBasicMaterial
+          ref={atmosphereRef}
+          side={THREE.BackSide}
+          color="#00F0FF"
+          transparent
+          opacity={0.15}
+          depthWrite={false}
         />
       </mesh>
 
@@ -124,17 +158,14 @@ export const HabitatDome: React.FC = () => {
 
       {/* Telemetry Mast & Communications Dish */}
       <group position={[-1.6, 1.8, -1.2]}>
-        {/* Mast Pylon */}
         <mesh position={[0, 0.6, 0]}>
           <cylinderGeometry args={[0.03, 0.05, 1.6, 8]} />
           <meshStandardMaterial color="#94A3B8" metalness={0.9} roughness={0.2} />
         </mesh>
-        {/* Communication Dish */}
         <mesh position={[0, 1.3, 0]} rotation={[0.4, 0.3, 0.2]}>
           <cylinderGeometry args={[0.35, 0.05, 0.1, 16]} />
           <meshStandardMaterial color="#CBD5E1" metalness={0.8} roughness={0.3} />
         </mesh>
-        {/* Apex Blinking Telemetry Strobe */}
         <mesh ref={beaconRef} position={[0, 1.45, 0]}>
           <sphereGeometry args={[0.06, 8, 8]} />
           <meshStandardMaterial
@@ -148,11 +179,11 @@ export const HabitatDome: React.FC = () => {
       {/* Local Ambient Life Support Glow Light */}
       <pointLight
         ref={pointLightRef}
-        position={[0, 1.4, 0]}
-        intensity={1.8}
         color="#00F0FF"
-        distance={7.5}
+        intensity={1.2}
+        distance={7}
         decay={2}
+        position={[0, 1.2, 0]}
       />
     </group>
   );

@@ -13,6 +13,8 @@ import BackpackModal from '@/modules/survival-ui/BackpackModal';
 import RewardCelebration from '@/modules/survival-ui/RewardCelebration';
 import AstroBotCompanion from '@/modules/survival-ui/AstroBotCompanion';
 import ClassroomModal from '@/modules/survival-ui/ClassroomModal';
+import BrownoutQuizModal from '@/modules/survival-ui/BrownoutQuizModal';
+import StormRadarHUD from '@/modules/survival-ui/StormRadarHUD';
 import VirtualJoystick from '@/modules/character/VirtualJoystick';
 
 const springPhysics = {
@@ -78,6 +80,11 @@ export const MissionControlOverlay: React.FC = () => {
     <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-3 md:p-5 overflow-hidden z-20">
       {/* Top Banner: Sol Clock, Phase, Directives & Dust Cleaner */}
       <StageBanner />
+
+      {/* Phase 16: Mars Weather & Dust Storm Concentric Mini-Radar */}
+      <div className="absolute top-20 right-3 sm:right-5 pointer-events-auto z-20 hidden md:block">
+        <StormRadarHUD />
+      </div>
 
       {/* Floating Bottom Mission Control HUD: Compact Minimalist Bar vs Expanded Deck */}
       <footer className="w-full max-w-5xl mx-auto flex flex-col items-center pb-1 select-none">
@@ -239,6 +246,9 @@ export const MissionControlOverlay: React.FC = () => {
       <div className="absolute bottom-28 left-4 sm:bottom-32 sm:left-6 pointer-events-auto z-30">
         <VirtualJoystick />
       </div>
+
+      {/* Phase 15.1: Mini-Quiz STEM Cứu Nguy Khi Sụt Nguồn */}
+      <BrownoutQuizModal />
 
       {/* Task 11.1 & 11.2: Classroom Room-PIN & Live Leaderboard Modal */}
       <ClassroomModal isOpen={isClassroomOpen} onClose={closeClassroom} />

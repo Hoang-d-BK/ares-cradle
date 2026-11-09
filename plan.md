@@ -63,3 +63,41 @@
   - Viết kịch bản tự động chụp ảnh màn hình canvas 3D định kỳ sau các commit, kiểm tra tụt frame (< 60 FPS) hoặc lỗi tràn vỡ mesh.
 - [x] **12.2 Xác Minh Đa Thiết Bị (Chromebook, iPad, Tablet Cảm Ứng)**
   - Đảm bảo trải nghiệm mượt mà 60 FPS trên GPU tích hợp Intel UHD và tương thích 100% giữa bàn phím WASD và Joystick cảm ứng.
+
+---
+
+#### Phase 13: NASA Space Apps Visual & Orbital Upgrades (Học từ `NASA-Live-Orrery`)
+> [!NOTE]
+> Bám sát `prd.md`: Giữ nguyên mô hình 2 tài nguyên cốt lõi (**Energy** vs. **Life Support: O₂ & Thermal**) cho học sinh 7–12 tuổi, nâng cấp chiều sâu thị giác và tính chân thực khoa học từ dự án Global Finalist `D:\nasa-meteor-rizzlers`.
+
+- [x] **13.1 Quỹ Đạo Kepler Thực Tế & Bầu Trời Đêm Sao Hỏa (`SpaceSkybox.tsx` & `marsWeatherService.ts`)**
+  - Áp dụng thuật toán Julian Date & phương trình Kepler từ `NASA-Live-Orrery/nasa-api.js` để mô phỏng chính xác vị trí 2 mặt trăng **Phobos & Deimos** cùng góc chiếu Mặt Trời theo giờ Sol thực tế (trực tiếp điều phối sản lượng điện **Solar Array** trong `prd.md` mục 3.1).
+  - Thêm lớp Procedural Canvas Fallback Texture (như `createProceduralTexture` trong `solar-system.js`) đảm bảo mặt đất Sao Hỏa và bầu trời luôn sắc nét 60 FPS ngay cả khi offline hoặc nghẽn mạng trên Chromebook trường học.
+- [x] **13.2 Shader Khí Quyển & Hiệu Ứng Quầng Sáng Năng Lượng (`SolarArray.tsx` & `HabitatDome.tsx`)**
+  - Tích hợp lớp phát xạ BackSide Corona/Atmospheric Glow (`MeshBasicMaterial` + `THREE.BackSide`) quanh vòm kính trạm: chuyển màu trực quan theo nhiệt độ trong trạm (`+20°C` Cyan ấm áp sang `-60°C` băng giá hoặc Đỏ cảnh báo khi sụt Oxy < 19.5%).
+  - Mở rộng địa hình sao Hỏa (`MarsTerrain.tsx`) kéo rộng bề mặt bán kính 38m, bổ sung cụm đá va chạm và vùng thám hiểm.
+  - Tích hợp xe tự hành Mars Rover (`MarsRover.tsx`) có thể điều khiển trực tiếp (WASD, hotkey R) với hệ thống đèn pha và bánh xe Rocker-Bogie quay theo vận tốc.
+  - Thêm chế độ quan sát bầu trời tự do Orrery Sky View (hotkey V) trên `CameraRig.tsx`.
+
+---
+
+#### Phase 14: Tactile Micro-Interactions & Anti-Slop Motion System (Học từ `PremiumButton`, `Navigation`, `animations.js`)
+- [x] **14.1 Hệ Thống Nút Bấm Từ Tính & Phản Hồi Xúc Giác (`PowerDistributor.tsx` & `TactileButton.tsx`)**
+  - Nâng cấp các nút điều phối **Power Router**, **Emergency Power Saver** và **Dust Wiper** (mục 3.3 `prd.md`) với hiệu ứng **Magnetic Hover** (`deltaX * 0.15`), **Click Ripple** và **Apple-style Skew Shimmer** học từ `PremiumButton.js` & `PremiumCard.css`.
+- [x] **14.2 Chuẩn Hóa Đường Cong Chuyển Động Bezier & Fluid Typography (`hallmark-tokens.css`)**
+  - Áp dụng bộ Bezier easing chuẩn `[0.6, 0.05, 0.01, 0.9]` từ `utils/animations.js` và thang chữ co giãn `clamp()` từ `premium-typography.css` cho `StageBanner.tsx` và các đồng hồ `ResourceDial.tsx`.
+
+---
+
+#### Phase 15: Cơ Chế "Space Quiz Cứu Nguy" & AI AstroBot Ngữ Cảnh (Học từ `AsteroidSmash` & `UniversalChatbot.js`)
+- [x] **15.1 Mini-Quiz STEM Cứu Nguy Khi Sụt Nguồn (`BrownoutQuizModal.tsx`)**
+  - Học từ cơ chế *Answer Space Quiz for Extra Heart (5s)* của `AsteroidSmash/main.js`: Khi Pin căn cứ chạm `0%` ban đêm (Emergency Brownout — mục 3.1 `prd.md`), trước khi xử thua, hệ thống mở thử thách câu hỏi trắc nghiệm nhanh 10 giây về khoa học Sao Hỏa (chu trình Sabatier, pin mặt trời, bão bụi). Trả lời đúng sẽ kích hoạt **Pin Dự Phòng Khẩn Cấp (+20% kWh)** kèm giải thích kỹ thuật cho học sinh.
+- [x] **15.2 Nâng Cấp Chipi-Bot Thành Trợ Lý Hỏi Đáp Đa Tầng (`AstroBotCompanion.tsx`)**
+  - Học kiến trúc 2 tầng của `UniversalChatbot.js`: Kết hợp lời thoại kịch bản nhanh (< 10 từ) với chế độ hỏi đáp khoa học có **Smart Offline Keyword Fallback**, giúp học sinh hỏi trực tiếp *"Tại sao bão cát làm giảm điện?"* hoặc *"Làm sao giữ ấm ban đêm mà không hết Oxy?"* ngay trong giờ học mà không sợ lỗi mất mạng hay hết quota API.
+
+---
+
+#### Phase 16: Radar Địa Hình & Vòng Đai Ảnh Hưởng Bão Bụi (Học từ `SimulationPage.js` & `NEOAnalysis.js`)
+- [x] **16.1 Mini-Radar Quét Tâm Bão Bụi Đa Vòng Tròn (`StormRadarHUD.tsx`)**
+  - Chuyển hóa cơ chế vẽ các vòng tròn đồng tâm bán kính ảnh hưởng (`fireball_km`, `shockwave_km`, `thermal_radius_km` trong `SimulationPage.js`) thành **Mini-Radar Khí Tượng Sao Hỏa** góc màn hình: hiển thị 3 vòng đai bão bụi đang tiến vào căn cứ (Vòng Cảnh Báo Sớm → Vòng Giảm 30% Điện Mặt Trời → Tâm Bão Giảm 60% Điện & Tụt Nhiệt Độ ở Stage 2 *Sol 5: Red Dust Approaching*).
+  - Giúp học sinh 7–12 tuổi nhìn thấy trực quan nhân-quả địa lý trước khi bão ập tới để chủ động tích trữ pin và bật chế độ tiết kiệm điện.

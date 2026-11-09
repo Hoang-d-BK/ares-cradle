@@ -5,61 +5,154 @@ import * as THREE from 'three';
 import { useOutpostStore } from '@/modules/store/useOutpostStore';
 
 /**
- * Task 10.3: Celestial Skybox & Orbiting Phobos Moon (Trụ Cột 3)
- * Simulates the Martian night sky with twinkling background stars
- * and an irregularly shaped low-poly potato moon (Phobos) orbiting via Keplerian approximation.
+ * Procedural Canvas Texture Generator (Learned from NASA-Live-Orrery/solar-system.js)
+ * Guarantees crisp 60 FPS celestial and surface textures without external asset requests or CORS issues.
+ */
+export function createProceduralMoonTexture(moonType: 'phobos' | 'deimos'): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+
+  if (!ctx) {
+    return new THREE.CanvasTexture(canvas);
+  }
+
+  // Base celestial regolith color
+  const baseColor = moonType === 'phobos' ? '#5A524A' : '#6B665E';
+  ctx.fillStyle = baseColor;
+  ctx.fillRect(0, 0, 512, 512);
+
+  // Gradient lighting simulation
+  const grad = ctx.createRadialGradient(256, 256, 40, 256, 256, 256);
+  grad.addColorStop(0, 'rgba(255, 255, 255, 0.12)');
+  grad.addColorStop(0.7, 'rgba(0, 0, 0, 0.1)');
+  grad.addColorStop(1, 'rgba(0, 0, 0, 0.45)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 512, 512);
+
+  // Procedural impact craters and dust striations
+  const craterCount = moonType === 'phobos' ? 35 : 22;
+  for (let i = 0; i < craterCount; i++) {
+    const cx = (Math.sin(i * 123.45) * 0.5 + 0.5) * 512;
+    const cy = (Math.cos(i * 678.90) * 0.5 + 0.5) * 512;
+    const cr = 4 + (Math.sin(i * 45.67) * 0.5 + 0.5) * 16;
+
+    // Crater rim shadow & highlight
+    ctx.beginPath();
+    ctx.arc(cx, cy, cr, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(25, 22, 19, 0.55)';
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(cx - 2, cy - 2, cr * 0.85, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(180, 170, 160, 0.2)';
+    ctx.fill();
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  return texture;
+}
+
+/**
+ * Phase 13.1: NASA 3D Orbital & Atmospheric Visuals
+ * Real Martian Keplerian Orbits:
+ * - Phobos: 7.66h orbital period (approx ~3.13 passes per 24h Martian Sol), orbits West-to-East rapidly.
+ * - Deimos: 30.35h orbital period (approx ~0.79 pass per Sol), slower high-altitude orbit.
+ * - Procedural canvas textures ensure 60 FPS performance on Chromebooks & offline mode.
  */
 export const SpaceSkybox: React.FC = () => {
   const phobosGroupRef = useRef<THREE.Group>(null);
   const phobosMeshRef = useRef<THREE.Mesh>(null);
+  const deimosGroupRef = useRef<THREE.Group>(null);
+  const deimosMeshRef = useRef<THREE.Mesh>(null);
+
   const solTime = useOutpostStore((state) => state.solTime);
   const solPhase = useOutpostStore((state) => state.solPhase);
+  const isSkyViewActive = useOutpostStore((state) => state.isSkyViewActive);
 
-  // Procedural potato shape deformation for Phobos
+  // Procedural canvas textures for both moons
+  const phobosTexture = useMemo(() => createProceduralMoonTexture('phobos'), []);
+  const deimosTexture = useMemo(() => createProceduralMoonTexture('deimos'), []);
+
+  // Procedural irregular potato geometry for Phobos (27 x 22 x 18 km)
   const phobosGeometry = useMemo(() => {
-    const geo = new THREE.DodecahedronGeometry(0.85, 1);
+    const geo = new THREE.DodecahedronGeometry(0.85, 2);
     const pos = geo.attributes.position as THREE.BufferAttribute;
     const v = new THREE.Vector3();
 
-    // Asymmetric elongation and crater-like noise
     for (let i = 0; i < pos.count; i++) {
       v.fromBufferAttribute(pos, i);
-      // Elongate along X axis (Phobos triaxial ellipsoid: 27 x 22 x 18 km)
       v.x *= 1.35;
       v.y *= 1.05;
-      v.z *= 0.85;
-
-      // Subtle surface deformation
-      const noise = Math.sin(v.x * 4.0) * Math.cos(v.y * 3.5) * 0.08;
+      v.z *= 0.82;
+      const noise = Math.sin(v.x * 4.2) * Math.cos(v.y * 3.6) * 0.09;
       v.addScaledVector(v.clone().normalize(), noise);
-
       pos.setXYZ(i, v.x, v.y, v.z);
     }
+    geo.computeVertexNormals();
+    return geo;
+  }, []);
 
+  // Procedural irregular geometry for Deimos (15 x 12 x 11 km)
+  const deimosGeometry = useMemo(() => {
+    const geo = new THREE.DodecahedronGeometry(0.48, 1);
+    const pos = geo.attributes.position as THREE.BufferAttribute;
+    const v = new THREE.Vector3();
+
+    for (let i = 0; i < pos.count; i++) {
+      v.fromBufferAttribute(pos, i);
+      v.x *= 1.25;
+      v.y *= 0.95;
+      v.z *= 0.88;
+      const noise = Math.sin(v.x * 3.5) * Math.cos(v.z * 3.2) * 0.06;
+      v.addScaledVector(v.clone().normalize(), noise);
+      pos.setXYZ(i, v.x, v.y, v.z);
+    }
     geo.computeVertexNormals();
     return geo;
   }, []);
 
   useFrame((_, delta) => {
-    // Phobos orbital mechanics: fast orbit west-to-east
-    // In our 60s Sol cycle, Phobos completes nearly 3 fast passes
-    const orbitalSpeed = 0.22;
-    const currentAngle = solTime * orbitalSpeed;
+    // 60-second game Sol corresponds to 24.6h Martian Sol
+    // Phobos (7.66h period): completes 24.6 / 7.66 = 3.21 revolutions per 60s
+    const phobosSpeed = (Math.PI * 2 * 3.21) / 60;
+    const phobosAngle = solTime * phobosSpeed;
 
-    const orbitRadiusX = 16.5;
-    const orbitRadiusZ = 14.0;
-    const orbitHeight = 9.5;
+    const phobosRadiusX = 18.0;
+    const phobosRadiusZ = 15.0;
+    const phobosBaseHeight = 10.5;
 
     if (phobosGroupRef.current) {
-      phobosGroupRef.current.position.x = Math.cos(currentAngle) * orbitRadiusX;
-      phobosGroupRef.current.position.z = Math.sin(currentAngle) * orbitRadiusZ - 2.0;
-      phobosGroupRef.current.position.y = orbitHeight + Math.sin(currentAngle * 2) * 1.5;
+      phobosGroupRef.current.position.x = Math.cos(phobosAngle) * phobosRadiusX;
+      phobosGroupRef.current.position.z = Math.sin(phobosAngle) * phobosRadiusZ - 1.5;
+      phobosGroupRef.current.position.y = phobosBaseHeight + Math.sin(phobosAngle * 1.5) * 1.8;
     }
 
-    // Slow axial rotation as it tumbles along orbit
     if (phobosMeshRef.current) {
       phobosMeshRef.current.rotation.y += delta * 0.4;
-      phobosMeshRef.current.rotation.x += delta * 0.2;
+      phobosMeshRef.current.rotation.x += delta * 0.15;
+    }
+
+    // Deimos (30.35h period): completes 24.6 / 30.35 = 0.81 revolutions per 60s
+    const deimosSpeed = (Math.PI * 2 * 0.81) / 60;
+    const deimosAngle = solTime * deimosSpeed + 1.8; // Offset initial phase
+
+    const deimosRadiusX = 26.0;
+    const deimosRadiusZ = 23.0;
+    const deimosBaseHeight = 14.5;
+
+    if (deimosGroupRef.current) {
+      deimosGroupRef.current.position.x = Math.cos(deimosAngle) * deimosRadiusX;
+      deimosGroupRef.current.position.z = Math.sin(deimosAngle) * deimosRadiusZ + 2.0;
+      deimosGroupRef.current.position.y = deimosBaseHeight + Math.cos(deimosAngle) * 2.2;
+    }
+
+    if (deimosMeshRef.current) {
+      deimosMeshRef.current.rotation.y += delta * 0.2;
+      deimosMeshRef.current.rotation.z += delta * 0.1;
     }
   });
 
@@ -67,19 +160,19 @@ export const SpaceSkybox: React.FC = () => {
 
   return (
     <group dispose={null}>
-      {/* Background Deep Space Starfield */}
+      {/* Background Starfield */}
       <Stars
-        radius={45}
-        depth={25}
-        count={isNight ? 1800 : 700}
-        factor={3.5}
-        saturation={0.1}
+        radius={isSkyViewActive ? 60 : 45}
+        depth={30}
+        count={isNight ? 2200 : 800}
+        factor={3.8}
+        saturation={0.15}
         fade
-        speed={0.4}
+        speed={0.3}
       />
 
-      {/* Orbiting Low-Poly Potato Moon (Phobos) */}
-      <group ref={phobosGroupRef} position={[15, 9.5, 0]}>
+      {/* Orbiting Phobos (Potato Moon Alpha) */}
+      <group ref={phobosGroupRef} position={[18, 10.5, 0]}>
         <mesh
           ref={phobosMeshRef}
           geometry={phobosGeometry}
@@ -87,15 +180,16 @@ export const SpaceSkybox: React.FC = () => {
           receiveShadow
         >
           <meshStandardMaterial
-            color="#5C5349"
+            map={phobosTexture}
+            color="#C4B5A5"
             roughness={0.92}
             metalness={0.08}
             flatShading
           />
         </mesh>
 
-        {/* Stickney Giant Impact Crater Accent */}
-        <mesh position={[0.55, 0.2, 0.2]} scale={[0.3, 0.1, 0.3]}>
+        {/* Stickney Giant Impact Crater */}
+        <mesh position={[0.55, 0.2, 0.2]} scale={[0.32, 0.12, 0.32]}>
           <dodecahedronGeometry args={[1, 0]} />
           <meshStandardMaterial
             color="#3D362F"
@@ -104,10 +198,35 @@ export const SpaceSkybox: React.FC = () => {
           />
         </mesh>
 
-        {/* Subtle Solar Reflected Moonlight */}
+        {/* Solar Reflected Moonlight */}
         <pointLight
-          color="#D4D4D8"
-          intensity={isNight ? 0.35 : 0.1}
+          color="#E2E8F0"
+          intensity={isNight ? 0.45 : 0.1}
+          distance={8}
+          decay={2}
+        />
+      </group>
+
+      {/* Orbiting Deimos (Outer Potato Moon Beta) */}
+      <group ref={deimosGroupRef} position={[-25, 14.5, 5]}>
+        <mesh
+          ref={deimosMeshRef}
+          geometry={deimosGeometry}
+          castShadow
+          receiveShadow
+        >
+          <meshStandardMaterial
+            map={deimosTexture}
+            color="#A8A29E"
+            roughness={0.94}
+            metalness={0.05}
+            flatShading
+          />
+        </mesh>
+
+        <pointLight
+          color="#CBD5E1"
+          intensity={isNight ? 0.25 : 0.05}
           distance={6}
           decay={2}
         />

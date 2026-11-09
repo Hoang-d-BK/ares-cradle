@@ -26,6 +26,7 @@ export const AstronautPlayer: React.FC = () => {
   const setPlayerPos = useOutpostStore((state) => state.setPlayerPos);
   const isInsideHabitat = useOutpostStore((state) => state.isInsideHabitat);
   const setIsInsideHabitat = useOutpostStore((state) => state.setIsInsideHabitat);
+  const isDrivingRover = useOutpostStore((state) => state.isDrivingRover);
 
   // Keyboard Event Listeners for WASD and Arrow Keys
   useEffect(() => {
@@ -48,6 +49,12 @@ export const AstronautPlayer: React.FC = () => {
 
   useFrame((_, delta) => {
     if (!groupRef.current) return;
+
+    if (isDrivingRover) {
+      groupRef.current.visible = false;
+      return;
+    }
+    groupRef.current.visible = true;
 
     const safeDelta = Math.min(delta, 0.1);
     const speed = 3.6; // m/s

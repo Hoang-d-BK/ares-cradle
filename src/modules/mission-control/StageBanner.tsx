@@ -11,7 +11,9 @@ import {
   Volume2, 
   VolumeX,
   Backpack,
-  Users 
+  Users,
+  Truck,
+  Eye 
 } from 'lucide-react';
 import { useOutpostStore } from '@/modules/store/useOutpostStore';
 import { SolPhase } from '@/modules/simulation-engine/types';
@@ -52,6 +54,10 @@ export const StageBanner: React.FC = () => {
   const toggleMute = useOutpostStore((state) => state.toggleMute);
   const toggleBackpack = useOutpostStore((state) => state.toggleBackpack);
   const toggleClassroom = useOutpostStore((state) => state.toggleClassroom);
+  const isDrivingRover = useOutpostStore((state) => state.isDrivingRover);
+  const toggleDrivingRover = useOutpostStore((state) => state.toggleDrivingRover);
+  const isSkyViewActive = useOutpostStore((state) => state.isSkyViewActive);
+  const toggleSkyView = useOutpostStore((state) => state.toggleSkyView);
   const marsWeather = useOutpostStore((state) => state.marsWeather);
 
   const PhaseIcon = phaseIcons[solPhase] || Sun;
@@ -185,6 +191,44 @@ export const StageBanner: React.FC = () => {
             </div>
           </motion.div>
         )}
+
+        {/* Playable Rover Toggle [R] */}
+        <motion.button
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ ...springPhysics, delay: 0.06 }}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.94 }}
+          onClick={toggleDrivingRover}
+          className={`btn-tactile px-3 py-2 rounded flex items-center gap-1.5 text-xs font-display font-bold tracking-wider border ${
+            isDrivingRover
+              ? 'bg-mars-cyan text-slate-950 border-mars-cyan shadow-[0_0_12px_#00F0FF]'
+              : 'border-mars-border text-slate-300'
+          }`}
+          title="Drive Mars Rover [Hotkey: R]"
+        >
+          <Truck className="w-4 h-4" />
+          <span className="hidden sm:inline">{isDrivingRover ? 'DISMOUNT [R]' : 'ROVER [R]'}</span>
+        </motion.button>
+
+        {/* Orrery Sky View Toggle [V] */}
+        <motion.button
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ ...springPhysics, delay: 0.065 }}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.94 }}
+          onClick={toggleSkyView}
+          className={`btn-tactile px-3 py-2 rounded flex items-center gap-1.5 text-xs font-display font-bold tracking-wider border ${
+            isSkyViewActive
+              ? 'bg-mars-cyan text-slate-950 border-mars-cyan shadow-[0_0_12px_#00F0FF]'
+              : 'border-mars-border text-slate-300'
+          }`}
+          title="Orrery Stargazing View [Hotkey: V]"
+        >
+          <Eye className="w-4 h-4" />
+          <span className="hidden sm:inline">{isSkyViewActive ? 'TERRAIN [V]' : 'SKY VIEW [V]'}</span>
+        </motion.button>
 
         {/* Tactile Backpack Button [E] */}
         <motion.button

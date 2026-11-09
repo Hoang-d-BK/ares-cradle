@@ -301,3 +301,76 @@
     scroll-behavior: auto !important;
   }
 }
+
+
+/* ==========================================================================
+   Phase 14: Premium Motion, Magnetic Physics & Fluid Typography Tokens
+   Standardized from NASA Global Finalist Benchmark (animations.js, PremiumButton.js)
+   ========================================================================== */
+:root {
+  --motion-ease-premium: cubic-bezier(0.6, 0.05, 0.01, 0.9);
+  --motion-ease-magnetic: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --font-size-telemetry-sm: clamp(0.7rem, 0.65rem + 0.25vw, 0.85rem);
+  --font-size-telemetry-md: clamp(0.85rem, 0.8rem + 0.35vw, 1.05rem);
+  --font-size-telemetry-lg: clamp(1.15rem, 1.05rem + 0.6vw, 1.6rem);
+  --font-size-telemetry-xl: clamp(1.5rem, 1.35rem + 1.2vw, 2.4rem);
+}
+
+@keyframes tactileRipplePulse {
+  0% { transform: scale(0); opacity: 0.75; }
+  100% { transform: scale(3.0); opacity: 0; }
+}
+
+@keyframes cardShineSweep {
+  0% { transform: translateX(-160%) skewX(-20deg); }
+  100% { transform: translateX(260%) skewX(-20deg); }
+}
+
+.tactile-ripple-wave {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(0, 240, 255, 0.5) 0%, rgba(0, 240, 255, 0) 70%);
+  animation: tactileRipplePulse 0.55s var(--motion-ease-premium) forwards;
+}
+
+.tactile-shimmer-wrapper {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.tactile-shimmer-streak {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 70%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.18) 50%,
+    transparent 100%
+  );
+  transform: translateX(-160%) skewX(-20deg);
+}
+
+.btn-tactile:hover .tactile-shimmer-streak,
+.btn-magnetic:hover .tactile-shimmer-streak {
+  animation: cardShineSweep 0.8s var(--motion-ease-premium);
+}
+
+.font-telemetry-sm {
+  font-size: var(--font-size-telemetry-sm);
+}
+.font-telemetry-md {
+  font-size: var(--font-size-telemetry-md);
+}
+.font-telemetry-lg {
+  font-size: var(--font-size-telemetry-lg);
+}
+.font-telemetry-xl {
+  font-size: var(--font-size-telemetry-xl);
+}

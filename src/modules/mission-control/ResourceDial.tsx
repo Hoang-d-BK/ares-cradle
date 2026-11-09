@@ -40,6 +40,10 @@ const statusColors: Record<ResourceStatus, { text: string; bg: string; stroke: s
   }
 };
 
+/**
+ * Phase 14.2: Resource Dial with Fluid Typography & NASA Standardized Bezier Transitions
+ * Utilizes fluid clamp() tokens and cubic-bezier(0.6, 0.05, 0.01, 0.9) easing.
+ */
 export const ResourceDial: React.FC<ResourceDialProps> = ({
   label,
   displayValue,
@@ -60,17 +64,17 @@ export const ResourceDial: React.FC<ResourceDialProps> = ({
   const strokeDashoffset = arcLength - (arcLength * clampedPercent) / 100;
 
   return (
-    <div className="relative flex flex-col items-center justify-between p-2 sm:p-3.5 bg-slate-900/60 border border-mars-border rounded-sm hover:border-mars-border-bright transition-colors select-none">
+    <div className="relative flex flex-col items-center justify-between p-2 sm:p-3.5 bg-slate-900/60 border border-mars-border rounded-sm hover:border-mars-border-bright transition-[border-color,box-shadow] duration-200 select-none">
       {/* Top Header: Label & Status Indicator */}
       <div className="w-full flex items-center justify-between gap-1 mb-1">
         <div className="flex items-center gap-1 sm:gap-1.5 text-slate-300">
-          <Icon className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${currentStatus.text}`} />
-          <span className="text-[9px] sm:text-[11px] font-display font-bold tracking-wider uppercase text-slate-200 truncate">
+          <Icon className={`w-3.5 h-3.5 ${currentStatus.text}`} />
+          <span className="font-telemetry-sm font-display font-bold tracking-wider uppercase text-slate-200 truncate">
             {label}
           </span>
         </div>
         <span
-          className={`text-[8px] sm:text-[9px] font-mono font-semibold px-1 sm:px-1.5 py-0.5 rounded ${currentStatus.bg} ${currentStatus.text} border border-current/20`}
+          className={`font-telemetry-sm font-mono font-semibold px-1.5 py-0.5 rounded ${currentStatus.bg} ${currentStatus.text} border border-current/20`}
         >
           {currentStatus.badge}
         </span>
@@ -103,9 +107,8 @@ export const ResourceDial: React.FC<ResourceDialProps> = ({
             initial={{ strokeDashoffset: arcLength }}
             animate={{ strokeDashoffset }}
             transition={{
-              type: 'spring',
-              stiffness: 140,
-              damping: 20
+              duration: 0.65,
+              ease: [0.6, 0.05, 0.01, 0.9]
             }}
             style={{
               filter: `drop-shadow(0 0 6px ${currentStatus.glow})`
@@ -113,13 +116,13 @@ export const ResourceDial: React.FC<ResourceDialProps> = ({
           />
         </svg>
 
-        {/* Center Numerical Readout */}
+        {/* Center Numerical Readout with Fluid Typography */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
           <div className="flex items-baseline gap-0.5">
-            <span className="font-mono text-base sm:text-xl font-bold tracking-tight text-slate-100">
+            <span className="font-mono font-telemetry-lg font-bold tracking-tight text-slate-100">
               {displayValue}
             </span>
-            <span className="font-mono text-[9px] sm:text-[10px] text-slate-400">{unit}</span>
+            <span className="font-mono font-telemetry-sm text-slate-400">{unit}</span>
           </div>
         </div>
       </div>
@@ -127,7 +130,7 @@ export const ResourceDial: React.FC<ResourceDialProps> = ({
       {/* Bottom Subtext */}
       {subtext && (
         <div className="w-full text-center mt-0.5 sm:mt-1 pt-1 sm:pt-1.5 border-t border-slate-800/80">
-          <span className="text-[8px] sm:text-[10px] font-mono text-slate-400 tracking-wider truncate block">
+          <span className="font-telemetry-sm font-mono text-slate-400 tracking-wider truncate block">
             {subtext}
           </span>
         </div>

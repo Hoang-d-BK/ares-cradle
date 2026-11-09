@@ -3,6 +3,11 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useOutpostStore } from '@/modules/store/useOutpostStore';
 
+/**
+ * Phase 13.1: Photovoltaic Solar Array with Active Heliotropic Sun Tracking
+ * Calculates solar incidence angle based on real Sol hour (0h-24h).
+ * Actively pivots the array perpendicular to the solar vector to maximize absorption.
+ */
 export const SolarArray: React.FC = () => {
   const groupRef = useRef<THREE.Group>(null);
   const panelsRef = useRef<THREE.Group>(null);
@@ -13,19 +18,36 @@ export const SolarArray: React.FC = () => {
   const dustCoverage = useOutpostStore((state) => state.dustCoverage);
   const cleanDust = useOutpostStore((state) => state.cleanDust);
   const solTime = useOutpostStore((state) => state.solTime);
+  const solPhase = useOutpostStore((state) => state.solPhase);
 
   useFrame((_, delta) => {
-    // Sun tracking tilt during daytime (0 to 32s)
+    // Precise Sol Hour Calculation: 0 to 60s maps to 0 to 24 hours Martian time
+    // Sunrise at ~6h (15s), Zenith Noon at 12h (30s), Sunset at ~18h (45s)
     if (panelsRef.current) {
-      if (solTime < 32) {
-        const dayProgress = solTime / 32;
-        // Tilt subtly from east (-0.5 rad) to west (+0.5 rad)
-        const targetTilt = -0.45 + dayProgress * 0.9;
+      if (solTime >= 12 && solTime <= 48) {
+        // Daytime: Sol time 12s to 48s (approx 4.8h to 19.2h)
+        const dayProgress = (solTime - 12) / 36; // 0.0 (sunrise) to 1.0 (sunset)
+        // Heliotropic tilt: Track sun azimuth from East (-0.65 rad) to West (+0.65 rad)
+        const targetAzimuth = -0.65 + dayProgress * 1.30;
+        
+        // Solar elevation zenith pitch: flat at noon, tilted at sunrise/sunset
+        const elevationProgress = Math.sin(dayProgress * Math.PI);
+        const targetPitch = -0.25 - (1 - elevationProgress) * 0.35;
+
         panelsRef.current.rotation.y = THREE.MathUtils.lerp(
           panelsRef.current.rotation.y,
-          targetTilt,
-          delta * 2.0
+          targetAzimuth,
+          delta * 2.5
         );
+        panelsRef.current.rotation.x = THREE.MathUtils.lerp(
+          panelsRef.current.rotation.x,
+          targetPitch,
+          delta * 2.5
+        );
+      } else {
+        // Nighttime safe stow position
+        panelsRef.current.rotation.y = THREE.MathUtils.lerp(panelsRef.current.rotation.y, 0, delta * 1.0);
+        panelsRef.current.rotation.x = THREE.MathUtils.lerp(panelsRef.current.rotation.x, -0.2, delta * 1.0);
       }
     }
 
@@ -51,6 +73,8 @@ export const SolarArray: React.FC = () => {
     cleanDust();
     setCleanFeedback(1.0);
   };
+
+  const isNight = solPhase === 'Night';
 
   return (
     <group
@@ -111,7 +135,7 @@ export const SolarArray: React.FC = () => {
             metalness={0.95}
             roughness={0.12}
             emissive="#00F0FF"
-            emissiveIntensity={hovered ? 0.35 : 0.08}
+            emissiveIntensity={hovered ? 0.35 : isNight ? 0.02 : 0.12}
           />
         </mesh>
 
@@ -123,49 +147,33 @@ export const SolarArray: React.FC = () => {
             metalness={0.95}
             roughness={0.12}
             emissive="#00F0FF"
-            emissiveIntensity={hovered ? 0.35 : 0.08}
+            emissiveIntensity={hovered ? 0.35 : isNight ? 0.02 : 0.12}
           />
         </mesh>
 
-        {/* Interactive Dynamic Dust Accumulator Layer */}
+        {/* Accumulative Regolith Dust Layer */}
         <mesh
           ref={dustMeshRef}
           position={[0, 0.035, 0]}
+          rotation={[-Math.PI / 2, 0, 0]}
         >
-          <boxGeometry args={[3.7, 0.01, 1.88]} />
+          <planeGeometry args={[3.65, 1.85]} />
           <meshStandardMaterial
-            color="#9E360B"
-            roughness={0.98}
-            metalness={0.02}
+            color="#C1440E"
+            roughness={1.0}
+            metalness={0.0}
             transparent
             opacity={dustCoverage * 0.9}
+            depthWrite={false}
           />
         </mesh>
 
-        {/* Silicon Grid Divider Lines (Fine Engineering Polish) */}
-        <mesh position={[0, 0.03, 0]}>
-          <boxGeometry args={[0.06, 0.02, 1.88]} />
-          <meshStandardMaterial color="#64748B" metalness={0.8} roughness={0.2} />
-        </mesh>
-        <mesh position={[0, 0.03, 0]}>
-          <boxGeometry args={[3.7, 0.02, 0.06]} />
-          <meshStandardMaterial color="#64748B" metalness={0.8} roughness={0.2} />
-        </mesh>
+        {/* Efficiency Grid Cells Accent Lines */}
+        <gridHelper
+          args={[3.7, 12, '#00F0FF', '#1E293B']}
+          position={[0, 0.032, 0]}
+        />
       </group>
-
-      {/* Floating Tactical Click Helper for Young Cadets */}
-      {dustCoverage > 0.3 && (
-        <group position={[0, 2.3, 0]}>
-          <mesh>
-            <sphereGeometry args={[0.1, 12, 12]} />
-            <meshStandardMaterial
-              color="#00F0FF"
-              emissive="#00F0FF"
-              emissiveIntensity={0.8}
-            />
-          </mesh>
-        </group>
-      )}
     </group>
   );
 };

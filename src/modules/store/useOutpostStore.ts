@@ -88,6 +88,21 @@ export interface OutpostStoreState {
   setJoystickVector: (vec: { x: number; y: number }) => void;
   setIsInsideHabitat: (isInside: boolean) => void;
 
+  // Phase 13: Exploration Rover & Orrery Sky View
+  isDrivingRover: boolean;
+  roverPos: [number, number, number];
+  isSkyViewActive: boolean;
+  toggleDrivingRover: () => void;
+  setRoverPos: (pos: [number, number, number]) => void;
+  toggleSkyView: () => void;
+
+  // Phase 15: Emergency Brownout STEM Quiz
+  isBrownoutQuizOpen: boolean;
+  hasUsedBrownoutQuiz: boolean;
+  openBrownoutQuiz: () => void;
+  closeBrownoutQuiz: () => void;
+  handleBrownoutQuizSuccess: () => void;
+
   // Actions
   tick: (deltaSeconds?: number) => void;
   tickTelemetry: (delta: number) => void;
@@ -256,6 +271,46 @@ export const useOutpostStore = create<OutpostStoreState>((set, get) => ({
     set({ isInsideHabitat: isInside });
   },
 
+  // Exploration Rover & Orrery Sky View Implementation
+  isDrivingRover: false,
+  roverPos: [3.8, -0.32, -2.2],
+  isSkyViewActive: false,
+  toggleDrivingRover: () => {
+    soundEngine.playClick(1300);
+    set((state) => ({ isDrivingRover: !state.isDrivingRover }));
+  },
+  setRoverPos: (pos: [number, number, number]) => set({ roverPos: pos }),
+  toggleSkyView: () => {
+    soundEngine.playClick(900);
+    set((state) => ({ isSkyViewActive: !state.isSkyViewActive }));
+  },
+
+  // Brownout STEM Quiz Implementation (Phase 15)
+  isBrownoutQuizOpen: false,
+  hasUsedBrownoutQuiz: false,
+  openBrownoutQuiz: () => {
+    soundEngine.playAlarm();
+    set({ isBrownoutQuizOpen: true, isSimulating: false });
+  },
+  closeBrownoutQuiz: () => {
+    soundEngine.playFailureTone();
+    set({
+      isBrownoutQuizOpen: false,
+      isGameOver: true,
+      failureReason: 'Brownout emergency: Backup power initialization failed!'
+    });
+  },
+  handleBrownoutQuizSuccess: () => {
+    soundEngine.playSuccessChime();
+    const cap = get().batteryCapacityKwh;
+    set((state) => ({
+      batteryKwh: Math.min(cap, state.batteryKwh + cap * 0.2),
+      battery: Math.min(100, state.battery + 20),
+      isBrownoutQuizOpen: false,
+      isSimulating: true
+    }));
+  },
+
   toggleMute: () => {
     const isNowMuted = soundEngine.toggleMute();
     set({ isMuted: isNowMuted });
@@ -311,7 +366,9 @@ export const useOutpostStore = create<OutpostStoreState>((set, get) => ({
         isVictory: false,
         failureReason: null,
         debriefReport: null,
-        activeWarnings: []
+        activeWarnings: [],
+        isBrownoutQuizOpen: false,
+        hasUsedBrownoutQuiz: false
       });
       soundEngine.startPowerHum();
     } catch (err) {
@@ -417,6 +474,19 @@ export const useOutpostStore = create<OutpostStoreState>((set, get) => ({
     } else if (nextState.batteryPercent <= 0 && nextPhase === 'Night') {
       // Extended brownout in freezing dark
       if (nextState.temperatureCelsius < 0) {
+        // Phase 15.1: Emergency Space Quiz intervention before terminal failure
+        if (!state.hasUsedBrownoutQuiz) {
+          soundEngine.playAlarm();
+          soundEngine.stopPowerHum();
+          set({
+            isSimulating: false,
+            isBrownoutQuizOpen: true,
+            hasUsedBrownoutQuiz: true,
+            battery: 0,
+            batteryKwh: 0
+          });
+          return;
+        }
         isGameOver = true;
         failureReason = 'Total outpost brownout during the frigid Martian night!';
       }
