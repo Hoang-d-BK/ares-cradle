@@ -30,6 +30,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 1024
   },
   server: {
+    host: true,
     port: 3000,
     open: false,
     watch: {

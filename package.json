@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
+    "lint:anti-slop": "node scripts/lint_anti_slop.mjs",
     "test:canvas": "node scripts/test_canvas_regression.mjs"
   },
   "dependencies": {
