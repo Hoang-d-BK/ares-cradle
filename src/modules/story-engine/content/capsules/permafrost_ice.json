@@ -1,0 +1,51 @@
+{
+  "id": "capsule-permafrost-ice",
+  "title": "Subsurface Permafrost Glaciers",
+  "category": "water",
+  "icon": "🧊",
+  "quickFact": "NASA radar detected massive sheets of pure water ice buried just 1 to 2 meters beneath Martian soil.",
+  "explore": "While liquid water cannot exist on the frigid, low-pressure surface of modern Mars, enormous volumes of pure water ice are locked beneath the regolith in subsurface glaciers. The Phoenix lander used a robotic trenching arm to uncover ice chunks that vanished through sublimation over four Martian days.",
+  "nasaMission": "Phoenix Mars Lander & Mars Reconnaissance Orbiter (SHARAD Radar)",
+  "credit": "NASA/JPL-Caltech/University of Arizona",
+  "nasaData": [
+    {
+      "metric": "Ice Deposit Depth",
+      "marsValue": "1–2.5 m",
+      "earthValue": "0.5–3 m",
+      "unit": "Meters"
+    },
+    {
+      "metric": "Water Ice Purity",
+      "marsValue": "> 90%",
+      "earthValue": "95–99%",
+      "unit": "Purity %"
+    },
+    {
+      "metric": "Sublimation Temperature",
+      "marsValue": "-78°C (at 6 mbar)",
+      "earthValue": "0°C (at 1013 mbar)",
+      "unit": "Celsius"
+    }
+  ],
+  "refinementConversion": {
+    "resourceType": "water",
+    "amount": 50,
+    "description": "Purified into sterile drinking water and electrolyzed into O2."
+  },
+  "checkQuestion": {
+    "question": "What happens to exposed water ice on the surface of Mars?",
+    "options": [
+      "It quickly melts into a liquid river",
+      "It turns directly from solid ice into gas (sublimates)",
+      "It combusts due to solar radiation",
+      "It stays frozen forever without changing"
+    ],
+    "correctIndex": 1,
+    "explanation": "Because Mars atmospheric pressure is only 0.6% of Earths, water cannot remain liquid and transitions directly from solid to vapor (sublimation)."
+  },
+  "media": {
+    "heroImage": "https://images-assets.nasa.gov/image/PIA10974/PIA10974~orig.jpg",
+    "videoUrl": "https://www.youtube.com/watch?v=sIoaXw_zG4o"
+  },
+  "unlocked": false
+}

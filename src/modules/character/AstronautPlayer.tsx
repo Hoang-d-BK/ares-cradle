@@ -27,12 +27,27 @@ export const AstronautPlayer: React.FC = () => {
   const isInsideHabitat = useOutpostStore((state) => state.isInsideHabitat);
   const setIsInsideHabitat = useOutpostStore((state) => state.setIsInsideHabitat);
   const isDrivingRover = useOutpostStore((state) => state.isDrivingRover);
+  const cameraYaw = useOutpostStore((state) => state.cameraYaw);
+  const isMouseDriving = useOutpostStore((state) => state.isMouseDriving);
+  const isFlashlightOn = useOutpostStore((state) => state.isFlashlightOn);
+  const toggleFlashlight = useOutpostStore((state) => state.toggleFlashlight);
 
-  // Keyboard Event Listeners for WASD and Arrow Keys
+  // Local Object3D target attached to torch hierarchy so the beam always points forward
+  const [flashlightTarget] = React.useState(() => {
+    const obj = new THREE.Object3D();
+    obj.position.set(0, -0.3, 14);
+    return obj;
+  });
+
+  // Keyboard Event Listeners for WASD, Arrow Keys and [F] for Flashlight
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
       keysPressed.current[e.code] = true;
+
+      if (e.code === 'KeyF') {
+        toggleFlashlight();
+      }
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
@@ -59,40 +74,56 @@ export const AstronautPlayer: React.FC = () => {
     const safeDelta = Math.min(delta, 0.1);
     const speed = 3.6; // m/s
 
-    // Calculate movement vector from Keyboard
-    let kbX = 0;
-    let kbZ = 0;
+    // Camera-relative direction vectors (yaw = 0 points towards -Z)
+    const forwardX = -Math.sin(cameraYaw);
+    const forwardZ = -Math.cos(cameraYaw);
+    const rightX = Math.cos(cameraYaw);
+    const rightZ = -Math.sin(cameraYaw);
 
-    if (keysPressed.current['KeyW'] || keysPressed.current['ArrowUp']) kbZ -= 1;
-    if (keysPressed.current['KeyS'] || keysPressed.current['ArrowDown']) kbZ += 1;
-    if (keysPressed.current['KeyA'] || keysPressed.current['ArrowLeft']) kbX -= 1;
-    if (keysPressed.current['KeyD'] || keysPressed.current['ArrowRight']) kbX += 1;
+    let inputForward = 0;
+    let inputRight = 0;
 
-    // Combine Keyboard and Virtual Joystick
-    let totalX = kbX + joystickVector.x;
-    let totalZ = kbZ + joystickVector.y;
+    if (keysPressed.current['KeyW'] || keysPressed.current['ArrowUp'] || isMouseDriving) {
+      inputForward += 1;
+    }
+    if (keysPressed.current['KeyS'] || keysPressed.current['ArrowDown']) {
+      inputForward -= 1;
+    }
+    if (keysPressed.current['KeyD'] || keysPressed.current['ArrowRight']) {
+      inputRight += 1;
+    }
+    if (keysPressed.current['KeyA'] || keysPressed.current['ArrowLeft']) {
+      inputRight -= 1;
+    }
 
-    const length = Math.sqrt(totalX * totalX + totalZ * totalZ);
+    // Combine with Virtual Joystick
+    inputForward -= joystickVector.y;
+    inputRight += joystickVector.x;
+
+    let moveX = forwardX * inputForward + rightX * inputRight;
+    let moveZ = forwardZ * inputForward + rightZ * inputRight;
+
+    const length = Math.hypot(moveX, moveZ);
     const isMoving = length > 0.05;
 
     if (isMoving) {
-      // Normalize direction vector
-      const normX = totalX / (length > 1 ? length : 1);
-      const normZ = totalZ / (length > 1 ? length : 1);
+      const normX = moveX / (length > 1 ? length : 1);
+      const normZ = moveZ / (length > 1 ? length : 1);
 
       // Move player position
-      groupRef.current.position.x += normX * speed * safeDelta;
-      groupRef.current.position.z += normZ * speed * safeDelta;
+      let newX = groupRef.current.position.x + normX * speed * safeDelta;
+      let newZ = groupRef.current.position.z + normZ * speed * safeDelta;
 
-      // Restrict boundaries within Martian outpost area (radius 14m)
-      const distFromCenter = Math.sqrt(
-        groupRef.current.position.x * groupRef.current.position.x +
-        groupRef.current.position.z * groupRef.current.position.z
-      );
-      if (distFromCenter > 14) {
-        groupRef.current.position.x = (groupRef.current.position.x / distFromCenter) * 14;
-        groupRef.current.position.z = (groupRef.current.position.z / distFromCenter) * 14;
+      // Planetary circumnavigation loop (calibrated 80m world radius)
+      const distFromCenter = Math.hypot(newX, newZ);
+      if (distFromCenter > 78) {
+        // Continuous Planetoid Circumnavigation: wrap smoothly to opposite horizon
+        newX = -newX * 0.96;
+        newZ = -newZ * 0.96;
       }
+
+      groupRef.current.position.x = newX;
+      groupRef.current.position.z = newZ;
 
       // Smooth rotation toward movement vector
       const targetAngle = Math.atan2(normX, normZ);
@@ -112,7 +143,12 @@ export const AstronautPlayer: React.FC = () => {
       }
       if (leftArmRef.current && rightArmRef.current) {
         leftArmRef.current.rotation.x = -swing * 0.4;
-        rightArmRef.current.rotation.x = swing * 0.4;
+        if (isFlashlightOn) {
+          // Tactical Forward Hold: stable forward pointing with subtle walk bobbing
+          rightArmRef.current.rotation.x = -0.35 + Math.sin(walkCycle.current) * 0.05;
+        } else {
+          rightArmRef.current.rotation.x = swing * 0.4;
+        }
       }
       // Bobbing head & body bounce
       groupRef.current.position.y = -0.4 + Math.abs(Math.sin(walkCycle.current)) * 0.06;
@@ -125,7 +161,12 @@ export const AstronautPlayer: React.FC = () => {
       }
       if (leftArmRef.current && rightArmRef.current) {
         leftArmRef.current.rotation.x *= 0.85;
-        rightArmRef.current.rotation.x *= 0.85;
+        if (isFlashlightOn) {
+          // Tactical Forward Hold in idle pose
+          rightArmRef.current.rotation.x = -0.35;
+        } else {
+          rightArmRef.current.rotation.x *= 0.85;
+        }
       }
     }
 
@@ -222,12 +263,44 @@ export const AstronautPlayer: React.FC = () => {
         <meshStandardMaterial color="#E2E8F0" roughness={0.4} metalness={0.1} flatShading />
       </mesh>
 
-      {/* Right Arm */}
+      {/* Right Arm & Handheld Flashlight */}
       <group ref={rightArmRef} position={[0.29, 0.55, 0]}>
         <mesh castShadow>
           <boxGeometry args={[0.14, 0.42, 0.16]} />
           <meshStandardMaterial color="#E2E8F0" roughness={0.4} metalness={0.1} flatShading />
         </mesh>
+        {/* Handheld Flashlight Torch */}
+        {isFlashlightOn && (
+          <group position={[0, -0.18, 0.14]} rotation={[0.2, 0, 0]}>
+            <mesh rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.035, 0.035, 0.18, 10]} />
+              <meshStandardMaterial color="#1E293B" metalness={0.8} roughness={0.2} />
+            </mesh>
+            <mesh position={[0, 0, 0.09]} rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.038, 0.038, 0.02, 10]} />
+              <meshBasicMaterial color="#E0F2FE" />
+            </mesh>
+            {/* Scene Graph Local Target ensures light beam always points forward as Leo moves & turns */}
+            <primitive object={flashlightTarget} />
+            <spotLight
+              target={flashlightTarget}
+              color="#FFFDF0"
+              intensity={8.0}
+              distance={26}
+              angle={0.55}
+              penumbra={0.45}
+              position={[0, 0, 0.1]}
+              castShadow
+            />
+            {/* Close-range ground ambient illumination */}
+            <pointLight
+              color="#FFFDF0"
+              intensity={1.2}
+              distance={3.5}
+              position={[0, 0, 0.15]}
+            />
+          </group>
+        )}
       </group>
 
       {/* Left Leg */}

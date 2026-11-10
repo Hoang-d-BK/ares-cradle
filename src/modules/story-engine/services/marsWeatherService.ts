@@ -1,5 +1,5 @@
 /**
- * Ares Cradle - NASA InSight Mars Weather Service (Trụ Cột 3)
+ * Ares Cradle - NASA InSight Mars Weather Service (Pillar 3)
  * Fetches real-time / seasonal Martian telemetry from NASA Elysium Planitia InSight Station.
  * Resilient Fallback: Automatically reverts to verified Martian winter archives if offline.
  */

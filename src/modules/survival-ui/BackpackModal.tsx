@@ -10,7 +10,8 @@ import {
   Flame, 
   Microscope, 
   Lock, 
-  Loader2 
+  Loader2,
+  Flashlight
 } from 'lucide-react';
 import { useOutpostStore } from '@/modules/store/useOutpostStore';
 
@@ -36,6 +37,15 @@ interface InventorySlotDef {
 }
 
 const INVENTORY_SLOTS: InventorySlotDef[] = [
+  {
+    id: 'flashlight',
+    name: 'EVA Flashlight Torch',
+    countKey: 'flashlight',
+    icon: Flashlight,
+    description: 'High-power LED beam for night missions (Sol 1) & dark craters. Hotkey [F].',
+    effectLabel: 'Toggle Forward Beam',
+    tactileState: 'normal'
+  },
   {
     id: 'sonic_wiper',
     name: 'Sonic Dust Sweeper',
@@ -139,7 +149,7 @@ export const BackpackModal: React.FC = () => {
   return (
     <AnimatePresence>
       {isBackpackOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md pointer-events-auto">
           {/* Backdrop Click Dismiss */}
           <div className="absolute inset-0" onClick={closeBackpack} />
 

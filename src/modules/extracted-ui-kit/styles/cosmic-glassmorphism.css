@@ -1,0 +1,63 @@
+/**
+ * Cosmic Glassmorphism & Tactical HUD Tokens
+ * Extracted and optimized from Meteoroid Simulator & NASA Orrery
+ */
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes pulseGlowAmber {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(255, 126, 41, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(255, 126, 41, 0.6);
+  }
+}
+
+@keyframes pulseGlowCyan {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(6, 182, 212, 0.6);
+  }
+}
+
+.hud-glass-card {
+  background: rgba(10, 14, 23, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 126, 41, 0.25);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+}
+
+.hud-glass-card-cyan {
+  background: rgba(8, 20, 28, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(6, 182, 212, 0.25);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+}
+
+.hud-border-amber {
+  border-color: rgba(255, 126, 41, 0.4);
+}
+
+.hud-text-amber {
+  color: #ff7e29;
+}
+
+.hud-glow-amber {
+  animation: pulseGlowAmber 2.5s infinite ease-in-out;
+}
+
+.hud-glow-cyan {
+  animation: pulseGlowCyan 2.5s infinite ease-in-out;
+}
+
+.cosmic-nebula-bg {
+  background: radial-gradient(circle at 50% 20%, rgba(255, 74, 0, 0.08) 0%, rgba(10, 13, 20, 0.98) 75%), #05070c;
+}

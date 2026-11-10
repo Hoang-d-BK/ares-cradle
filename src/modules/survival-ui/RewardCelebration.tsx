@@ -1,13 +1,12 @@
 import React, { useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import { Trophy, Star, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Trophy, Star, CheckCircle2, ArrowRight, X } from 'lucide-react';
 import { useOutpostStore } from '@/modules/store/useOutpostStore';
 
 /**
- * Task 8.3: Reward Celebration with Canvas Confetti Explosion
- * Fires multicolored particle bursts matching Mars palette:
- * Cyan (#00F0FF), Amber (#FFB020), Rust (#C1440E), Emerald (#10B981), White (#FFFFFF)
+ * Checkpoint Milestone Reward Celebration with Canvas Confetti Explosion
+ * Reserved exclusively for Sol Completion & Habitat Base Milestone Checkpoints.
  */
 export const RewardCelebration: React.FC = () => {
   const isCelebrationOpen = useOutpostStore((state) => state.isCelebrationOpen);
@@ -15,10 +14,8 @@ export const RewardCelebration: React.FC = () => {
   const dismissCelebration = useOutpostStore((state) => state.dismissCelebration);
 
   const fireConfetti = useCallback(() => {
-    // Multi-angle festive confetti salvo
     const colors = ['#00F0FF', '#FFB020', '#C1440E', '#10B981', '#FFFFFF'];
 
-    // Left cannon
     confetti({
       particleCount: 65,
       angle: 60,
@@ -27,7 +24,6 @@ export const RewardCelebration: React.FC = () => {
       colors
     });
 
-    // Right cannon
     confetti({
       particleCount: 65,
       angle: 120,
@@ -36,7 +32,6 @@ export const RewardCelebration: React.FC = () => {
       colors
     });
 
-    // Center starburst
     setTimeout(() => {
       confetti({
         particleCount: 100,
@@ -49,9 +44,21 @@ export const RewardCelebration: React.FC = () => {
 
   useEffect(() => {
     if (isCelebrationOpen) {
+      document.exitPointerLock?.();
       fireConfetti();
     }
   }, [isCelebrationOpen, fireConfetti]);
+
+  useEffect(() => {
+    if (!isCelebrationOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'Enter') {
+        dismissCelebration();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isCelebrationOpen, dismissCelebration]);
 
   if (!isCelebrationOpen || !celebrationData) return null;
 
@@ -59,8 +66,13 @@ export const RewardCelebration: React.FC = () => {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-        <div className="absolute inset-0" onClick={dismissCelebration} />
+      <div className="fixed inset-0 z-50 pointer-events-auto flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+        {/* Backdrop dismiss */}
+        <div 
+          className="absolute inset-0 cursor-pointer" 
+          onClick={dismissCelebration} 
+          aria-hidden="true"
+        />
 
         <motion.div
           initial={{ opacity: 0, scale: 0.85, y: 30 }}
@@ -69,6 +81,19 @@ export const RewardCelebration: React.FC = () => {
           transition={{ type: 'spring', stiffness: 350, damping: 25 }}
           className="hud-panel hud-corner-brackets relative z-10 w-full max-w-md p-6 rounded-md border-2 border-mars-amber/50 bg-mars-charcoal/95 shadow-[0_0_35px_rgba(255,176,32,0.3)] text-center select-none"
         >
+          {/* Explicit Close [X] Button */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              dismissCelebration();
+            }}
+            className="absolute top-3 right-3 p-1.5 rounded text-slate-400 hover:text-white hover:bg-white/10 transition-colors z-20 cursor-pointer"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
+
           {/* Trophy Crest */}
           <div className="mx-auto w-16 h-16 mb-3 rounded-full bg-mars-amber/15 border-2 border-mars-amber/40 flex items-center justify-center text-mars-amber shadow-[0_0_15px_rgba(255,176,32,0.4)]">
             <Trophy className="w-8 h-8 animate-bounce" />
@@ -115,8 +140,12 @@ export const RewardCelebration: React.FC = () => {
 
           {/* Tactile Action Button */}
           <button
-            onClick={dismissCelebration}
-            className="btn-tactile-rust w-full py-3 px-4 rounded text-sm font-display font-bold flex items-center justify-center gap-2"
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              dismissCelebration();
+            }}
+            className="btn-tactile-rust w-full py-3 px-4 rounded text-sm font-display font-bold flex items-center justify-center gap-2 cursor-pointer"
           >
             <span>CONTINUE EXPEDITION</span>
             <ArrowRight className="w-4 h-4" />

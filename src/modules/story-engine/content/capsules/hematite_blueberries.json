@@ -1,0 +1,51 @@
+{
+  "id": "capsule-hematite-blueberries",
+  "title": "Hematite Spherules (Blueberries)",
+  "category": "geology",
+  "icon": "🫐",
+  "quickFact": "Small gray spheres discovered in 2004 that proved liquid water once flowed through Martian rocks.",
+  "explore": "In 2004, NASA Opportunity discovered millions of tiny, ball-bearing-sized spherical stones dotting Meridiani Planum. Nicknamed 'blueberries', these concretions are composed of hematite (Fe2O3) and could only have formed when mineral-laden groundwater slowly seeped through porous bedrock billions of years ago.",
+  "nasaMission": "Mars Exploration Rover Opportunity (Sol 30)",
+  "credit": "NASA/JPL-Caltech/Cornell/USGS",
+  "nasaData": [
+    {
+      "metric": "Spherule Diameter",
+      "marsValue": "1–4 mm",
+      "earthValue": "2–10 mm",
+      "unit": "Millimeters"
+    },
+    {
+      "metric": "Hematite Purity",
+      "marsValue": "95%",
+      "earthValue": "80–90%",
+      "unit": "Purity %"
+    },
+    {
+      "metric": "Ancient Groundwater Evidence",
+      "marsValue": "Acidic / Wet",
+      "earthValue": "Abundant",
+      "unit": "Status"
+    }
+  ],
+  "refinementConversion": {
+    "resourceType": "alloy",
+    "amount": 35,
+    "description": "High-purity iron extraction for base electrical conductors."
+  },
+  "checkQuestion": {
+    "question": "What geological condition is required to form hematite spherules?",
+    "options": [
+      "Rapid cooling of volcanic lava",
+      "Liquid water percolating through sedimentary rock",
+      "Extreme friction from asteroid impacts",
+      "Solar radiation baking dry dust"
+    ],
+    "correctIndex": 1,
+    "explanation": "Hematite blueberries are concretions created by precipitation of iron minerals from groundwater flowing through porous rock."
+  },
+  "media": {
+    "heroImage": "https://images-assets.nasa.gov/image/PIA05557/PIA05557~orig.jpg",
+    "videoUrl": "https://www.youtube.com/watch?v=r0Xgq9q7Dks"
+  },
+  "unlocked": false
+}

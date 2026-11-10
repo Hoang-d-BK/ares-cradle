@@ -18,6 +18,7 @@ import BatteryBank from './BatteryBank';
 import DustStormParticles from './DustStormParticles';
 import MarsRover from './MarsRover';
 import ResourceDrops from './ResourceDrops';
+import SpecimenNodesCollection from './SpecimenNode';
 import SpaceSkybox from './SpaceSkybox';
 import AstronautPlayer from '@/modules/character/AstronautPlayer';
 import CameraRig from '@/modules/character/CameraRig';
@@ -177,6 +178,9 @@ export const MarsCanvas: React.FC = () => {
 
         {/* Task 9.1: Low-Poly Floating Radiant Energy Crystals */}
         <ResourceDrops />
+
+        {/* Phase 19: 3D Scientific Specimen Drops with Proximity Glow */}
+        <SpecimenNodesCollection />
 
         {/* Tactile Solar Array with Interactive Dust Wiping */}
         <SolarArray />

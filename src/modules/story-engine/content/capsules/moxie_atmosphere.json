@@ -1,0 +1,51 @@
+{
+  "id": "capsule-moxie-oxygen",
+  "title": "MOXIE: In-Situ Oxygen Production",
+  "category": "atmosphere",
+  "icon": "🫁",
+  "quickFact": "NASA Perseverance instrument that extracts breathable oxygen directly from Mars 95% CO2 air.",
+  "explore": "The Mars Oxygen ISRU Experiment (MOXIE) is a microwave-toaster-sized testbed aboard the Perseverance rover. It uses solid oxide electrolysis at 800°C to split carbon dioxide molecules (CO2) from the Martian atmosphere into carbon monoxide (CO) and breathable oxygen (O2), producing enough oxygen to keep an astronaut breathing for hours.",
+  "nasaMission": "Mars 2020 Perseverance Rover (MOXIE)",
+  "credit": "NASA/JPL-Caltech/MIT",
+  "nasaData": [
+    {
+      "metric": "Atmospheric CO2 Fraction",
+      "marsValue": "95.3%",
+      "earthValue": "0.04%",
+      "unit": "Volume %"
+    },
+    {
+      "metric": "Operating Electrolysis Temp",
+      "marsValue": "800°C",
+      "earthValue": "N/A",
+      "unit": "Celsius"
+    },
+    {
+      "metric": "Oxygen Production Rate",
+      "marsValue": "12 grams/hr",
+      "earthValue": "N/A",
+      "unit": "g/hr"
+    }
+  ],
+  "refinementConversion": {
+    "resourceType": "oxygen",
+    "amount": 40,
+    "description": "Replenishes 40% colony Sabatier oxygen buffer."
+  },
+  "checkQuestion": {
+    "question": "What primary gas does MOXIE intake to create breathable oxygen?",
+    "options": [
+      "Methane (CH4)",
+      "Nitrogen (N2)",
+      "Carbon Dioxide (CO2)",
+      "Argon (Ar)"
+    ],
+    "correctIndex": 2,
+    "explanation": "Mars atmosphere is 95.3% carbon dioxide. MOXIE strips one oxygen atom from CO2 molecules to generate pure O2."
+  },
+  "media": {
+    "heroImage": "https://images-assets.nasa.gov/image/PIA24495/PIA24495~orig.jpg",
+    "videoUrl": "https://www.youtube.com/watch?v=AeqxZk3K9t4"
+  },
+  "unlocked": false
+}

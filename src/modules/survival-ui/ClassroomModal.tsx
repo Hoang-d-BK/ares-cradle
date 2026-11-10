@@ -109,7 +109,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({ isOpen, onClose 
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md pointer-events-auto">
         <div className="absolute inset-0" onClick={onClose} />
 
         <motion.div

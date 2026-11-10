@@ -1,0 +1,51 @@
+{
+  "id": "capsule-dust-devil",
+  "title": "Martian Dust Devils & Electrostatic Cleaning",
+  "category": "energy",
+  "icon": "🌪️",
+  "quickFact": "Whirling convective columns of warm air that occasionally sweep dust off rover solar panels.",
+  "explore": "Martian dust devils are spinning atmospheric vortexes powered by warm ground heating the thin atmosphere. They can tower up to 8 kilometers high! While strong dust storms block solar panels, gentle dust devils have repeatedly saved NASA rovers Spirit and Opportunity by accidentally blowing dust clean off their solar arrays.",
+  "nasaMission": "Spirit Rover (Gusev Crater) & Perseverance (Jezero Crater)",
+  "credit": "NASA/JPL-Caltech",
+  "nasaData": [
+    {
+      "metric": "Vortex Height",
+      "marsValue": "1000–8000 m",
+      "earthValue": "100–1000 m",
+      "unit": "Meters"
+    },
+    {
+      "metric": "Electric Field Gradient",
+      "marsValue": "Up to 20 kV/m",
+      "earthValue": "1–5 kV/m",
+      "unit": "kV/m"
+    },
+    {
+      "metric": "Cleaning Event Probability",
+      "marsValue": "1 per 120 Sols",
+      "earthValue": "Rare",
+      "unit": "Frequency"
+    }
+  ],
+  "refinementConversion": {
+    "resourceType": "battery",
+    "amount": 20,
+    "description": "Electrostatic telemetry calibrated to predict cleaning events."
+  },
+  "checkQuestion": {
+    "question": "How did dust devils unexpectedly assist NASA Mars rovers?",
+    "options": [
+      "They provided wind energy to turn turbines",
+      "They blew away accumulated dust from solar panels, restoring power",
+      "They delivered moisture to recharge fuel cells",
+      "They cooled overheated computer processors"
+    ],
+    "correctIndex": 1,
+    "explanation": "Dust devils frequently swept across the rovers, brushing dust off the solar arrays and producing sudden 'cleaning events' that prolonged missions for years."
+  },
+  "media": {
+    "heroImage": "https://images-assets.nasa.gov/image/PIA07943/PIA07943~orig.jpg",
+    "videoUrl": "https://www.youtube.com/watch?v=k8lfJ0c75yY"
+  },
+  "unlocked": false
+}

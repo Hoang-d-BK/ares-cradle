@@ -64,15 +64,17 @@ flowchart LR
 
 ---
 
-### 4. Mission Stage Progression (Demo Scope)
+### 4. Mission Stage Progression (5 Sol Milestones & 4-Phase Sortie)
 
-The demo includes 3 bite-sized stages (3–5 minutes each):
+The simulation enforces the **4-Phase Sortie Loop** (Briefing -> Checkpoint Sortie -> High-Tension Return to Base -> Lab Analysis & Upgrade) across 5 real-time Sol milestones within an 80m exploration sphere:
 
-| Stage | Mission Title | Objective & Environmental Event | Core Engineering Trade-off |
-|---|---|---|---|
-| **Stage 1** | *Sol 1: The Frigid Night* | Survive the 12-hour Martian night without battery brownout. | Build sufficient battery reserve during daylight; throttle heaters just enough to stay warm without killing oxygen scrubbers. |
-| **Stage 2** | *Sol 5: Red Dust Approaching* | Maintain base stability during an unexpected dust storm. | Solar output drops by 60%. Player must actively wipe panels and cut non-critical power to prevent life support collapse. |
-| **Stage 3** | *Sol 12: Hull Micro-Fracture* | Manage an oxygen leak until maintenance drones seal the breach. | Oxygen leaks at 2x rate. Running generators at maximum power strains the battery; player must balance emergency power with thermal safety. |
+| Sol | Title & Checkpoint | Distance & Mode | NASA Mission Feature | Core Engineering Trade-off |
+|---|---|---|---|---|
+| **Sol 1** | *First Light: Solar Array* | `8.0m` (Foot EVA) | **Opportunity** (Solar Arrays & RAT Tool) | Daylight generation vs night freeze; clean dust deposits and balance 50/50 battery allocation. |
+| **Sol 5** | *Red Wall: Crater Alpha* | `35.0m` (Rover Recommended) | **Spirit & Opportunity** (Hematite Blueberries) | Electrostatic dust devil reduces visibility by 60%; harvest samples and race back before storm landfall. |
+| **Sol 9** | *Frozen Water: North Glacier* | `55.0m` (Rover Required) | **Phoenix Lander** (Permafrost Ice Trench) | Extreme polar cold (-80°C); suit heating drain spikes; drill ice core and return to purify water in lab. |
+| **Sol 12** | *Breath of Mars: MOXIE Tower* | `40.0m` (Foot / Rover) | **Perseverance** (MOXIE CO2-to-O2 Electrolysis) | Hull seal Bravo breach causing pressure drop; retrieve catalyst and pressurize O2 chamber. |
+| **Sol 20** | *Green Shield: Mesa Peak* | `75.0m` (Rover High-Beam) | **Curiosity RAD & ISS Veggie** (Ares-1 Touchdown) | High-range navigation over rough terrain; activate sky laser landing beacon to guide crewed fleet. |
 
 ---
 
@@ -84,12 +86,17 @@ The demo includes 3 bite-sized stages (3–5 minutes each):
 - **Physicality & Micro-Interactions:** Buttons depress with physical weight; switches toggle with crisp spring physics via Framer Motion; dials show smooth inertia.
 
 #### 5.2 Interface Architecture (Interactive 3D Diorama + Floating HUD)
-- **Center Canvas:** 3D Three.js Mars Outpost (interactive orbit controls, zoom to modules, dust storm particle effects).
-- **Top Bar:** Sol counter, mission timer, current stage objective.
-- **Floating Bottom HUD:**
-  - **Power Meter:** Dual gauge showing Current Draw vs. Solar Input + Battery Level.
-  - **Life Support Gauge:** Habitat Temperature (°C) and O₂ Saturation (%).
-  - **Action Deck:** Tactile distribution switches and emergency protocol triggers.
+- **Center Canvas:** 3D Three.js Mars Outpost (interactive orbit controls, zoom to modules, dust storm particle effects, planet radius calibrated to 80m).
+- **Top Bar:** Sol counter, mission timer, current stage objective, and circular Mini-Radar showing base camp and active POIs.
+- **Floating Bottom HUD / Horizontal Datapad:**
+  - **Minimalist Horizontal Telemetry Bar:** Power, Battery, Oxygen, and Habitat Temperature.
+  - **Interactive Pop-up Cards:** Clicking any metric card opens a focused educational panel directly above the bar explaining the current reading and its engineering significance.
+  - **Zero Overlap:** Top Visor and Bottom Datapad remain strictly non-overlapping.
+
+#### 5.3 Language, Layout & Essential-Only Constraints
+- **100% English Standard:** All in-game text, tooltips, dialogues, and science logs are strictly English (no mixed languages).
+- **Essential-Only & Anti-Clutter:** Only elements with an active functional or educational role are shown. Concise wording (< 15 words for alerts).
+- **80m World Radius:** Planetary bounds scaled to 80m so students can navigate and return to base smoothly.
 - **Audio Feedback:** Sub-bass hum for base power, crisp mechanical switch clicks, telemetry notification chimes, alarm sirens for emergency levels.
 
 ---

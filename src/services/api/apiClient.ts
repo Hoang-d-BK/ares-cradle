@@ -1,5 +1,5 @@
 /**
- * Ares Cradle - Autonomous Hybrid Fallback API Client (Trụ Cột 4)
+ * Ares Cradle - Autonomous Hybrid Fallback API Client (Pillar 4)
  * Connects frontend with Django REST backend (Room-PIN & Telemetry Leaderboard).
  * Autonomous Fallback: If Django backend is offline, automatically diverts to localStorage
  * with ZERO red console errors, ensuring 100% uptime on static Vercel deployment.

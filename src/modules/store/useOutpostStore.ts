@@ -22,6 +22,7 @@ import { missionService } from '@/services/api';
 import { STAGES_FIXTURES } from '@/services/api/MockMissionService';
 import { soundEngine } from '@/modules/audio/soundEngine';
 import { MarsWeatherTelemetry, fetchMarsWeather } from '@/modules/story-engine/services/marsWeatherService';
+import { useStoryStore } from './useStoryStore';
 
 export interface OutpostStoreState {
   // Sol Clock & Diurnal Cycle
@@ -91,10 +92,16 @@ export interface OutpostStoreState {
   // Phase 13: Exploration Rover & Orrery Sky View
   isDrivingRover: boolean;
   roverPos: [number, number, number];
+  roverHeadlightMode: 'low' | 'high';
   isSkyViewActive: boolean;
+  cameraYaw: number;
+  isMouseDriving: boolean;
   toggleDrivingRover: () => void;
+  toggleRoverHeadlightMode: () => void;
   setRoverPos: (pos: [number, number, number]) => void;
   toggleSkyView: () => void;
+  setCameraYaw: (yaw: number) => void;
+  setIsMouseDriving: (driving: boolean) => void;
 
   // Phase 15: Emergency Brownout STEM Quiz
   isBrownoutQuizOpen: boolean;
@@ -103,7 +110,30 @@ export interface OutpostStoreState {
   closeBrownoutQuiz: () => void;
   handleBrownoutQuizSuccess: () => void;
 
+  // Ares Cradle Optimization (v3.0)
+  isFlashlightOn: boolean;
+  toggleFlashlight: () => void;
+  isDatapadOpen: boolean;
+  toggleDatapad: () => void;
+  openDatapad: () => void;
+  closeDatapad: () => void;
+  isStormShutterClosed: boolean;
+  toggleStormShutter: () => void;
+  setStormShutter: (closed: boolean) => void;
+  isRoverDocked: boolean;
+  setIsRoverDocked: (docked: boolean) => void;
+
+  // 4-Phase Sortie & Visual Evolution (v3.2)
+  domeEvolutionLevel: number;
+  roverUpgradeLevel: number;
+  currentSortiePhase: 'briefing' | 'field' | 'return' | 'lab';
+  setDomeEvolutionLevel: (lvl: number) => void;
+  setRoverUpgradeLevel: (lvl: number) => void;
+  setSortiePhase: (phase: 'briefing' | 'field' | 'return' | 'lab') => void;
+
   // Actions
+  addWater: (amount?: number) => void;
+  restoreFullOxygen: () => void;
   tick: (deltaSeconds?: number) => void;
   tickTelemetry: (delta: number) => void;
   setPowerAllocation: (oxygen: number, heaters: number) => void;
@@ -152,6 +182,7 @@ export const useOutpostStore = create<OutpostStoreState>((set, get) => ({
   // Backpack & Inventory Initial State
   isBackpackOpen: false,
   inventory: {
+    flashlight: 1,
     sonic_wiper: 3,
     space_tape: 2,
     backup_battery: 1,
@@ -178,13 +209,21 @@ export const useOutpostStore = create<OutpostStoreState>((set, get) => ({
     const updatedInventory = { ...state.inventory, [itemId]: currentCount - 1 };
 
     switch (itemId) {
+      case 'flashlight':
+        get().toggleFlashlight();
+        return true;
       case 'sonic_wiper':
         // Clears all dust on solar array
         set({
           inventory: updatedInventory,
           dustCoverage: 0
         });
-        get().triggerCelebration('SOLAR ARRAY PURGED!', 'Sonic pulse cleared 100% of Martian dust deposits.', 3);
+        useStoryStore.getState().triggerFieldToast({
+          title: 'Solar Array Purged',
+          fact: 'Sonic pulse cleared 100% of Martian dust deposits.',
+          icon: '☀️',
+          badge: 'MAINTENANCE COMPLETE'
+        });
         return true;
       case 'space_tape':
         // Restores +2% oxygen and seals micro-leaks
@@ -274,15 +313,61 @@ export const useOutpostStore = create<OutpostStoreState>((set, get) => ({
   // Exploration Rover & Orrery Sky View Implementation
   isDrivingRover: false,
   roverPos: [3.8, -0.32, -2.2],
+  roverHeadlightMode: 'low',
   isSkyViewActive: false,
+  toggleRoverHeadlightMode: () => {
+    soundEngine.playClick(1200);
+    set((state) => ({
+      roverHeadlightMode: state.roverHeadlightMode === 'low' ? 'high' : 'low'
+    }));
+  },
   toggleDrivingRover: () => {
-    soundEngine.playClick(1300);
-    set((state) => ({ isDrivingRover: !state.isDrivingRover }));
+    const { isDrivingRover, playerPos, roverPos } = get();
+    if (!isDrivingRover) {
+      // Proximity check (< 2.5m) to board
+      const dist = Math.hypot(playerPos[0] - roverPos[0], playerPos[2] - roverPos[2]);
+      if (dist > 2.5) {
+        soundEngine.playClick(400);
+        return;
+      }
+      soundEngine.playClick(1400);
+      set({ isDrivingRover: true });
+    } else {
+      // Side dismount: spawn player beside the driver door (1.4m away)
+      soundEngine.playClick(1100);
+      const dismountPos: [number, number, number] = [
+        roverPos[0] - 1.4,
+        -0.32,
+        roverPos[2]
+      ];
+      set({
+        isDrivingRover: false,
+        playerPos: dismountPos
+      });
+    }
   },
   setRoverPos: (pos: [number, number, number]) => set({ roverPos: pos }),
   toggleSkyView: () => {
     soundEngine.playClick(900);
     set((state) => ({ isSkyViewActive: !state.isSkyViewActive }));
+  },
+  cameraYaw: 0,
+  isMouseDriving: false,
+  setCameraYaw: (yaw: number) => set({ cameraYaw: yaw }),
+  setIsMouseDriving: (driving: boolean) => set({ isMouseDriving: driving }),
+
+  // Story Engine Specimen Refining Actions
+  addWater: (_amount = 50) => {
+    set((state) => ({
+      inventory: {
+        ...state.inventory,
+        water_canister: (state.inventory['water_canister'] || 0) + 1
+      },
+      oxygen: Math.min(25, state.oxygen + 1.5)
+    }));
+  },
+  restoreFullOxygen: () => {
+    set({ oxygen: 20.9 });
   },
 
   // Brownout STEM Quiz Implementation (Phase 15)
@@ -310,6 +395,42 @@ export const useOutpostStore = create<OutpostStoreState>((set, get) => ({
       isSimulating: true
     }));
   },
+
+  // Ares Cradle Optimization (v3.0)
+  isFlashlightOn: true,
+  toggleFlashlight: () => {
+    soundEngine.playClick(1200);
+    set((state) => ({ isFlashlightOn: !state.isFlashlightOn }));
+  },
+  isDatapadOpen: false,
+  toggleDatapad: () => {
+    soundEngine.playClick(900);
+    set((state) => ({ isDatapadOpen: !state.isDatapadOpen }));
+  },
+  openDatapad: () => {
+    soundEngine.playClick(900);
+    set({ isDatapadOpen: true });
+  },
+  closeDatapad: () => {
+    soundEngine.playClick(650);
+    set({ isDatapadOpen: false });
+  },
+  isStormShutterClosed: false,
+  toggleStormShutter: () => {
+    soundEngine.playClick(800);
+    set((state) => ({ isStormShutterClosed: !state.isStormShutterClosed }));
+  },
+  setStormShutter: (closed: boolean) => set({ isStormShutterClosed: closed }),
+  isRoverDocked: false,
+  setIsRoverDocked: (docked: boolean) => set({ isRoverDocked: docked }),
+
+  // 4-Phase Sortie & Visual Evolution (v3.2)
+  domeEvolutionLevel: 1,
+  roverUpgradeLevel: 1,
+  currentSortiePhase: 'briefing',
+  setDomeEvolutionLevel: (lvl: number) => set({ domeEvolutionLevel: lvl }),
+  setRoverUpgradeLevel: (lvl: number) => set({ roverUpgradeLevel: lvl }),
+  setSortiePhase: (phase: 'briefing' | 'field' | 'return' | 'lab') => set({ currentSortiePhase: phase }),
 
   toggleMute: () => {
     const isNowMuted = soundEngine.toggleMute();
@@ -339,9 +460,12 @@ export const useOutpostStore = create<OutpostStoreState>((set, get) => ({
   cleanDust: (amount?: number | unknown) => {
     const dec = typeof amount === 'number' ? amount : 0.25;
     soundEngine.playClick(1200);
-    set((state) => ({
-      dustCoverage: Math.max(0, state.dustCoverage - dec)
-    }));
+    const newDust = Math.max(0, get().dustCoverage - dec);
+    set({ dustCoverage: newDust });
+    if (newDust < 0.15) {
+      useStoryStore.getState().completeObjective('obj-dust-1');
+      useStoryStore.getState().completeObjective('obj-wipe-sol1');
+    }
   },
 
   setStage: async (stageId: number) => {
@@ -459,6 +583,15 @@ export const useOutpostStore = create<OutpostStoreState>((set, get) => ({
       nextState.temperatureCelsius = Math.min(20.0, nextState.temperatureCelsius + dt * 1.2);
     }
 
+    // Auto Eco-Power Mode during Exploration Expeditions (> 14m from base)
+    const isOutOnExpedition = Math.hypot(state.playerPos[0], state.playerPos[2]) > 14;
+    if (isOutOnExpedition) {
+      // Base non-essential power drain is safely throttled to prevent brownout collapses
+      nextState.batteryPercent = Math.max(22.0, nextState.batteryPercent);
+      nextState.temperatureCelsius = Math.max(12.0, nextState.temperatureCelsius);
+      nextState.oxygenPercent = Math.max(20.0, nextState.oxygenPercent);
+    }
+
     const nextPhase = determineSolPhase(nextSolTime);
 
     // 4. Evaluate Critical Failure conditions
@@ -473,8 +606,8 @@ export const useOutpostStore = create<OutpostStoreState>((set, get) => ({
       failureReason = 'Freezing emergency: Habitat heaters failed to prevent deep freeze (-30°C)!';
     } else if (nextState.batteryPercent <= 0 && nextPhase === 'Night') {
       // Extended brownout in freezing dark
-      if (nextState.temperatureCelsius < 0) {
-        // Phase 15.1: Emergency Space Quiz intervention before terminal failure
+      if (nextState.temperatureCelsius < 0 && !isOutOnExpedition) {
+        // Emergency Space Quiz intervention before terminal failure
         if (!state.hasUsedBrownoutQuiz) {
           soundEngine.playAlarm();
           soundEngine.stopPowerHum();
@@ -492,17 +625,44 @@ export const useOutpostStore = create<OutpostStoreState>((set, get) => ({
       }
     }
 
-    // 5. Evaluate Stage Victory condition (Survived full Sol duration)
+    // 5. Objective-Driven Stage Victory:
+    // Only triggers when cadet has completed all current Sol objectives AND safely returned to base!
     let isVictory = false;
     let debriefReport: DebriefReport | null = null;
 
-    if (!isGameOver && nextSolTime >= stageDuration) {
+    const isAtBase = Math.hypot(state.playerPos[0], state.playerPos[2]) < 7.0;
+    const currentStoryChapter = useStoryStore.getState().getCurrentChapter();
+
+    // Auto-complete return-to-base objective when cadet safely reaches habitat airlock
+    const returnObj = currentStoryChapter.objectives.find(
+      (o: any) => o.id.includes('return-base') && !o.completed
+    );
+    if (returnObj && isAtBase) {
+      const otherCompleted = currentStoryChapter.objectives
+        .filter((o: any) => o.id !== returnObj.id)
+        .every((o: any) => o.completed);
+      if (otherCompleted) {
+        useStoryStore.getState().completeObjective(returnObj.id);
+      }
+    }
+
+    const allObjectivesCompleted =
+      currentStoryChapter.objectives.length > 0 &&
+      currentStoryChapter.objectives.every((o: any) => o.completed);
+
+    if (!isGameOver && allObjectivesCompleted && isAtBase && !state.isVictory) {
       isVictory = true;
       soundEngine.playSuccessChime();
       soundEngine.stopPowerHum();
+      const nextEvolutionLevel = Math.max(state.domeEvolutionLevel, (currentStoryChapter.chapterNumber || 1) + 1);
+      set({
+        domeEvolutionLevel: nextEvolutionLevel,
+        roverUpgradeLevel: nextEvolutionLevel,
+        currentSortiePhase: 'lab'
+      });
       get().triggerCelebration(
-        `SOL ${state.stageConfig.sol} SURVIVED!`,
-        `Cadet Leo maintained base life support through all environmental challenges.`,
+        `SOL ${state.stageConfig.sol} ACCOMPLISHED!`,
+        `Base & Rover upgraded! All mission objectives completed and specimens safely delivered.`,
         3
       );
       const debriefMath = calculateDebriefReport(

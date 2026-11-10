@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Retro Space Defense</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Force fullscreen */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { overflow: hidden; width: 100%; height: 100%; }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- Menu overlay -->
+  <div id="menuOverlay" class="menu-overlay">
+    <div class="menu">
+      <h1>AsteroidSmash</h1>
+      
+      <!-- High Score Display -->
+      <div class="high-score-display">
+        <p class="high-score-text" id="highScoreText">High Score: 0</p>
+      </div>
+      
+      <div class="menu-buttons">
+        <button id="playBtn" class="btn">Play</button>
+        <button id="exitBtn" class="btn">Exit</button>
+      </div>
+      <div class="did-you-know-section">
+        <p class="did-you-know-label">Did you know?</p>
+        <div id="menuFact" class="fact" aria-live="polite"></div>
+      </div>
+      <p class="hint">Answer space quiz correctly for extra life! Press M to mute.</p>
+    </div>
+  </div>
+
+  <!-- Quiz Overlay -->
+  <div id="quizOverlay" class="quiz-overlay" style="display: none;">
+    <div class="quiz-modal">
+      <h2 id="gameOverTitle" class="game-over-title">GAME OVER</h2>
+      
+      <div id="quizTimer" class="quiz-timer">
+        <button id="quizTimerBtn" class="quiz-timer-btn">Answer Quiz for Extra Heart (5s)</button>
+        <p class="quiz-timer-hint">Quick! Answer a space quiz to continue playing</p>
+      </div>
+      
+      <h3 id="quizTitle" class="quiz-title">Space Quiz Challenge</h3>
+      <p id="quizSubtitle" class="quiz-subtitle">Answer correctly to earn an extra heart and continue playing!</p>
+      
+      <div id="quizQuestion" class="quiz-question" style="display: none;"></div>
+      <div id="quizAnswers" class="quiz-answers" style="display: none;"></div>
+      <div id="quizFeedback" class="quiz-feedback" style="display: none;"></div>
+    </div>
+  </div>
+  
+  <script src="main.js"></script>
+</body>
+</html>

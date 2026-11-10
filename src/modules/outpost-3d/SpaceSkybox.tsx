@@ -231,6 +231,78 @@ export const SpaceSkybox: React.FC = () => {
           decay={2}
         />
       </group>
+
+      {/* ========================================================
+          VISIBLE SOLAR SYSTEM CELESTIAL BODIES (For Stargazing)
+          ======================================================== */}
+      {/* 1. Earth & The Moon (The Pale Blue Dot) */}
+      <group position={[48, 30, -55]}>
+        <mesh>
+          <sphereGeometry args={[0.75, 20, 16]} />
+          <meshStandardMaterial
+            color="#38BDF8"
+            emissive="#0284C7"
+            emissiveIntensity={1.2}
+            roughness={0.2}
+          />
+        </mesh>
+        {/* Earth Atmosphere Blue Corona */}
+        <mesh scale={[1.15, 1.15, 1.15]}>
+          <sphereGeometry args={[0.75, 16, 12]} />
+          <meshBasicMaterial color="#60A5FA" transparent opacity={0.3} side={THREE.BackSide} />
+        </mesh>
+        {/* Orbiting Moon */}
+        <mesh position={[1.6, 0.4, 0.2]}>
+          <sphereGeometry args={[0.2, 12, 10]} />
+          <meshStandardMaterial color="#E2E8F0" emissive="#CBD5E1" emissiveIntensity={0.6} />
+        </mesh>
+      </group>
+
+      {/* 2. Jupiter (Great Gas Giant) */}
+      <group position={[-52, 38, -42]}>
+        <mesh>
+          <sphereGeometry args={[1.6, 24, 16]} />
+          <meshStandardMaterial
+            color="#F59E0B"
+            emissive="#D97706"
+            emissiveIntensity={0.9}
+            roughness={0.4}
+          />
+        </mesh>
+        {/* Striped Cloud Belt Rings */}
+        {[-0.4, 0, 0.4].map((by, bIdx) => (
+          <mesh key={`jbelt-${bIdx}`} position={[0, by, 0]}>
+            <cylinderGeometry args={[1.61, 1.61, 0.22, 24, 1, true]} />
+            <meshBasicMaterial color="#B45309" transparent opacity={0.7} />
+          </mesh>
+        ))}
+      </group>
+
+      {/* 3. Saturn & Golden Rings */}
+      <group position={[58, 34, 38]} rotation={[0.45, 0.2, 0.35]}>
+        {/* Planet Core */}
+        <mesh>
+          <sphereGeometry args={[1.2, 20, 16]} />
+          <meshStandardMaterial
+            color="#FEF08A"
+            emissive="#CA8A04"
+            emissiveIntensity={0.8}
+            roughness={0.5}
+          />
+        </mesh>
+        {/* Golden Equatorial Planetary Rings */}
+        <mesh rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[1.6, 2.8, 32]} />
+          <meshStandardMaterial
+            color="#FDE047"
+            emissive="#CA8A04"
+            emissiveIntensity={0.6}
+            side={THREE.DoubleSide}
+            transparent
+            opacity={0.85}
+          />
+        </mesh>
+      </group>
     </group>
   );
 };

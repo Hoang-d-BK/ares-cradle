@@ -1,0 +1,51 @@
+{
+  "id": "capsule-hydroponics-crops",
+  "title": "Bio-Dome Hydroponics & Veggie Systems",
+  "category": "food",
+  "icon": "🌱",
+  "quickFact": "Growing fresh salad greens in sealed environments using nutrient-rich water and LED light recipes.",
+  "explore": "Astronauts on future Mars missions cannot rely on packaged food forever due to vitamin breakdown. NASA has tested the 'Veggie' and Advanced Plant Habitat (APH) aboard the ISS to grow red romaine lettuce, mizuna mustard, and radishes. Sealed Martian greenhouses recycle astronaut CO2 into fresh oxygen while providing nutrient-dense fresh food.",
+  "nasaMission": "ISS Veggie Experiment & Kennedy Space Center Space Crop Production",
+  "credit": "NASA Kennedy Space Center",
+  "nasaData": [
+    {
+      "metric": "Water Efficiency vs Soil",
+      "marsValue": "+95% Savings",
+      "earthValue": "Standard",
+      "unit": "Efficiency"
+    },
+    {
+      "metric": "LED Photoperiod",
+      "marsValue": "16 hr Light / 8 hr Dark",
+      "earthValue": "Natural Sun",
+      "unit": "Cycle"
+    },
+    {
+      "metric": "Caloric Yield per m²",
+      "marsValue": "250 kcal/day",
+      "earthValue": "50–100 kcal",
+      "unit": "kcal/m²"
+    }
+  ],
+  "refinementConversion": {
+    "resourceType": "water",
+    "amount": 20,
+    "description": "Replenishes crew morale and restores full Health Hearts."
+  },
+  "checkQuestion": {
+    "question": "Why is growing fresh vegetables critical for a multi-year Mars mission?",
+    "options": [
+      "To produce rocket propellant fuels",
+      "Pre-packaged food loses essential vitamins over 3-year space transit",
+      "Martian gravity requires heavy plants for ballast",
+      "Plants are needed to cool the electrical generators"
+    ],
+    "correctIndex": 1,
+    "explanation": "Critical micronutrients such as Vitamin C and B1 degrade in shelf-stable space rations over time, making fresh hydroponic produce essential for crew health."
+  },
+  "media": {
+    "heroImage": "https://images-assets.nasa.gov/image/iss044e045585/iss044e045585~orig.jpg",
+    "videoUrl": "https://www.youtube.com/watch?v=0h6kXfC8y7s"
+  },
+  "unlocked": false
+}

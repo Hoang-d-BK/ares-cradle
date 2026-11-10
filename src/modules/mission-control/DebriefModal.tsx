@@ -21,6 +21,12 @@ export const DebriefModal: React.FC = () => {
   const setStage = useOutpostStore((state) => state.setStage);
   const resetCurrentStage = useOutpostStore((state) => state.resetCurrentStage);
 
+  React.useEffect(() => {
+    if (isVictory || isGameOver) {
+      document.exitPointerLock?.();
+    }
+  }, [isVictory, isGameOver]);
+
   if (!isVictory && !isGameOver) return null;
 
   const handleNextStage = () => {

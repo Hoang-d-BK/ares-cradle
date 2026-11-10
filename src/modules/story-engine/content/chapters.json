@@ -1,0 +1,377 @@
+[
+  {
+    "sol": 1,
+    "chapterNumber": 1,
+    "title": "First Light",
+    "subtitle": "Establish Primary Energy Grid & Clear Panel Dust",
+    "environmentalEvent": "Frigid Night (-60°C)",
+    "nasaMissionLore": "Opportunity Rover (Photovoltaic Solar Arrays & Dust Deposition)",
+    "durationSeconds": 180,
+    "initialWeather": {
+      "temperature": -20,
+      "dustStormRisk": false,
+      "solarEfficiency": 0.85
+    },
+    "comicPrologue": [
+      {
+        "speaker": "commander",
+        "avatar": "🧑‍🚀",
+        "title": "Earth Command Transmission",
+        "dialogue": "Cadet Leo! You have landed safely in Elysium Planitia. Before night falls, we must secure the base power grid.",
+        "highlightText": "Secure base power grid"
+      },
+      {
+        "speaker": "chipi",
+        "avatar": "🤖",
+        "title": "Chipi-Bot Telemetry",
+        "dialogue": "Dust deposits are cutting solar panel output! Walk 8 meters to the Solar Array, wipe the panels, and return to base.",
+        "highlightText": "Wipe solar panels"
+      },
+      {
+        "speaker": "system",
+        "avatar": "📡",
+        "title": "Mission Directive",
+        "dialogue": "Clean the solar panels, collect 2x regolith samples, and return to the Habitat Airlock before night freeze.",
+        "highlightText": "Return to Habitat Base"
+      }
+    ],
+    "objectives": [
+      {
+        "id": "sol1-wipe-panels",
+        "type": "operate",
+        "label": "Reach Solar Array & Clean Dust Deposits",
+        "targetAnchorId": "anchor-solar",
+        "requiredCount": 1,
+        "currentCount": 0,
+        "completed": false,
+        "scoreReward": 200
+      },
+      {
+        "id": "sol1-collect-regolith",
+        "type": "collect",
+        "label": "Collect 2x Martian Regolith Specimens",
+        "targetSpecimenId": "specimen-regolith",
+        "requiredCount": 2,
+        "currentCount": 0,
+        "completed": false,
+        "scoreReward": 200
+      },
+      {
+        "id": "sol1-return-base",
+        "type": "reach",
+        "label": "Return to Bio-Dome Airlock to Analyze in Lab",
+        "targetAnchorId": "anchor-base",
+        "requiredCount": 1,
+        "currentCount": 0,
+        "completed": false,
+        "scoreReward": 300
+      }
+    ],
+    "unlockedBadge": {
+      "id": "badge-solar-pioneer",
+      "title": "Solar Pioneer",
+      "icon": "☀️",
+      "description": "Restored 100% solar array efficiency and survived the first Martian night."
+    }
+  },
+  {
+    "sol": 5,
+    "chapterNumber": 2,
+    "title": "Red Wall",
+    "subtitle": "Electrostatic Dust Devil & Hematite Blueberries",
+    "environmentalEvent": "Approaching Dust Storm (-60% Solar)",
+    "nasaMissionLore": "Spirit & Opportunity Rovers (Hematite Blueberries in Meridiani Planum)",
+    "durationSeconds": 200,
+    "initialWeather": {
+      "temperature": -35,
+      "dustStormRisk": true,
+      "solarEfficiency": 0.5
+    },
+    "comicPrologue": [
+      {
+        "speaker": "commander",
+        "avatar": "🧑‍🚀",
+        "title": "Dust Storm Warning",
+        "dialogue": "Satellite imagery shows a massive red dust wall moving in from Crater Alpha. Solar radiation will drop by 60%!",
+        "highlightText": "Red Dust Wall"
+      },
+      {
+        "speaker": "chipi",
+        "avatar": "🤖",
+        "title": "Rover Sortie Recommended",
+        "dialogue": "Crater Alpha is 35m South! Board the Exploration Rover [R] to travel quickly and harvest hematite blueberries.",
+        "highlightText": "Drive Rover [R]"
+      },
+      {
+        "speaker": "system",
+        "avatar": "📡",
+        "title": "Field Directive",
+        "dialogue": "Navigate to Crater Alpha, harvest 2x Hematite berries, and race back to base airlock before visibility drops.",
+        "highlightText": "Harvest & Return"
+      }
+    ],
+    "objectives": [
+      {
+        "id": "sol5-reach-crater",
+        "type": "reach",
+        "label": "Drive Rover to Crater Alpha Ridge (35m South)",
+        "targetAnchorId": "anchor-crater",
+        "requiredCount": 1,
+        "currentCount": 0,
+        "completed": false,
+        "scoreReward": 150
+      },
+      {
+        "id": "sol5-collect-blueberries",
+        "type": "collect",
+        "label": "Harvest 2x Hematite Blueberry Samples",
+        "targetSpecimenId": "specimen-hematite",
+        "requiredCount": 2,
+        "currentCount": 0,
+        "completed": false,
+        "scoreReward": 250
+      },
+      {
+        "id": "sol5-return-base",
+        "type": "reach",
+        "label": "Return Rover to Habitat Airlock Before Storm Hits",
+        "targetAnchorId": "anchor-base",
+        "requiredCount": 1,
+        "currentCount": 0,
+        "completed": false,
+        "scoreReward": 300
+      }
+    ],
+    "unlockedBadge": {
+      "id": "badge-hematite-prospector",
+      "title": "Hematite Prospector",
+      "icon": "🫐",
+      "description": "Discovered spherical groundwater nodules proving Mars ancient wet history."
+    }
+  },
+  {
+    "sol": 9,
+    "chapterNumber": 3,
+    "title": "Frozen Water",
+    "subtitle": "Drill North Glacier Permafrost Ice Core",
+    "environmentalEvent": "Extreme Cold Wave (-80°C)",
+    "nasaMissionLore": "Phoenix Lander & Mars Reconnaissance Orbiter (Subsurface Glaciers)",
+    "durationSeconds": 220,
+    "initialWeather": {
+      "temperature": -60,
+      "dustStormRisk": false,
+      "solarEfficiency": 0.75
+    },
+    "comicPrologue": [
+      {
+        "speaker": "commander",
+        "avatar": "🧑‍🚀",
+        "title": "Critical Water Depletion",
+        "dialogue": "Colony water reserves are down! We must drill into North Glacier Trench to tap subsurface permafrost.",
+        "highlightText": "Subsurface Ice Drilling"
+      },
+      {
+        "speaker": "chipi",
+        "avatar": "🤖",
+        "title": "Extreme Cold Warning",
+        "dialogue": "The trench drops to -80°C! Keep high speed on the Rover to prevent battery freeze.",
+        "highlightText": "Drive Rover [R]"
+      },
+      {
+        "speaker": "system",
+        "avatar": "📡",
+        "title": "Lab Extraction",
+        "dialogue": "Extract 2x Ice Core specimens and bring them back to the Bio-Dome Lab to melt into drinking water and oxygen.",
+        "highlightText": "Refine in Bio-Dome"
+      }
+    ],
+    "objectives": [
+      {
+        "id": "sol9-drive-rover",
+        "type": "reach",
+        "label": "Traverse 55m North to Glacier Trench",
+        "targetAnchorId": "anchor-glacier",
+        "requiredCount": 1,
+        "currentCount": 0,
+        "completed": false,
+        "scoreReward": 150
+      },
+      {
+        "id": "sol9-collect-ice",
+        "type": "collect",
+        "label": "Extract 2x Permafrost Ice Core Specimens",
+        "targetSpecimenId": "specimen-ice",
+        "requiredCount": 2,
+        "currentCount": 0,
+        "completed": false,
+        "scoreReward": 300
+      },
+      {
+        "id": "sol9-return-base",
+        "type": "reach",
+        "label": "Return to Habitat Airlock to Purify Water",
+        "targetAnchorId": "anchor-base",
+        "requiredCount": 1,
+        "currentCount": 0,
+        "completed": false,
+        "scoreReward": 350
+      }
+    ],
+    "unlockedBadge": {
+      "id": "badge-glacier-driller",
+      "title": "Glacier Driller",
+      "icon": "🧊",
+      "description": "Successfully harvested subsurface Martian water ice to safeguard colony life support."
+    }
+  },
+  {
+    "sol": 12,
+    "chapterNumber": 4,
+    "title": "Breath of Mars",
+    "subtitle": "Inspect MOXIE Atmospheric Extraction Testbed",
+    "environmentalEvent": "Hull Micro-Fracture (Oxygen Leak)",
+    "nasaMissionLore": "Perseverance Rover MOXIE (Generating Oxygen from 95% CO2 Atmosphere)",
+    "durationSeconds": 200,
+    "initialWeather": {
+      "temperature": -45,
+      "dustStormRisk": false,
+      "solarEfficiency": 0.8
+    },
+    "comicPrologue": [
+      {
+        "speaker": "commander",
+        "avatar": "🧑‍🚀",
+        "title": "Emergency Alert",
+        "dialogue": "Dome pressure dropping! A micrometeoroid micro-fracture has breached seal segment Bravo.",
+        "highlightText": "Dome Micro-Fracture"
+      },
+      {
+        "speaker": "chipi",
+        "avatar": "🤖",
+        "title": "MOXIE Testbed Online",
+        "dialogue": "Use Space Duct Tape from backpack [E] to seal the breach, then inspect MOXIE tower to synthesize fresh O2!",
+        "highlightText": "Activate MOXIE"
+      },
+      {
+        "speaker": "system",
+        "avatar": "📡",
+        "title": "Oxygen Stability",
+        "dialogue": "Collect the MOXIE catalyst from the East Tower (40m) and return to seal the dome and stabilize oxygen.",
+        "highlightText": "Restore 19.5% O2"
+      }
+    ],
+    "objectives": [
+      {
+        "id": "sol12-reach-moxie",
+        "type": "reach",
+        "label": "Navigate 40m East to MOXIE Extraction Tower",
+        "targetAnchorId": "anchor-moxie",
+        "requiredCount": 1,
+        "currentCount": 0,
+        "completed": false,
+        "scoreReward": 200
+      },
+      {
+        "id": "sol12-collect-catalyst",
+        "type": "collect",
+        "label": "Collect MOXIE Electrolysis Catalyst",
+        "targetSpecimenId": "specimen-moxie",
+        "requiredCount": 1,
+        "currentCount": 0,
+        "completed": false,
+        "scoreReward": 250
+      },
+      {
+        "id": "sol12-return-base",
+        "type": "reach",
+        "label": "Return to Habitat Airlock & Pressurize O2 Chamber",
+        "targetAnchorId": "anchor-base",
+        "requiredCount": 1,
+        "currentCount": 0,
+        "completed": false,
+        "scoreReward": 350
+      }
+    ],
+    "unlockedBadge": {
+      "id": "badge-moxie-engineer",
+      "title": "MOXIE Oxygen Engineer",
+      "icon": "🫁",
+      "description": "Mastered electro-chemical oxygen synthesis from raw Martian carbon dioxide."
+    }
+  },
+  {
+    "sol": 20,
+    "chapterNumber": 5,
+    "title": "Green Shield",
+    "subtitle": "Harvest Hydroponics & Welcome Ares-1 Crew Landing",
+    "environmentalEvent": "Cosmic Solar Radiation Flare & Ares-1 Touchdown",
+    "nasaMissionLore": "Curiosity RAD & ISS Veggie (Space Agriculture & Radiation Shielding)",
+    "durationSeconds": 240,
+    "initialWeather": {
+      "temperature": -15,
+      "dustStormRisk": false,
+      "solarEfficiency": 0.95
+    },
+    "comicPrologue": [
+      {
+        "speaker": "commander",
+        "avatar": "🧑‍🚀",
+        "title": "Ares-1 On Final Approach",
+        "dialogue": "Cadet Leo! The Ares-1 crewed transport is entering the Martian stratosphere. Touchdown in 4 minutes!",
+        "highlightText": "Ares-1 Touchdown"
+      },
+      {
+        "speaker": "chipi",
+        "avatar": "🤖",
+        "title": "Beacon Activation Required",
+        "dialogue": "Drive the Rover 75m to the high Mesa peak and activate the ground laser landing beacon!",
+        "highlightText": "Activate Laser Beacon"
+      },
+      {
+        "speaker": "system",
+        "avatar": "📡",
+        "title": "Outpost Graduation",
+        "dialogue": "Activate the landing beacon, return to the Bio-Dome, and welcome the first human colony fleet!",
+        "highlightText": "Graduate as Pioneer"
+      }
+    ],
+    "objectives": [
+      {
+        "id": "sol20-reach-mesa",
+        "type": "reach",
+        "label": "Drive Rover 75m South-East to Mesa Ridge",
+        "targetAnchorId": "anchor-landing",
+        "requiredCount": 1,
+        "currentCount": 0,
+        "completed": false,
+        "scoreReward": 250
+      },
+      {
+        "id": "sol20-activate-beacon",
+        "type": "operate",
+        "label": "Activate Ares-1 High-Gain Sky Laser Beacon",
+        "targetAnchorId": "anchor-landing",
+        "requiredCount": 1,
+        "currentCount": 0,
+        "completed": false,
+        "scoreReward": 350
+      },
+      {
+        "id": "sol20-return-base",
+        "type": "reach",
+        "label": "Return to Habitat Base to Welcome Ares-1 Crew",
+        "targetAnchorId": "anchor-base",
+        "requiredCount": 1,
+        "currentCount": 0,
+        "completed": false,
+        "scoreReward": 500
+      }
+    ],
+    "unlockedBadge": {
+      "id": "badge-mars-colonist",
+      "title": "Ares-1 Master Explorer",
+      "icon": "🚀",
+      "description": "Graduated as an official NASA Mars Pioneer, unlocking infinite free-roam sandbox."
+    }
+  }
+]

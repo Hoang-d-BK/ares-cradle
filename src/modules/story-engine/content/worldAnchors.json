@@ -1,0 +1,136 @@
+{
+  "anchors": [
+    {
+      "id": "anchor-base",
+      "label": "Bio-Dome Habitat Airlock",
+      "position": [0, 0, 0],
+      "type": "base",
+      "icon": "🏕️"
+    },
+    {
+      "id": "anchor-solar",
+      "label": "Photovoltaic Solar Array",
+      "position": [-6.0, 0, 4.0],
+      "type": "solar",
+      "icon": "☀️"
+    },
+    {
+      "id": "anchor-crater",
+      "label": "Crater Alpha Hematite Ridge",
+      "position": [18.0, 0, -30.0],
+      "type": "crater",
+      "icon": "🔭"
+    },
+    {
+      "id": "anchor-glacier",
+      "label": "North Glacier Permafrost Trench",
+      "position": [-25.0, 0, -50.0],
+      "type": "glacier",
+      "icon": "❄️"
+    },
+    {
+      "id": "anchor-moxie",
+      "label": "MOXIE Atmospheric Extraction Tower",
+      "position": [35.0, 0, 18.0],
+      "type": "solar",
+      "icon": "🧪"
+    },
+    {
+      "id": "anchor-landing",
+      "label": "Ares-1 Mesa Landing Beacon",
+      "position": [-40.0, 0, 62.0],
+      "type": "base",
+      "icon": "🚀"
+    }
+  ],
+  "specimenDrops": [
+    {
+      "id": "specimen-regolith-1",
+      "name": "Martian Regolith Dust",
+      "category": "mineral",
+      "icon": "🪨",
+      "anchorId": "anchor-solar",
+      "position": [-5.5, 0, 5.0],
+      "solAvailable": 1,
+      "quickFact": "Martian soil is rich in iron oxide (rust), giving the Red Planet its signature fiery glow.",
+      "capsuleId": "capsule-regolith-iron"
+    },
+    {
+      "id": "specimen-regolith-2",
+      "name": "Basalt Regolith Crust",
+      "category": "mineral",
+      "icon": "🪨",
+      "anchorId": "anchor-solar",
+      "position": [-6.8, 0, 3.2],
+      "solAvailable": 1,
+      "quickFact": "NASA Opportunity rover ground into surface rocks using its Rock Abrasion Tool (RAT).",
+      "capsuleId": "capsule-regolith-iron"
+    },
+    {
+      "id": "specimen-hematite-1",
+      "name": "Hematite Blueberry Cluster",
+      "category": "mineral",
+      "icon": "🫐",
+      "anchorId": "anchor-crater",
+      "position": [19.0, 0, -29.0],
+      "solAvailable": 5,
+      "quickFact": "Hematite spherules form when liquid water percolates through porous sedimentary rock.",
+      "capsuleId": "capsule-hematite-blueberries"
+    },
+    {
+      "id": "specimen-hematite-2",
+      "name": "Groundwater Nodule",
+      "category": "mineral",
+      "icon": "🫐",
+      "anchorId": "anchor-crater",
+      "position": [17.0, 0, -31.0],
+      "solAvailable": 5,
+      "quickFact": "These tiny gray spheres proved that liquid water once drenched ancient Mars!",
+      "capsuleId": "capsule-hematite-blueberries"
+    },
+    {
+      "id": "specimen-ice-1",
+      "name": "Permafrost Ice Core",
+      "category": "ice",
+      "icon": "🧊",
+      "anchorId": "anchor-glacier",
+      "position": [-24.0, 0, -49.0],
+      "solAvailable": 9,
+      "quickFact": "NASA Phoenix lander scraped away topsoil to expose pure water ice that sublimated in days.",
+      "capsuleId": "capsule-permafrost-ice"
+    },
+    {
+      "id": "specimen-ice-2",
+      "name": "Glacier Subsurface Shard",
+      "category": "ice",
+      "icon": "🧊",
+      "anchorId": "anchor-glacier",
+      "position": [-26.0, 0, -51.0],
+      "solAvailable": 9,
+      "quickFact": "Mars holds enough subsurface ice to cover the entire planet in an ocean 35 meters deep!",
+      "capsuleId": "capsule-permafrost-ice"
+    },
+    {
+      "id": "specimen-moxie-1",
+      "name": "MOXIE Electrolysis Catalyst",
+      "category": "atmosphere",
+      "icon": "🧪",
+      "anchorId": "anchor-moxie",
+      "position": [34.0, 0, 19.0],
+      "solAvailable": 12,
+      "quickFact": "MOXIE splits Martian CO2 molecules at 800°C into breathable O2 and carbon monoxide.",
+      "capsuleId": "capsule-moxie-oxygen"
+    },
+    {
+      "id": "specimen-greens-1",
+      "name": "Hydroponic Microgreen Sample",
+      "category": "food",
+      "icon": "🌱",
+      "anchorId": "anchor-landing",
+      "position": [-39.0, 0, 61.0],
+      "solAvailable": 20,
+      "quickFact": "Astronauts on the ISS grow fresh radishes and lettuce using LED lighting and aeroponic mist.",
+      "capsuleId": "capsule-microgreens-food"
+    }
+  ]
+}
