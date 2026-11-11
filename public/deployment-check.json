@@ -1,5 +1,5 @@
 {
-  "probe": "ares-cradle-github-vercel-20261111-185025",
+  "probe": "ares-cradle-github-vercel-20261111-195304",
   "purpose": "Verify GitHub-to-Vercel production deployment without changing gameplay",
   "gameplayChanged": false
 }
