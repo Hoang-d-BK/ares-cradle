@@ -8,6 +8,10 @@ const PARTICLE_COUNT = 900;
 export const DustStormParticles: React.FC = () => {
   const pointsRef = useRef<THREE.Points>(null);
   const activeEvents = useOutpostStore((state) => state.activeEvents);
+  const graphicsQuality = useOutpostStore((state) => state.graphicsQuality);
+
+  const activeParticleBudget =
+    graphicsQuality === 'low' ? 240 : graphicsQuality === 'medium' ? 540 : PARTICLE_COUNT;
 
   const isStormActive = activeEvents.some(
     (e) => e.active && !e.resolved && e.type === 'dust_storm'
@@ -38,6 +42,7 @@ export const DustStormParticles: React.FC = () => {
     if (!pointsRef.current) return;
 
     const geo = pointsRef.current.geometry;
+    geo.setDrawRange(0, activeParticleBudget);
     const posAttr = geo.attributes.position as THREE.BufferAttribute;
     const posArray = posAttr.array as Float32Array;
 
@@ -46,7 +51,7 @@ export const DustStormParticles: React.FC = () => {
     const windDirectionX = isStormActive ? -1.0 : -0.3;
     const windDirectionZ = isStormActive ? 0.6 : 0.2;
 
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
+    for (let i = 0; i < activeParticleBudget; i++) {
       const idx = i * 3;
 
       // Update position along wind trajectory

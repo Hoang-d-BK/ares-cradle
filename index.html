@@ -5,9 +5,43 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ares Cradle | Extraterrestrial Outpost Simulator</title>
+    <meta name="description" content="Ares Cradle: High-fidelity extraterrestrial Martian outpost simulation and mission control deck." />
+    <meta property="og:title" content="Ares Cradle | Extraterrestrial Outpost Simulator" />
+    <meta property="og:description" content="Ares Cradle: High-fidelity extraterrestrial Martian outpost simulation and mission control deck." />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <script>
+      (function() {
+        try {
+          var _origFetch = typeof window !== 'undefined' && window.fetch ? window.fetch.bind(window) : null;
+          var _currentFetch = _origFetch;
+          var fetchDesc = {
+            get: function() {
+              return _currentFetch;
+            },
+            set: function(val) {
+              _currentFetch = val;
+            },
+            configurable: true,
+            enumerable: true
+          };
+          try {
+            Object.defineProperty(window, 'fetch', fetchDesc);
+          } catch (_) {}
+          try {
+            if (typeof Window !== 'undefined' && Window.prototype) {
+              Object.defineProperty(Window.prototype, 'fetch', fetchDesc);
+            }
+          } catch (_) {}
+          try {
+            if (typeof globalThis !== 'undefined' && globalThis !== window) {
+              Object.defineProperty(globalThis, 'fetch', fetchDesc);
+            }
+          } catch (_) {}
+        } catch (_) {}
+      })();
+    </script>
   </head>
   <body class="bg-mars-charcoal text-slate-100 antialiased selection:bg-mars-rust selection:text-white overflow-hidden select-none">
     <div id="root"></div>

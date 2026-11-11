@@ -28,7 +28,12 @@ export const ChapterSelectModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-xl font-mono select-none pointer-events-auto">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Mission Log and Chapter Selector"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/90 font-mono select-none pointer-events-auto"
+    >
       {/* Backdrop click dismiss */}
       <div className="absolute inset-0 cursor-pointer" onClick={() => setChapterSelectOpen(false)} />
 

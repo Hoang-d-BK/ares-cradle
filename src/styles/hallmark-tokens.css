@@ -51,19 +51,70 @@
   --shadow-cyan-glow: 0 0 14px rgba(0, 240, 255, 0.3);
   --shadow-amber-glow: 0 0 14px rgba(255, 176, 32, 0.3);
   --shadow-rust-glow: 0 0 18px rgba(193, 68, 14, 0.4);
+
+  /* Creative Aerospace Visor Theme Variables (Default: Solar Amber / Martian Terracotta) */
+  --hud-bg: rgba(20, 11, 8, 0.94);
+  --hud-surface: #1E110C;
+  --hud-border: rgba(255, 146, 43, 0.52);
+  --hud-accent: #FFB020;
+  --hud-accent-2: #FF5722;
+  --hud-glow: 0 0 22px rgba(255, 146, 43, 0.28);
+  --hud-text: #FFF3E0;
+}
+
+:root[data-hud-theme="solar-amber"] {
+  --hud-bg: rgba(20, 11, 8, 0.94);
+  --hud-surface: #1E110C;
+  --hud-border: rgba(255, 146, 43, 0.55);
+  --hud-accent: #FFB020;
+  --hud-accent-2: #FF5722;
+  --hud-glow: 0 0 22px rgba(255, 146, 43, 0.28);
+  --hud-text: #FFF7ED;
+  --mars-cyan: #FFB020;
+}
+
+:root[data-hud-theme="cerenkov-cyan"] {
+  --hud-bg: rgba(6, 15, 25, 0.94);
+  --hud-surface: #0B1929;
+  --hud-border: rgba(0, 240, 255, 0.52);
+  --hud-accent: #00F0FF;
+  --hud-accent-2: #38BDF8;
+  --hud-glow: 0 0 22px rgba(0, 240, 255, 0.26);
+  --hud-text: #ECFEFF;
+  --mars-cyan: #00F0FF;
+}
+
+:root[data-hud-theme="biodome-emerald"] {
+  --hud-bg: rgba(6, 20, 14, 0.94);
+  --hud-surface: #0A2218;
+  --hud-border: rgba(16, 185, 129, 0.55);
+  --hud-accent: #10B981;
+  --hud-accent-2: #A3E635;
+  --hud-glow: 0 0 22px rgba(16, 185, 129, 0.28);
+  --hud-text: #ECFDF5;
+  --mars-cyan: #10B981;
+}
+
+:root[data-hud-theme="phobos-plasma"] {
+  --hud-bg: rgba(15, 8, 26, 0.94);
+  --hud-surface: #1A0E2E;
+  --hud-border: rgba(192, 132, 252, 0.55);
+  --hud-accent: #C084FC;
+  --hud-accent-2: #F43F5E;
+  --hud-glow: 0 0 22px rgba(192, 132, 252, 0.3);
+  --hud-text: #FAF5FF;
+  --mars-cyan: #C084FC;
 }
 
 /* ==========================================================================
    Anti-Slop Foundations & Strict UI Principles
    ========================================================================== */
 
-/* High-precision mechanical borders */
+/* High-precision mechanical borders (Zero backdrop-filter over WebGL) */
 .hud-panel {
-  background: rgba(18, 22, 32, 0.88);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--mars-border);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
+  background: var(--hud-bg);
+  border: 1px solid var(--hud-border);
+  box-shadow: 0 8px 28px 0 rgba(0, 0, 0, 0.65), var(--hud-glow);
   position: relative;
 }
 
@@ -71,11 +122,20 @@
   content: "";
   position: absolute;
   top: -1px;
-  left: 8px;
-  right: 8px;
+  left: 10px;
+  right: 10px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.4), transparent);
+  background: linear-gradient(90deg, transparent, var(--hud-accent), transparent);
   pointer-events: none;
+}
+
+/* Dynamic Theme Shell utility for top/bottom HUD decks */
+.hud-theme-shell {
+  background: var(--hud-bg);
+  border: 1px solid var(--hud-border);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.65), var(--hud-glow);
+  color: var(--hud-text);
+  transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
 /* Corner bracket accents (Technical HUD Aesthetic) */
@@ -87,24 +147,24 @@
 .hud-corner-brackets::after {
   content: "";
   position: absolute;
-  width: 6px;
-  height: 6px;
-  border-color: var(--mars-cyan);
+  width: 7px;
+  height: 7px;
+  border-color: var(--hud-accent);
   pointer-events: none;
 }
 
 .hud-corner-brackets::before {
   top: -1px;
   left: -1px;
-  border-top: 2px solid var(--mars-cyan);
-  border-left: 2px solid var(--mars-cyan);
+  border-top: 2px solid var(--hud-accent);
+  border-left: 2px solid var(--hud-accent);
 }
 
 .hud-corner-brackets::after {
   bottom: -1px;
   right: -1px;
-  border-bottom: 2px solid var(--mars-cyan);
-  border-right: 2px solid var(--mars-cyan);
+  border-bottom: 2px solid var(--hud-accent);
+  border-right: 2px solid var(--hud-accent);
 }
 
 /* ==========================================================================

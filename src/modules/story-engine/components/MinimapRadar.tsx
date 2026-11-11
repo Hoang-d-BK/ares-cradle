@@ -73,7 +73,7 @@ export const MinimapRadar: React.FC = () => {
   return (
     <div className="fixed top-3 right-3 z-30 pointer-events-auto flex flex-col items-end select-none font-mono">
       {/* Radar Outer Shell */}
-      <div className="relative w-28 h-28 rounded-full bg-slate-950/90 border-2 border-cyan-500/50 shadow-[0_0_20px_rgba(0,0,0,0.8),0_0_12px_rgba(0,240,255,0.25)] backdrop-blur-md flex items-center justify-center overflow-hidden">
+      <div className="relative w-28 h-28 rounded-full hud-theme-shell border-2 flex items-center justify-center overflow-hidden">
         
         {/* Radar Concentric Distance Rings */}
         <div className="absolute inset-2 rounded-full border border-cyan-500/20" />
@@ -112,8 +112,7 @@ export const MinimapRadar: React.FC = () => {
           className="absolute z-10 w-4 h-4 -ml-2 -mt-2 flex items-center justify-center text-[10px] text-amber-300 transition-transform duration-100"
           title={`Target: ${targetAnchor?.label || 'Objective'} (${distToTarget.toFixed(0)}m)`}
         >
-          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-white shadow-[0_0_8px_#F59E0B] animate-ping" />
-          <span className="absolute w-2 h-2 rounded-full bg-amber-400" />
+          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-white shadow-[0_0_8px_#F59E0B]" />
         </div>
 
         {/* Center Player / Rover Arrow (Fixed at Center, Points Forward) */}

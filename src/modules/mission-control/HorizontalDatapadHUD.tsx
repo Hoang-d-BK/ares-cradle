@@ -12,8 +12,9 @@ import {
   X
 } from 'lucide-react';
 import { useOutpostStore } from '@/modules/store/useOutpostStore';
-import { useStoryStore } from '@/modules/store/useStoryStore';
 import { soundEngine } from '@/modules/audio/soundEngine';
+import { ITEM_CATALOG } from '@/modules/survival-ui/itemRegistry';
+import AerospaceItemIcon from '@/modules/survival-ui/AerospaceItemIcon';
 
 type ActiveMetric = 'battery' | 'oxygen' | 'temperature' | 'power' | 'shutter' | null;
 
@@ -37,6 +38,12 @@ export const HorizontalDatapadHUD: React.FC = () => {
   const toggleStormShutter = useOutpostStore((state) => state.toggleStormShutter);
   const isDrivingRover = useOutpostStore((state) => state.isDrivingRover);
 
+  const quickbarSlots = useOutpostStore((state) => state.quickbarSlots);
+  const backpackInventory = useOutpostStore((state) => state.inventory);
+  const isFlashlightOn = useOutpostStore((state) => state.isFlashlightOn);
+  const executeItemAction = useOutpostStore((state) => state.executeItemAction);
+  const lastItemActionResult = useOutpostStore((state) => state.lastItemActionResult);
+
   // Status colors
   const batteryStatus = battery > 40 ? 'safe' : battery > 15 ? 'warning' : 'critical';
   const oxygenStatus = oxygen > 19.5 ? 'safe' : oxygen > 16.0 ? 'warning' : 'critical';
@@ -53,23 +60,33 @@ export const HorizontalDatapadHUD: React.FC = () => {
     setActiveMetric((prev) => (prev === metric ? null : metric));
   };
 
-  const currentChapter = useStoryStore((state) => state.getCurrentChapter());
-  const solNumber = currentChapter?.sol || 1;
-  const solBorder = solNumber >= 20 
-    ? 'border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.18)]' 
-    : solNumber >= 12 
-    ? 'border-teal-500/40 shadow-[0_0_20px_rgba(20,184,166,0.18)]' 
-    : solNumber >= 9 
-    ? 'border-cyan-500/40 shadow-[0_0_20px_rgba(6,182,212,0.18)]' 
-    : solNumber >= 5 
-    ? 'border-orange-500/40 shadow-[0_0_20px_rgba(249,115,22,0.18)]' 
-    : 'border-amber-500/40 shadow-[0_0_20px_rgba(245,158,11,0.18)]';
-
   // If driving rover, keep the bottom clear for the Cockpit Driving Deck
   if (isDrivingRover) return null;
 
   return (
-    <div className="fixed bottom-2 left-1/2 -translate-x-1/2 z-30 pointer-events-auto select-none font-mono">
+    <div className="fixed bottom-2 left-1/2 -translate-x-1/2 z-30 pointer-events-auto select-none font-mono flex flex-col items-center">
+      {/* ========================================================
+          0. QUICKBAR ITEM ACTION FEEDBACK PILL (When Triggered)
+          ======================================================== */}
+      <AnimatePresence>
+        {lastItemActionResult && !activeMetric && (
+          <motion.div
+            key={lastItemActionResult.ok ? lastItemActionResult.feedback : lastItemActionResult.reason}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            data-testid="quickbar-action-feedback"
+            className={`mb-1.5 px-3 py-1 rounded-xl border text-[11px] font-bold shadow-lg ${
+              lastItemActionResult.ok
+                ? 'bg-emerald-950/95 border-emerald-500/60 text-emerald-200'
+                : 'bg-amber-950/95 border-amber-500/60 text-amber-200'
+            }`}
+          >
+            {lastItemActionResult.ok ? lastItemActionResult.feedback : lastItemActionResult.reason}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ========================================================
           1. ANCHORED MICRO-LESSON POPOVER CARD (Above the Clicked Tile)
           ======================================================== */}
@@ -80,7 +97,7 @@ export const HorizontalDatapadHUD: React.FC = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 15, scale: 0.95 }}
             transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-            className="mb-2 w-[340px] sm:w-[420px] rounded-2xl bg-slate-950/95 border-2 border-cyan-500/50 shadow-[0_0_30px_rgba(0,0,0,0.8),0_0_15px_rgba(0,240,255,0.25)] p-4 text-slate-100 backdrop-blur-md"
+            className="mb-2 w-[340px] sm:w-[420px] rounded-2xl bg-slate-950/95 border-2 border-cyan-500/50 shadow-[0_0_30px_rgba(0,0,0,0.8),0_0_15px_rgba(0,240,255,0.25)] p-4 text-slate-100 relative"
           >
             {/* Popover Header */}
             <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-2.5">
@@ -221,19 +238,20 @@ export const HorizontalDatapadHUD: React.FC = () => {
       </AnimatePresence>
 
       {/* ========================================================
-          2. MINIMALIST HORIZONTAL HUD BAR (Non-Overlapping)
+          2. UNIFIED TELEMETRY DOCK + 5-SLOT QUICKBAR [1-5]
           ======================================================== */}
-      <div className={`flex items-center gap-1.5 sm:gap-2.5 px-3 py-1.5 rounded-2xl bg-slate-950/90 border ${solBorder} backdrop-blur-md text-xs`}>
+      <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-2xl hud-theme-shell text-xs">
         
         {/* Tile 1: Battery Grid */}
         <button
           onClick={() => handleTileClick('battery')}
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border transition-all cursor-pointer ${
+          data-testid="hud-tile-battery"
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border transition-all cursor-pointer tabular-nums ${
             activeMetric === 'battery'
               ? 'ring-2 ring-cyan-400 bg-cyan-950/80'
               : statusColorMap[batteryStatus]
           }`}
-          title="Click to view Battery Telemetry & Science Lesson"
+          title={`Battery Grid: ${battery.toFixed(1)}% (${batteryKwh.toFixed(1)}/${batteryCapacityKwh.toFixed(0)} kWh)`}
         >
           <Zap className="w-3.5 h-3.5" />
           <span className="font-bold">{battery.toFixed(0)}%</span>
@@ -242,7 +260,8 @@ export const HorizontalDatapadHUD: React.FC = () => {
         {/* Tile 2: Habitat Oxygen */}
         <button
           onClick={() => handleTileClick('oxygen')}
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border transition-all cursor-pointer ${
+          data-testid="hud-tile-oxygen"
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border transition-all cursor-pointer tabular-nums ${
             activeMetric === 'oxygen'
               ? 'ring-2 ring-cyan-400 bg-cyan-950/80'
               : statusColorMap[oxygenStatus]
@@ -256,7 +275,8 @@ export const HorizontalDatapadHUD: React.FC = () => {
         {/* Tile 3: Habitat Temperature */}
         <button
           onClick={() => handleTileClick('temperature')}
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border transition-all cursor-pointer ${
+          data-testid="hud-tile-temperature"
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border transition-all cursor-pointer tabular-nums ${
             activeMetric === 'temperature'
               ? 'ring-2 ring-cyan-400 bg-cyan-950/80'
               : statusColorMap[tempStatus]
@@ -298,6 +318,59 @@ export const HorizontalDatapadHUD: React.FC = () => {
             {isStormShutterClosed ? 'SEALED' : 'SHUTTER'}
           </span>
         </button>
+
+        {/* Divider between Telemetry & Quickbar */}
+        <div className="hidden md:block w-px h-6 bg-slate-700/80 mx-0.5" />
+
+        {/* 5-Slot Quickbar [1-5] */}
+        <div
+          data-testid="hud-quickbar"
+          className="hidden md:flex items-center gap-1"
+        >
+          {quickbarSlots.map((slotItemId, idx) => {
+            const spec = slotItemId ? ITEM_CATALOG[slotItemId] : null;
+            const qty = slotItemId ? backpackInventory[slotItemId] ?? 0 : 0;
+            const isTorchActive = slotItemId === 'flashlight' && isFlashlightOn;
+
+            return (
+              <button
+                key={`quickbar-${idx}`}
+                type="button"
+                data-testid={`quickbar-slot-${idx + 1}`}
+                disabled={!spec || qty <= 0}
+                onClick={() => {
+                  if (slotItemId) {
+                    executeItemAction(slotItemId);
+                  }
+                }}
+                title={
+                  spec
+                    ? `[${idx + 1}] ${spec.name} (${spec.reusable ? 'Reusable' : `x${qty}`})`
+                    : `Quickbar Slot [${idx + 1}] Empty`
+                }
+                className={`relative w-8 h-8 rounded-xl border flex items-center justify-center transition-all cursor-pointer ${
+                  isTorchActive
+                    ? 'bg-amber-500/25 border-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.4)]'
+                    : spec && qty > 0
+                    ? 'bg-slate-900/90 border-slate-700 hover:border-cyan-400/70'
+                    : 'bg-slate-950/50 border-slate-800/60 opacity-45 cursor-not-allowed'
+                }`}
+              >
+                <span className="absolute top-0.5 left-1 text-[8px] font-bold text-slate-400">
+                  {idx + 1}
+                </span>
+                {spec && (
+                  <>
+                    <AerospaceItemIcon iconId={spec.svgIconId} className="w-5 h-5" />
+                    <span className="absolute bottom-0 right-0.5 text-[8px] font-bold text-cyan-300 bg-slate-950/90 px-0.5 rounded">
+                      {spec.reusable ? '∞' : qty}
+                    </span>
+                  </>
+                )}
+              </button>
+            );
+          })}
+        </div>
 
       </div>
     </div>

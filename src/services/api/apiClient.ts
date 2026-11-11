@@ -52,6 +52,16 @@ class HybridApiClient {
    * Non-throwing quick probe to check if Django server is reachable.
    */
   private async checkBackendHealth(): Promise<boolean> {
+    // Zero-friction demo/SPA deployment: If backend is not explicitly enabled, do not attempt network requests
+    const isBackendExplicitlyEnabled =
+      typeof import.meta !== 'undefined' &&
+      (import.meta.env?.VITE_USE_BACKEND === 'true' || !!import.meta.env?.VITE_BACKEND_URL);
+
+    if (!isBackendExplicitlyEnabled) {
+      this.isBackendHealthy = false;
+      return false;
+    }
+
     // Zero-friction Vercel production deployment: Avoid Mixed Content blocks when served over HTTPS
     if (typeof window !== 'undefined' && window.location.protocol === 'https:' && this.baseUrl.startsWith('http://')) {
       this.isBackendHealthy = false;

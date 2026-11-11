@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useStoryStore } from '@/modules/store/useStoryStore';
 import { useOutpostStore } from '@/modules/store/useOutpostStore';
@@ -14,12 +14,33 @@ export const BioDomeLabStation: React.FC = () => {
   const openScienceCard = useStoryStore((state) => state.openScienceCard);
   const dataCapsules = useStoryStore((state) => state.dataCapsules);
   const addWater = useOutpostStore((state) => state.addWater);
-  const restoreFullOxygen = useOutpostStore((state) => state.restoreFullOxygen);
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisReport, setAnalysisReport] = useState<string | null>(null);
+  const [unlockedCapsuleIds, setUnlockedCapsuleIds] = useState<string[]>([]);
+
+  // Escape key closes lab station
+  useEffect(() => {
+    if (!isLabStationOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setLabStationOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [isLabStationOpen, setLabStationOpen]);
 
   if (!isLabStationOpen) return null;
+
+  const getExpectedYieldLabel = (category: string, specimenId: string) => {
+    if (category === 'ice') return '+1 Water Canister (25L) & +3.5% Habitat O₂';
+    if (category === 'atmosphere') return '+4.0% MOXIE O₂ Synthesis & Catalyst Data';
+    if (category === 'food') return '+1 Hydroponic Ration Pack & Crop Telemetry';
+    if (specimenId.includes('hematite')) return '+1 Sorted Hematite Ore & Groundwater Capsule';
+    return '+1 Sorted Regolith Ore & +1.2°C Thermal Cladding';
+  };
 
   const handleRefine = () => {
     if (carriedVials.length === 0 || isAnalyzing) return;
@@ -32,77 +53,138 @@ export const BioDomeLabStation: React.FC = () => {
       setIsAnalyzing(false);
       const processed = emptyVialsIntoLab();
 
-      // Convert resources
+      let waterCanistersAdded = 0;
+      let mineralShardsAdded = 0;
+      let rationsAdded = 0;
+      let o2Added = 0;
+      let tempAdded = 0;
+      const newlyUnlockedIds: string[] = [];
+
       processed.forEach((vial) => {
         if (vial.category === 'ice') {
-          addWater(50);
-          restoreFullOxygen();
+          waterCanistersAdded += 1;
+          o2Added += 3.5;
+        } else if (vial.category === 'atmosphere') {
+          o2Added += 4.0;
+        } else if (vial.category === 'food') {
+          rationsAdded += 1;
+        } else {
+          // mineral (regolith / hematite)
+          mineralShardsAdded += 1;
+          tempAdded += 1.2;
         }
+
         if (vial.capsuleId) {
           unlockDataCapsule(vial.capsuleId);
+          if (!newlyUnlockedIds.includes(vial.capsuleId)) {
+            newlyUnlockedIds.push(vial.capsuleId);
+          }
         }
       });
 
+      if (waterCanistersAdded > 0) {
+        addWater(waterCanistersAdded);
+      }
+
+      useOutpostStore.setState((s) => ({
+        inventory: {
+          ...s.inventory,
+          mineral_shard: (s.inventory.mineral_shard ?? 0) + mineralShardsAdded,
+          space_apple: (s.inventory.space_apple ?? 0) + rationsAdded
+        },
+        oxygen: Math.min(20.9, s.oxygen + o2Added),
+        temperature: Math.min(21.5, s.temperature + tempAdded)
+      }));
+
+      // Build truthful, category-accurate report
+      const yieldParts: string[] = [];
+      if (mineralShardsAdded > 0) {
+        yieldParts.push(`+${mineralShardsAdded} Sorted Regolith/Hematite Ore (+${tempAdded.toFixed(1)}°C thermal cladding)`);
+      }
+      if (waterCanistersAdded > 0) {
+        yieldParts.push(`+${waterCanistersAdded} Purified Water Canister (${waterCanistersAdded * 25}L H₂O)`);
+      }
+      if (o2Added > 0) {
+        yieldParts.push(`+${o2Added.toFixed(1)}% Habitat O₂ via electrolysis`);
+      }
+      if (rationsAdded > 0) {
+        yieldParts.push(`+${rationsAdded} Hydroponic Calorie Ration Pack`);
+      }
+
       soundEngine.playSuccessChime();
+      setUnlockedCapsuleIds(newlyUnlockedIds);
       setAnalysisReport(
-        `Analysis Complete! Processed ${processed.length} field specimens. Refined +50L Purified Water, restored 100% Oxygen, and unlocked ${processed.length} NASA Data Capsules.`
+        `Spectrometry & ISRU Processing Complete (${processed.length} ${processed.length === 1 ? 'vial' : 'vials'}): Yielded ${yieldParts.join(', ')}. Unlocked ${newlyUnlockedIds.length} NASA Science Data ${newlyUnlockedIds.length === 1 ? 'Capsule' : 'Capsules'}.`
       );
-    }, 1500);
+    }, 900);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-xl font-mono select-none pointer-events-auto">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/88 font-mono select-none pointer-events-auto"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="lab-station-title"
+    >
       {/* Backdrop click dismiss */}
       <div className="absolute inset-0 cursor-pointer" onClick={() => setLabStationOpen(false)} />
 
       <motion.div
-        initial={{ opacity: 0, scale: 0.92, y: 20 }}
+        data-testid="biodome-lab-modal"
+        initial={{ opacity: 0, scale: 0.94, y: 16 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.92, y: 20 }}
-        className="relative z-10 w-full max-w-4xl max-h-[90vh] rounded-3xl bg-gray-950/95 border-2 border-cyan-500/50 shadow-[0_0_60px_rgba(0,240,255,0.3)] p-4 sm:p-6 text-white overflow-hidden flex flex-col pointer-events-auto"
+        exit={{ opacity: 0, scale: 0.94, y: 16 }}
+        className="hud-panel hud-corner-brackets relative z-10 w-full max-w-4xl max-h-[90vh] rounded-xl bg-[#111820] border border-cyan-500/50 shadow-2xl p-4 sm:p-6 text-[#EDF1EC] overflow-hidden flex flex-col pointer-events-auto"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-800 pb-4 mb-4">
+        <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
           <div className="flex items-center gap-3">
             <span className="text-2xl">🔬</span>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-black text-white tracking-wide uppercase">
+                <h2
+                  id="lab-station-title"
+                  className="text-base sm:text-lg font-display font-bold text-white tracking-wide uppercase"
+                >
                   Bio-Dome 3-Slot Chemical Sample Analyzer
                 </h2>
-                <span className="px-2 py-0.5 text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 rounded-full font-bold">
-                  AUTONOMOUS REFINERY
+                <span className="px-2 py-0.5 text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 rounded font-bold">
+                  ISRU SPECTROMETRY & REFINERY
                 </span>
               </div>
-              <p className="text-xs text-gray-400 font-sans">
-                Insert collected Martian field samples to refine life support water, oxygen, and structural alloys.
+              <p className="text-xs text-slate-300 font-sans">
+                Analyze sealed field specimens to unlock NASA planetary science capsules and refine category-specific ISRU resources.
               </p>
             </div>
           </div>
 
           <button
+            type="button"
             onClick={() => {
               soundEngine.playClick(800);
               setLabStationOpen(false);
             }}
-            className="w-8 h-8 rounded-xl bg-gray-900 border border-gray-700 hover:border-white text-gray-300 flex items-center justify-center text-xs font-bold transition-all cursor-pointer"
+            data-testid="close-lab-btn"
+            className="btn-tactile px-3 py-1.5 rounded-lg text-xs font-bold text-slate-200 hover:text-white cursor-pointer"
           >
-            ✕
+            CLOSE [ESC]
           </button>
         </div>
 
         {/* 3 Interactive Specimen Trays */}
         <div className="flex-1 overflow-y-auto space-y-4">
-          <div className="text-xs font-bold text-cyan-400 uppercase tracking-widest">
-            Carried Field Specimen Trays ({carriedVials.length}/3 Filled)
+          <div className="text-xs font-bold text-cyan-300 uppercase tracking-widest">
+            Carried Field Specimen Vials ({carriedVials.length}/3 Sealed Tubes)
           </div>
 
           {carriedVials.length === 0 ? (
-            <div className="p-8 rounded-2xl bg-gray-900/40 border border-dashed border-gray-700 text-center space-y-2">
-              <span className="text-4xl block opacity-40">🧪</span>
-              <div className="text-sm font-bold text-gray-400">All 3 Sample Trays are Empty</div>
-              <p className="text-xs text-gray-500 max-w-md mx-auto font-sans">
-                Explore the Martian surface (Crater Alpha, North Glacier, Regolith Ridge) to collect geological specimens. Bring them back here to refine!
+            <div className="p-8 rounded-xl bg-[#151F2A] border border-dashed border-slate-700 text-center space-y-2">
+              <span className="text-3xl block opacity-60">🧪</span>
+              <div className="text-sm font-bold text-slate-200">
+                All 3 Sample Analyzer Trays are Empty
+              </div>
+              <p className="text-xs text-slate-400 max-w-md mx-auto font-sans">
+                Explore the Martian surface (Solar Array Perimeter, Crater Alpha, North Glacier Trench, MOXIE Tower) to collect sealed specimens, then bring them here to analyze!
               </p>
             </div>
           ) : (
@@ -113,14 +195,14 @@ export const BioDomeLabStation: React.FC = () => {
                   name: vial.name,
                   category: vial.category,
                   icon: vial.icon,
-                  discoverySol: 1,
+                  discoverySol: vial.solCollected ?? 1,
                   missionLore: vial.quickFact,
-                  refinementYield: vial.category === 'ice' ? '+50L H2O & Full O2' : '+25 Alloy Plates',
-                  purityScore: 96,
+                  refinementYield: getExpectedYieldLabel(vial.category, vial.specimenId),
+                  purityScore: 96
                 };
                 return (
                   <HolographicArtifactViewer
-                    key={idx}
+                    key={`${vial.specimenId}-${idx}`}
                     artifact={artifact}
                     onSoundTrigger={() => soundEngine.playClick(1200)}
                     onInspect={() => {
@@ -133,31 +215,58 @@ export const BioDomeLabStation: React.FC = () => {
             </div>
           )}
 
-          {/* Analysis Report Banner */}
+          {/* Honest Analysis Report Banner */}
           {analysisReport && (
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
+              data-testid="lab-analysis-report"
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="p-4 rounded-2xl bg-cyan-950/40 border border-cyan-500/50 text-cyan-200 text-xs font-sans leading-relaxed flex items-center gap-3"
+              className="p-4 rounded-xl bg-emerald-950/50 border border-emerald-500/50 text-emerald-100 text-xs font-sans leading-relaxed space-y-2"
             >
-              <span className="text-xl">✅</span>
-              <span>{analysisReport}</span>
+              <div className="flex items-start gap-2.5">
+                <span className="text-lg">✅</span>
+                <span>{analysisReport}</span>
+              </div>
+              {unlockedCapsuleIds.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  {unlockedCapsuleIds.map((capId) => {
+                    const cap = dataCapsules.find((c) => c.id === capId);
+                    if (!cap) return null;
+                    return (
+                      <button
+                        key={capId}
+                        type="button"
+                        onClick={() => openScienceCard(cap)}
+                        className="btn-tactile px-3 py-1 rounded text-xs font-mono text-cyan-200 border-cyan-400"
+                      >
+                        📖 Read Science Capsule: {cap.title}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </motion.div>
           )}
         </div>
 
         {/* Footer Actions */}
-        <div className="pt-4 border-t border-gray-800 flex items-center justify-between">
-          <span className="text-xs text-gray-400">
-            {carriedVials.length > 0 ? 'Specimens ready for refinement' : 'Awaiting field specimens'}
+        <div className="pt-4 mt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2">
+          <span className="text-xs text-slate-400">
+            {carriedVials.length > 0
+              ? `Ready to process ${carriedVials.length} sealed ${carriedVials.length === 1 ? 'specimen' : 'specimens'}`
+              : 'Awaiting field specimens'}
           </span>
 
           <button
+            type="button"
+            data-testid="lab-refine-btn"
             onClick={handleRefine}
             disabled={carriedVials.length === 0 || isAnalyzing}
-            className="px-6 py-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-teal-600 hover:from-cyan-400 hover:to-teal-500 text-black font-bold text-xs uppercase tracking-wider shadow-[0_0_20px_rgba(0,240,255,0.4)] disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer active:scale-95"
+            className="btn-tactile-rust px-6 py-2.5 rounded-lg font-display font-bold text-xs uppercase tracking-wider disabled:opacity-40 cursor-pointer"
           >
-            {isAnalyzing ? 'Centrifuge Refining... ⚡' : 'Refine Samples Into Survival Resources 🧪'}
+            {isAnalyzing
+              ? 'Spectrometer Analyzing... ⚡'
+              : `Analyze & Refine ${carriedVials.length} ${carriedVials.length === 1 ? 'Sample' : 'Samples'} 🧪`}
           </button>
         </div>
       </motion.div>

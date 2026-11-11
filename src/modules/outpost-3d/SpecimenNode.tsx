@@ -63,7 +63,6 @@ export const SpecimenNode: React.FC<SpecimenNodeProps> = ({ specimen }) => {
       ref={meshRef}
       position={specimen.position}
       onClick={handleClick}
-      onPointerDown={handleClick}
       dispose={null}
     >
       {/* 3D Geometry per category */}

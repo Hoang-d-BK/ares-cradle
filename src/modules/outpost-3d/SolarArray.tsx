@@ -21,12 +21,11 @@ export const SolarArray: React.FC = () => {
   const solPhase = useOutpostStore((state) => state.solPhase);
 
   useFrame((_, delta) => {
-    // Precise Sol Hour Calculation: 0 to 60s maps to 0 to 24 hours Martian time
-    // Sunrise at ~6h (15s), Zenith Noon at 12h (30s), Sunset at ~18h (45s)
+    // Synchronized with SIM_CONSTANTS: 0 to 32s is daytime, 32 to 60s is night
+    const cycleTime = ((solTime % 60) + 60) % 60;
     if (panelsRef.current) {
-      if (solTime >= 12 && solTime <= 48) {
-        // Daytime: Sol time 12s to 48s (approx 4.8h to 19.2h)
-        const dayProgress = (solTime - 12) / 36; // 0.0 (sunrise) to 1.0 (sunset)
+      if (cycleTime < 32) {
+        const dayProgress = cycleTime / 32; // 0.0 (sunrise) to 1.0 (sunset)
         // Heliotropic tilt: Track sun azimuth from East (-0.65 rad) to West (+0.65 rad)
         const targetAzimuth = -0.65 + dayProgress * 1.30;
         
@@ -106,7 +105,6 @@ export const SolarArray: React.FC = () => {
         position={[0, 1.05, 0]}
         rotation={[-0.38, 0, 0]}
         onClick={handleClick}
-        onPointerDown={handleClick}
         onPointerOver={(e) => {
           e.stopPropagation();
           setHovered(true);

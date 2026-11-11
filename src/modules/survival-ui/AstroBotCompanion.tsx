@@ -150,7 +150,7 @@ export const AstroBotCompanion: React.FC = () => {
             {/* Drawer Header */}
             <div className="flex items-center justify-between border-b border-mars-border pb-2 mb-2.5">
               <div className="flex items-center gap-1.5 text-mars-cyan">
-                <Bot className="w-4 h-4 animate-pulse" />
+                <Bot className="w-4 h-4" />
                 <span className="font-display font-bold text-xs uppercase tracking-wider text-slate-100">
                   CHIPI-BOT • SCIENCE ADVISOR
                 </span>
@@ -240,7 +240,7 @@ export const AstroBotCompanion: React.FC = () => {
             title="Click to ask Chipi-Bot"
           >
             <div className="flex items-center gap-1.5 mb-1 text-[10px] font-mono font-bold text-mars-cyan uppercase tracking-wider">
-              <Bot className="w-3.5 h-3.5 text-mars-cyan animate-pulse" />
+              <Bot className="w-3.5 h-3.5 text-mars-cyan" />
               <span>Chipi-Bot • NASA Lore</span>
             </div>
             <p className="text-xs font-display font-semibold text-slate-100 leading-snug">
@@ -259,9 +259,8 @@ export const AstroBotCompanion: React.FC = () => {
         className="btn-tactile p-3 rounded-full flex items-center justify-center border-2 border-mars-cyan/60 bg-mars-charcoal text-mars-cyan shadow-hud-glow relative"
       >
         <Bot className="w-6 h-6" />
-        <span className="absolute -top-1 -right-1 flex h-3 w-3">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-mars-cyan opacity-75" />
-          <span className="relative inline-flex rounded-full h-3 w-3 bg-mars-cyan" />
+        <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
+          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-mars-cyan border border-slate-950" />
         </span>
       </motion.button>
     </aside>

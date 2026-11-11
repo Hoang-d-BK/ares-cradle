@@ -48,7 +48,7 @@ export const CockpitDrivingDeck: React.FC = () => {
       className="fixed bottom-3 left-1/2 -translate-x-1/2 z-30 pointer-events-auto flex items-center gap-3 select-none font-mono text-xs"
     >
       {/* Driving Deck Shell */}
-      <div className="flex items-center gap-2 sm:gap-3 px-4 py-2 rounded-2xl bg-slate-950/95 border-2 border-cyan-500/50 shadow-[0_0_25px_rgba(0,0,0,0.8),0_0_15px_rgba(0,240,255,0.3)] backdrop-blur-md text-white">
+      <div className="flex items-center gap-2 sm:gap-3 px-4 py-2 rounded-2xl bg-slate-950/95 border-2 border-cyan-500/50 shadow-[0_0_25px_rgba(0,0,0,0.8),0_0_15px_rgba(0,240,255,0.3)] text-white">
         
         {/* Speedometer Gauge Badge */}
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-cyan-300">
@@ -57,6 +57,15 @@ export const CockpitDrivingDeck: React.FC = () => {
             <span className="text-[9px] text-slate-400 block font-sans">SPEED</span>
             <span className="font-bold text-xs">27 KM/H</span>
           </div>
+        </div>
+
+        {/* Desktop Keyboard Hint (Hidden on Mobile/Touch) */}
+        <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 text-[11px]">
+          <kbd className="px-1.5 py-0.5 rounded bg-slate-950 border border-slate-700 text-cyan-300 font-bold text-[10px]">WASD</kbd>
+          <span>Drive</span>
+          <span className="text-slate-600">·</span>
+          <kbd className="px-1.5 py-0.5 rounded bg-slate-950 border border-slate-700 text-amber-300 font-bold text-[10px]">SPACE</kbd>
+          <span>Jump</span>
         </div>
 
         {/* 180° U-Turn Button */}
@@ -83,8 +92,8 @@ export const CockpitDrivingDeck: React.FC = () => {
           <span>{roverHeadlightMode === 'high' ? 'HIGH BEAM 34M' : 'LOW BEAM 14M'}</span>
         </button>
 
-        {/* On-Screen Touch Directional D-Pad */}
-        <div className="flex items-center gap-1 bg-slate-900 px-2 py-1 rounded-xl border border-slate-800">
+        {/* On-Screen Touch Directional D-Pad (Shown only on Mobile/Tablet < 1024px) */}
+        <div className="flex lg:hidden items-center gap-1 bg-slate-900 px-2 py-1 rounded-xl border border-slate-800">
           <button
             onPointerDown={() => handleNavStart('left')}
             onPointerUp={handleNavEnd}

@@ -33,7 +33,12 @@ export const MissionCommsBriefing: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md font-mono select-none pointer-events-auto">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Mission Comms Briefing"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/88 font-mono select-none pointer-events-auto"
+    >
       {/* Backdrop click/tap to advance */}
       <div 
         className="absolute inset-0 cursor-pointer" 
@@ -51,7 +56,7 @@ export const MissionCommsBriefing: React.FC = () => {
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-800 pb-3 mb-4">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
             <span className="text-[11px] sm:text-xs font-bold text-amber-400 uppercase tracking-widest">
               MISSION COMMS TRANSMISSION • SOL {currentChapter.sol}
             </span>
