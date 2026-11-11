@@ -22,6 +22,7 @@ import SpecimenNodesCollection from './SpecimenNode';
 import SpaceSkybox from './SpaceSkybox';
 import AstronautPlayer from '@/modules/character/AstronautPlayer';
 import CameraRig from '@/modules/character/CameraRig';
+import PhysicsDebugHitboxes from './PhysicsDebugHitboxes';
 
 /**
  * High-performance frame driver connecting R3F render loop with the domain simulation tick.
@@ -109,14 +110,22 @@ function DynamicCameraController({ isDebug }: { isDebug: boolean }) {
  * and GPU Post-Processing Shader Pipeline.
  */
 export const MarsCanvas: React.FC = () => {
+  const graphicsQuality = useOutpostStore((state) => state.graphicsQuality);
+
   // Query flag check for ?debug=true
   const isDebug = useMemo(() => {
     if (typeof window === 'undefined') return false;
     return new URLSearchParams(window.location.search).get('debug') === 'true';
   }, []);
 
+  const canvasDpr: number | [number, number] =
+    graphicsQuality === 'low' ? 1 : graphicsQuality === 'medium' ? [1, 1.5] : [1, 2];
+
   return (
-    <div className="w-full h-full relative cursor-grab active:cursor-grabbing select-none">
+    <div
+      data-graphics-quality={graphicsQuality}
+      className="w-full h-full relative cursor-grab active:cursor-grabbing select-none"
+    >
       {/* Leva GUI Control Deck - Visible only with ?debug=true query flag */}
       <Leva
         hidden={!isDebug}
@@ -135,16 +144,16 @@ export const MarsCanvas: React.FC = () => {
 
       <Canvas
         camera={{ position: [0, 6.5, 13], fov: 45 }}
-        dpr={[1, 2]} // Memory Hygiene: clamp device pixel ratio to max 2
-        shadows
+        dpr={canvasDpr}
+        shadows={graphicsQuality !== 'low'}
         gl={{
-          antialias: true,
+          antialias: graphicsQuality !== 'low',
           alpha: false,
           powerPreference: 'high-performance'
         }}
         onCreated={({ gl, scene }) => {
           // Strict memory hygiene: clamp pixel ratio and clean clear color
-          gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+          gl.setPixelRatio(Math.min(window.devicePixelRatio, graphicsQuality === 'low' ? 1 : 2));
           gl.setClearColor(new THREE.Color('#0B0E14'));
           scene.fog = new THREE.FogExp2('#0B0E14', 0.035);
         }}
@@ -176,7 +185,7 @@ export const MarsCanvas: React.FC = () => {
         {/* Task 9.1: Low-Poly Mars Rover Unit (Kenney Space Kit Style) */}
         <MarsRover />
 
-        {/* Task 9.1: Low-Poly Floating Radiant Energy Crystals */}
+        {/* Grounded Martian Field Supply Caches & Mineral Outcrops */}
         <ResourceDrops />
 
         {/* Phase 19: 3D Scientific Specimen Drops with Proximity Glow */}
@@ -188,11 +197,14 @@ export const MarsCanvas: React.FC = () => {
         {/* Modular Energy Storage with Dynamic LED Charge Bar */}
         <BatteryBank />
 
+        {/* 3D Physics Hitbox & Bounding Box Visualizer (Toggleable via [B] or UI Button) */}
+        <PhysicsDebugHitboxes />
+
         {/* Dynamic Atmospheric Dust Motes & Storm Particle System */}
         <DustStormParticles />
 
-        {/* Task 9.3: GPU Post-Processing Pipeline (Bloom, Noise, Vignette, ChromaticAberration) */}
-        <PostProcessingPipeline isDebug={isDebug} />
+        {/* Task 9.3: GPU Post-Processing Pipeline (Disabled on Low Quality for 60 FPS Chromebook/Mobile) */}
+        {graphicsQuality !== 'low' && <PostProcessingPipeline isDebug={isDebug} />}
 
         {/* Task 12.2: Smooth 45° Isometric Camera Rig with Interior/Exterior Switching */}
         {!isDebug && <CameraRig />}

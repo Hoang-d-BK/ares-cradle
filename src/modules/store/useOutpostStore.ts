@@ -24,15 +24,21 @@ import { soundEngine } from '@/modules/audio/soundEngine';
 import { MarsWeatherTelemetry, fetchMarsWeather } from '@/modules/story-engine/services/marsWeatherService';
 import { useStoryStore } from './useStoryStore';
 
+import {
+  ItemActionResult,
+  evaluateItemTransaction,
+  evaluateCargoTransfer
+} from '@/modules/survival-ui/itemRegistry';
+
 export interface OutpostStoreState {
   // Sol Clock & Diurnal Cycle
-  solTime: number;              // Current second in Sol (0 to 60)
-  currentSol: number;           // Sol number (1, 5, 12)
+  solTime: number;              // Current second in Sol (0 to 60+)
+  currentSol: number;           // Sol number (1, 5, 9, 12, 20)
   solPhase: SolPhase;           // 'Morning' | 'Noon' | 'Sunset' | 'Night'
   
   // Primary Telemetry Resources
-  battery: number;              // 0 to 100%
-  batteryKwh: number;           // kWh
+  battery: number;              // 0 to 100% (always derived from batteryKwh / batteryCapacityKwh)
+  batteryKwh: number;           // kWh (Single Source of Truth)
   batteryCapacityKwh: number;   // Max kWh
   oxygen: number;               // 0 to 25% (nominal ~20.9%)
   temperature: number;          // °C (nominal ~20°C)
@@ -57,13 +63,27 @@ export interface OutpostStoreState {
   activeWarnings: string[];
   isMuted: boolean;
 
-  // Backpack & Inventory State
+  // Graphics Quality & Performance Tier (Prompt 1 Section 12)
+  graphicsQuality: 'low' | 'medium' | 'high';
+  setGraphicsQuality: (quality: 'low' | 'medium' | 'high') => void;
+
+  // Backpack, Rover Cargo & Quickbar State (Prompt 2)
   isBackpackOpen: boolean;
   inventory: Record<string, number>;
+  roverInventory: Record<string, number>;
+  quickbarSlots: string[];
+  lastItemActionResult: ItemActionResult | null;
   toggleBackpack: () => void;
   openBackpack: () => void;
   closeBackpack: () => void;
   useItem: (itemId: string) => boolean;
+  executeItemAction: (itemId: string) => ItemActionResult;
+  transferCargoItem: (
+    itemId: string,
+    direction: 'to_rover' | 'to_backpack'
+  ) => { ok: boolean; reason: string };
+  assignQuickbarSlot: (slotIndex: number, itemId: string) => void;
+  addBatteryKwh: (kwhDelta: number) => number;
 
   // Reward Celebration State
   isCelebrationOpen: boolean;
@@ -81,13 +101,40 @@ export interface OutpostStoreState {
   closeClassroom: () => void;
   toggleClassroom: () => void;
 
-  // Character, Movement & Habitat State (Phase 12)
+  // Character, Movement, Physics & Habitat State (Phase 12)
   playerPos: [number, number, number];
   joystickVector: { x: number; y: number };
   isInsideHabitat: boolean;
+  isPlayerGrounded: boolean;
+  isPlayerBlocked: boolean;
+  blockedByLabel: string | null;
+  standingOnLabel: string | null;
+  jumpRequestCount: number;
+  isPhysicsDebugVisible: boolean;
+  isSprinting: boolean;
+  sprintInputActive: boolean;
+  thrusterEnergy: number;
+  playerSpeedMps: number;
+  airJumpsLeft: number;
+  hudColorTheme: 'cerenkov-cyan' | 'solar-amber' | 'biodome-emerald' | 'phobos-plasma';
   setPlayerPos: (pos: [number, number, number]) => void;
   setJoystickVector: (vec: { x: number; y: number }) => void;
   setIsInsideHabitat: (isInside: boolean) => void;
+  requestJump: () => void;
+  setSprintInput: (active: boolean) => void;
+  togglePhysicsDebug: () => void;
+  setHudColorTheme: (theme: 'cerenkov-cyan' | 'solar-amber' | 'biodome-emerald' | 'phobos-plasma') => void;
+  cycleHudColorTheme: () => void;
+  setPhysicsStatus: (status: {
+    isGrounded: boolean;
+    isBlocked: boolean;
+    blockedByLabel: string | null;
+    standingOnLabel: string | null;
+    isSprinting?: boolean;
+    thrusterEnergy?: number;
+    playerSpeedMps?: number;
+    airJumpsLeft?: number;
+  }) => void;
 
   // Phase 13: Exploration Rover & Orrery Sky View
   isDrivingRover: boolean;
@@ -179,15 +226,42 @@ export const useOutpostStore = create<OutpostStoreState>((set, get) => ({
   activeWarnings: [],
   isMuted: false,
 
-  // Backpack & Inventory Initial State
+  graphicsQuality: 'medium',
+  setGraphicsQuality: (quality) => {
+    soundEngine.playClick(1050);
+    set({ graphicsQuality: quality });
+  },
+
+  // Backpack, Rover Cargo & 5-Slot Quickbar Initial State (Prompt 2)
   isBackpackOpen: false,
   inventory: {
     flashlight: 1,
     sonic_wiper: 3,
     space_tape: 2,
     backup_battery: 1,
-    space_apple: 2
+    space_apple: 2,
+    water_canister: 1,
+    mineral_shard: 1,
+    thermal_blanket: 1,
+    soil_analyzer: 1,
+    sample_container: 1,
+    gasket_set: 1,
+    rover_repair_kit: 1,
+    relay_beacon: 1
   },
+  roverInventory: {
+    backup_battery: 1,
+    water_canister: 1,
+    space_tape: 1
+  },
+  quickbarSlots: [
+    'flashlight',
+    'sonic_wiper',
+    'backup_battery',
+    'space_tape',
+    'soil_analyzer'
+  ],
+  lastItemActionResult: null,
   toggleBackpack: () => {
     soundEngine.playClick(950);
     set((state) => ({ isBackpackOpen: !state.isBackpackOpen }));
@@ -200,57 +274,130 @@ export const useOutpostStore = create<OutpostStoreState>((set, get) => ({
     soundEngine.playClick(650);
     set({ isBackpackOpen: false });
   },
-  useItem: (itemId: string) => {
+  assignQuickbarSlot: (slotIndex: number, itemId: string) => {
+    if (slotIndex < 0 || slotIndex >= 5) return;
+    soundEngine.playClick(1120);
+    set((state) => {
+      const updated = [...state.quickbarSlots];
+      updated[slotIndex] = itemId;
+      return { quickbarSlots: updated };
+    });
+  },
+  addBatteryKwh: (kwhDelta: number) => {
     const state = get();
-    const currentCount = state.inventory[itemId] ?? 0;
-    if (currentCount <= 0) return false;
+    const cap = Math.max(0.001, state.batteryCapacityKwh);
+    const nextKwh = Math.max(0, Math.min(cap, state.batteryKwh + kwhDelta));
+    const added = nextKwh - state.batteryKwh;
+    const nextPct = Math.max(0, Math.min(100, (nextKwh / cap) * 100));
+    set({
+      batteryKwh: nextKwh,
+      battery: nextPct
+    });
+    return added;
+  },
+  executeItemAction: (itemId: string) => {
+    const state = get();
+    const storyState = useStoryStore.getState();
+    const hasActiveLeak = state.activeEvents.some(
+      (e) => e.active && !e.resolved && Boolean(e.effects?.leakRateMultiplier)
+    );
 
-    soundEngine.playClick(1300);
-    const updatedInventory = { ...state.inventory, [itemId]: currentCount - 1 };
+    const mutation = evaluateItemTransaction(itemId, {
+      inventory: state.inventory,
+      roverInventory: state.roverInventory,
+      batteryKwh: state.batteryKwh,
+      batteryCapacityKwh: state.batteryCapacityKwh,
+      oxygen: state.oxygen,
+      temperature: state.temperature,
+      dustCoverage: state.dustCoverage,
+      thrusterEnergy: state.thrusterEnergy,
+      isInsideHabitat: state.isInsideHabitat,
+      isDrivingRover: state.isDrivingRover,
+      playerPos: state.playerPos,
+      roverPos: state.roverPos,
+      hasActiveLeakEvent: hasActiveLeak,
+      unlockedSols: storyState.unlockedSols
+    });
 
-    switch (itemId) {
-      case 'flashlight':
-        get().toggleFlashlight();
-        return true;
-      case 'sonic_wiper':
-        // Clears all dust on solar array
-        set({
-          inventory: updatedInventory,
-          dustCoverage: 0
-        });
-        useStoryStore.getState().triggerFieldToast({
-          title: 'Solar Array Purged',
-          fact: 'Sonic pulse cleared 100% of Martian dust deposits.',
-          icon: '☀️',
-          badge: 'MAINTENANCE COMPLETE'
-        });
-        return true;
-      case 'space_tape':
-        // Restores +2% oxygen and seals micro-leaks
-        set({
-          inventory: updatedInventory,
-          oxygen: Math.min(25, state.oxygen + 2.5)
-        });
-        return true;
-      case 'backup_battery':
-        // Injects 25% battery storage
-        set({
-          inventory: updatedInventory,
-          batteryKwh: Math.min(state.batteryCapacityKwh, state.batteryKwh + state.batteryCapacityKwh * 0.25),
-          battery: Math.min(100, state.battery + 25)
-        });
-        return true;
-      case 'space_apple':
-        // Stabilizes crew vital temperature & oxygen
-        set({
-          inventory: updatedInventory,
-          temperature: 20.0,
-          oxygen: 20.9
-        });
-        return true;
-      default:
-        return false;
+    if (!mutation.result.ok) {
+      soundEngine.playClick(420);
+      set({ lastItemActionResult: mutation.result });
+      return mutation.result;
     }
+
+    soundEngine.playClick(1320);
+
+    if (mutation.toggleFlashlight) {
+      get().toggleFlashlight();
+    }
+
+    let nextEvents = state.activeEvents;
+    if (mutation.resolveLeakEvents) {
+      nextEvents = state.activeEvents.map((evt) =>
+        evt.active && evt.effects?.leakRateMultiplier
+          ? { ...evt, active: false, resolved: true }
+          : evt
+      );
+    }
+
+    set({
+      inventory: mutation.nextInventory,
+      batteryKwh: mutation.nextBatteryKwh,
+      battery: mutation.nextBatteryPercent,
+      oxygen: mutation.nextOxygen,
+      temperature: mutation.nextTemperature,
+      dustCoverage: mutation.nextDustCoverage,
+      thrusterEnergy: mutation.nextThrusterEnergy,
+      activeEvents: nextEvents,
+      lastItemActionResult: mutation.result
+    });
+
+    if (mutation.nextDustCoverage < 0.15 && state.dustCoverage >= 0.15) {
+      storyState.completeObjective('sol1-wipe-panels');
+      storyState.completeObjective('obj-dust-1');
+      storyState.completeObjective('obj-wipe-sol1');
+    }
+
+    if (mutation.stemScoreBonus) {
+      useStoryStore.setState((s) => ({ stemScore: s.stemScore + (mutation.stemScoreBonus || 0) }));
+    }
+
+    storyState.triggerFieldToast({
+      title: `${itemId.replace(/_/g, ' ').toUpperCase()}`,
+      fact: mutation.result.feedback,
+      icon: '🛠️',
+      badge: mutation.result.consumed > 0 ? 'CONSUMABLE APPLIED' : 'TOOL ACTIVATED'
+    });
+
+    return mutation.result;
+  },
+  useItem: (itemId: string) => {
+    const res = get().executeItemAction(itemId);
+    return res.ok;
+  },
+  transferCargoItem: (itemId, direction) => {
+    const state = get();
+    const tx = evaluateCargoTransfer({
+      itemId,
+      direction,
+      personalInventory: state.inventory,
+      roverInventory: state.roverInventory,
+      playerPos: state.playerPos,
+      roverPos: state.roverPos,
+      isDrivingRover: state.isDrivingRover
+    });
+
+    if (!tx.ok) {
+      soundEngine.playClick(420);
+      return { ok: false, reason: tx.reason };
+    }
+
+    soundEngine.playClick(1180);
+    set({
+      inventory: tx.nextPersonalInventory,
+      roverInventory: tx.nextRoverInventory
+    });
+    return { ok: true, reason: tx.reason };
   },
 
   // Reward Celebration Initial State
@@ -296,10 +443,22 @@ export const useOutpostStore = create<OutpostStoreState>((set, get) => ({
     set((state) => ({ isClassroomOpen: !state.isClassroomOpen }));
   },
 
-  // Character, Movement & Habitat State Implementation
-  playerPos: [1.8, -0.4, 2.5],
+  // Character, Movement, Physics & Habitat State Implementation
+  playerPos: [0, -0.4, 1.55],
   joystickVector: { x: 0, y: 0 },
-  isInsideHabitat: false,
+  isInsideHabitat: true,
+  isPlayerGrounded: true,
+  isPlayerBlocked: false,
+  blockedByLabel: null,
+  standingOnLabel: null,
+  jumpRequestCount: 0,
+  isPhysicsDebugVisible: false,
+  isSprinting: false,
+  sprintInputActive: false,
+  thrusterEnergy: 100,
+  playerSpeedMps: 0,
+  airJumpsLeft: 1,
+  hudColorTheme: 'solar-amber',
   setPlayerPos: (pos: [number, number, number]) => set({ playerPos: pos }),
   setJoystickVector: (vec: { x: number; y: number }) => set({ joystickVector: vec }),
   setIsInsideHabitat: (isInside: boolean) => {
@@ -308,6 +467,65 @@ export const useOutpostStore = create<OutpostStoreState>((set, get) => ({
       soundEngine.playAirlock();
     }
     set({ isInsideHabitat: isInside });
+  },
+  requestJump: () => {
+    set((state) => ({ jumpRequestCount: state.jumpRequestCount + 1 }));
+  },
+  setSprintInput: (active: boolean) => set({ sprintInputActive: active }),
+  togglePhysicsDebug: () => {
+    soundEngine.playClick(1150);
+    set((state) => ({ isPhysicsDebugVisible: !state.isPhysicsDebugVisible }));
+  },
+  setHudColorTheme: (theme) => {
+    soundEngine.playClick(1250);
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-hud-theme', theme);
+    }
+    set({ hudColorTheme: theme });
+  },
+  cycleHudColorTheme: () => {
+    const order: Array<'cerenkov-cyan' | 'solar-amber' | 'biodome-emerald' | 'phobos-plasma'> = [
+      'solar-amber',
+      'cerenkov-cyan',
+      'biodome-emerald',
+      'phobos-plasma'
+    ];
+    const current = get().hudColorTheme;
+    const next = order[(order.indexOf(current) + 1) % order.length];
+    soundEngine.playClick(1250);
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-hud-theme', next);
+    }
+    set({ hudColorTheme: next });
+  },
+  setPhysicsStatus: (status) => {
+    const state = get();
+    const nextSprint = status.isSprinting ?? state.isSprinting;
+    const nextEnergy = status.thrusterEnergy !== undefined ? Math.round(status.thrusterEnergy) : state.thrusterEnergy;
+    const nextSpeed = status.playerSpeedMps !== undefined ? Number(status.playerSpeedMps.toFixed(1)) : state.playerSpeedMps;
+    const nextAirJumps = status.airJumpsLeft ?? state.airJumpsLeft;
+
+    if (
+      state.isPlayerGrounded !== status.isGrounded ||
+      state.isPlayerBlocked !== status.isBlocked ||
+      state.blockedByLabel !== status.blockedByLabel ||
+      state.standingOnLabel !== status.standingOnLabel ||
+      state.isSprinting !== nextSprint ||
+      state.thrusterEnergy !== nextEnergy ||
+      state.playerSpeedMps !== nextSpeed ||
+      state.airJumpsLeft !== nextAirJumps
+    ) {
+      set({
+        isPlayerGrounded: status.isGrounded,
+        isPlayerBlocked: status.isBlocked,
+        blockedByLabel: status.blockedByLabel,
+        standingOnLabel: status.standingOnLabel,
+        isSprinting: nextSprint,
+        thrusterEnergy: nextEnergy,
+        playerSpeedMps: nextSpeed,
+        airJumpsLeft: nextAirJumps
+      });
+    }
   },
 
   // Exploration Rover & Orrery Sky View Implementation
@@ -357,13 +575,13 @@ export const useOutpostStore = create<OutpostStoreState>((set, get) => ({
   setIsMouseDriving: (driving: boolean) => set({ isMouseDriving: driving }),
 
   // Story Engine Specimen Refining Actions
-  addWater: (_amount = 50) => {
+  addWater: (canisters = 1) => {
+    const countToAdd = Math.max(1, Math.round(canisters >= 25 ? canisters / 25 : canisters));
     set((state) => ({
       inventory: {
         ...state.inventory,
-        water_canister: (state.inventory['water_canister'] || 0) + 1
-      },
-      oxygen: Math.min(25, state.oxygen + 1.5)
+        water_canister: (state.inventory['water_canister'] || 0) + countToAdd
+      }
     }));
   },
   restoreFullOxygen: () => {
@@ -387,13 +605,17 @@ export const useOutpostStore = create<OutpostStoreState>((set, get) => ({
   },
   handleBrownoutQuizSuccess: () => {
     soundEngine.playSuccessChime();
-    const cap = get().batteryCapacityKwh;
-    set((state) => ({
-      batteryKwh: Math.min(cap, state.batteryKwh + cap * 0.2),
-      battery: Math.min(100, state.battery + 20),
-      isBrownoutQuizOpen: false,
-      isSimulating: true
-    }));
+    const cap = Math.max(0.001, get().batteryCapacityKwh);
+    set((state) => {
+      const nextKwh = Math.min(cap, state.batteryKwh + cap * 0.2);
+      const nextPct = Math.max(0, Math.min(100, (nextKwh / cap) * 100));
+      return {
+        batteryKwh: nextKwh,
+        battery: nextPct,
+        isBrownoutQuizOpen: false,
+        isSimulating: true
+      };
+    });
   },
 
   // Ares Cradle Optimization (v3.0)
@@ -458,11 +680,17 @@ export const useOutpostStore = create<OutpostStoreState>((set, get) => ({
   },
 
   cleanDust: (amount?: number | unknown) => {
+    const state = get();
+    if (state.dustCoverage <= 0.01) {
+      soundEngine.playClick(500);
+      return;
+    }
     const dec = typeof amount === 'number' ? amount : 0.25;
     soundEngine.playClick(1200);
-    const newDust = Math.max(0, get().dustCoverage - dec);
+    const newDust = Math.max(0, state.dustCoverage - dec);
     set({ dustCoverage: newDust });
     if (newDust < 0.15) {
+      useStoryStore.getState().completeObjective('sol1-wipe-panels');
       useStoryStore.getState().completeObjective('obj-dust-1');
       useStoryStore.getState().completeObjective('obj-wipe-sol1');
     }
@@ -518,7 +746,22 @@ export const useOutpostStore = create<OutpostStoreState>((set, get) => ({
     const state = get();
     if (!state.isSimulating || state.isGameOver || state.isVictory) return;
 
-    const dt = Math.max(0, deltaSeconds);
+    // Unified Modal Pause Gate (Prompt 1 Section 7 & Prompt 2 Section 6):
+    // Pause simulation drain whenever the learner is reading a briefing, science card, lab, or inventory dialog.
+    const storyModalState = useStoryStore.getState();
+    const isModalPausingSim =
+      state.isBackpackOpen ||
+      state.isDatapadOpen ||
+      state.isClassroomOpen ||
+      state.isBrownoutQuizOpen ||
+      storyModalState.isBriefingOpen ||
+      storyModalState.isLabStationOpen ||
+      storyModalState.isScienceCardOpen ||
+      storyModalState.isChapterSelectOpen;
+
+    if (isModalPausingSim) return;
+
+    const dt = Math.max(0, Math.min(0.1, deltaSeconds));
     const nextSolTime = state.solTime + dt;
     const stageDuration = state.stageConfig.durationSeconds || SIM_CONSTANTS.SOL_DURATION_SECONDS;
 

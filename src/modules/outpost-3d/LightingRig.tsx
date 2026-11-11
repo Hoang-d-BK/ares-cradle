@@ -10,6 +10,7 @@ export const LightingRig: React.FC = () => {
 
   const solTime = useOutpostStore((state) => state.solTime);
   const activeEvents = useOutpostStore((state) => state.activeEvents);
+  const graphicsQuality = useOutpostStore((state) => state.graphicsQuality);
 
   const isStormActive = activeEvents.some(
     (e) => e.active && !e.resolved && e.type === 'dust_storm'
@@ -21,12 +22,13 @@ export const LightingRig: React.FC = () => {
   const targetFogColor = useRef(new THREE.Color('#0B0E14'));
 
   useFrame((_, delta) => {
-    // 0s to 32s is daytime, 32s to 60s is night
-    const isDay = solTime < 32;
-    const dayProgress = Math.min(1, solTime / 32);
+    // Synchronize with SIM_CONSTANTS.SOL_DURATION_SECONDS (60s cycle: 0-32s day, 32-60s night)
+    const cycleTime = ((solTime % 60) + 60) % 60;
+    const isDay = cycleTime < 32;
+    const dayProgress = Math.min(1, cycleTime / 32);
 
     let targetDirIntensity = 0;
-    let targetAmbientIntensity = 0.3;
+    let targetAmbientIntensity = 0.32;
 
     if (isStormActive) {
       // Dust storm: reddish-brown diffusion, heavy fog
@@ -38,8 +40,8 @@ export const LightingRig: React.FC = () => {
     } else if (isDay) {
       // Daytime: bright Martian sunlight arc
       const sunHeight = Math.sin(dayProgress * Math.PI);
-      targetDirIntensity = Math.max(0.1, sunHeight * 1.9);
-      targetAmbientIntensity = 0.35 + sunHeight * 0.15;
+      targetDirIntensity = Math.max(0.15, sunHeight * 1.9);
+      targetAmbientIntensity = 0.38 + sunHeight * 0.15;
 
       if (dayProgress < 0.2) {
         // Morning dawn
@@ -58,12 +60,16 @@ export const LightingRig: React.FC = () => {
         targetFogColor.current.set('#0E121A');
       }
     } else {
-      // Nighttime: cold Phobos moonlight, deep starlit charcoal
-      targetDirIntensity = 0.08;
-      targetAmbientIntensity = 0.12;
-      targetDirColor.current.set('#5A7A9E');
-      targetAmbientColor.current.set('#1A2230');
+      // Nighttime: Phobos moonlight + readable outpost fill
+      targetDirIntensity = 0.18;
+      targetAmbientIntensity = 0.22;
+      targetDirColor.current.set('#6B8DB5');
+      targetAmbientColor.current.set('#1E293B');
       targetFogColor.current.set('#07090E');
+    }
+
+    if (dirLightRef.current) {
+      dirLightRef.current.castShadow = graphicsQuality !== 'low';
     }
 
     const lerpSpeed = Math.min(1, delta * 3.5);

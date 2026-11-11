@@ -3,6 +3,12 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useOutpostStore } from '@/modules/store/useOutpostStore';
 import { soundEngine } from '@/modules/audio/soundEngine';
+import {
+  PHYSICS_CONSTANTS,
+  PhysicsState,
+  STATIC_WORLD_COLLIDERS,
+  stepPlayerPhysics
+} from '@/modules/character/physicsEngine';
 
 const MAX_TRACKS = 64;
 
@@ -54,19 +60,57 @@ export const MarsRover: React.FC = () => {
   const keysPressed = useRef<Record<string, boolean>>({});
   const heading = useRef(0.0); // 0 radians points towards +Z
   const currentSpeed = useRef(0);
+  const roverJumpQueued = useRef(false);
+  const roverPhysicsRef = useRef<PhysicsState>({
+    x: roverPos[0],
+    y: -0.32,
+    z: roverPos[2],
+    vy: 0,
+    isGrounded: true,
+    isBlocked: false,
+    blockedByLabel: null,
+    blockedObstacleJumpable: false,
+    standingOnLabel: null
+  });
 
   // Keyboard controls & U-Turn event for rover
   useEffect(() => {
+    const isModalBlocking = () => {
+      const o = useOutpostStore.getState();
+      if (o.isBackpackOpen || o.isClassroomOpen || o.isBrownoutQuizOpen || o.isVictory || o.isGameOver) {
+        return true;
+      }
+      return Boolean(document.querySelector('[role="dialog"]'));
+    };
+
     const handleUTurn = () => {
+      if (isModalBlocking()) return;
       heading.current += Math.PI;
     };
     window.addEventListener('rover:uturn', handleUTurn);
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(target.tagName) ||
+          target.closest('[role="dialog"]'))
+      ) {
+        return;
+      }
+      if (isModalBlocking()) {
+        keysPressed.current = {};
+        return;
+      }
+      if (e.code === 'Space' && isDrivingRover) {
+        e.preventDefault();
+        if (!keysPressed.current['Space']) {
+          roverJumpQueued.current = true;
+        }
+      }
       keysPressed.current[e.code] = true;
 
-      if (e.code === 'KeyR') {
+      if (e.code === 'KeyR' && !e.repeat) {
         toggleDrivingRover();
       }
     };
@@ -82,7 +126,7 @@ export const MarsRover: React.FC = () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [toggleDrivingRover]);
+  }, [toggleDrivingRover, isDrivingRover]);
 
   // Dust Particle Buffer
   const dustCount = 45;
@@ -118,26 +162,36 @@ export const MarsRover: React.FC = () => {
 
     if (!groupRef.current) return;
 
+    const modalOpen =
+      useOutpostStore.getState().isBackpackOpen ||
+      Boolean(document.querySelector('[role="dialog"]'));
+    if (modalOpen) {
+      keysPressed.current = {};
+      roverJumpQueued.current = false;
+    }
+
     if (isDrivingRover) {
       let forwardInput = 0;
       let steerInput = 0;
 
-      if (keysPressed.current['KeyW'] || keysPressed.current['ArrowUp'] || isMouseDriving) {
-        forwardInput += 1;
-      }
-      if (keysPressed.current['KeyS'] || keysPressed.current['ArrowDown']) {
-        forwardInput -= 1;
-      }
-      if (keysPressed.current['KeyA'] || keysPressed.current['ArrowLeft']) {
-        steerInput += 1; // turn left
-      }
-      if (keysPressed.current['KeyD'] || keysPressed.current['ArrowRight']) {
-        steerInput -= 1; // turn right
-      }
+      if (!modalOpen) {
+        if (keysPressed.current['KeyW'] || keysPressed.current['ArrowUp'] || isMouseDriving) {
+          forwardInput += 1;
+        }
+        if (keysPressed.current['KeyS'] || keysPressed.current['ArrowDown']) {
+          forwardInput -= 1;
+        }
+        if (keysPressed.current['KeyA'] || keysPressed.current['ArrowLeft']) {
+          steerInput += 1; // turn left
+        }
+        if (keysPressed.current['KeyD'] || keysPressed.current['ArrowRight']) {
+          steerInput -= 1; // turn right
+        }
 
-      // Add touch joystick input
-      forwardInput -= joystickVector.y;
-      steerInput -= joystickVector.x;
+        // Add touch joystick input
+        forwardInput -= joystickVector.y;
+        steerInput -= joystickVector.x;
+      }
 
       // Steering turn rate (supports zero-turn rotation in place)
       const turnRate = forwardInput === 0 ? 2.6 : 1.9;
@@ -160,28 +214,48 @@ export const MarsRover: React.FC = () => {
       // Rover front faces +Z in local space:
       // In world coordinates with rotation.y = heading:
       // Forward vector is (sin(heading), 0, cos(heading))
-      const dx = Math.sin(heading.current) * currentSpeed.current * safeDelta;
-      const dz = Math.cos(heading.current) * currentSpeed.current * safeDelta;
+      const velX = Math.sin(heading.current) * currentSpeed.current;
+      const velZ = Math.cos(heading.current) * currentSpeed.current;
 
-      let newX = groupRef.current.position.x + dx;
-      let newZ = groupRef.current.position.z + dz;
+      roverPhysicsRef.current.x = groupRef.current.position.x;
+      roverPhysicsRef.current.z = groupRef.current.position.z;
 
-      // Continuous Planetoid Circumnavigation Loop (calibrated 80m world radius)
-      const distFromCenter = Math.hypot(newX, newZ);
-      if (distFromCenter > 78) {
-        // Smoothly loop to opposite side of Mars
-        newX = -newX * 0.96;
-        newZ = -newZ * 0.96;
+      const wantJump = roverJumpQueued.current;
+      roverJumpQueued.current = false;
+
+      const nextRoverPhys = stepPlayerPhysics(
+        roverPhysicsRef.current,
+        {
+          moveX: velX,
+          moveZ: velZ,
+          jumpJustPressed: wantJump,
+          dt: safeDelta
+        },
+        STATIC_WORLD_COLLIDERS,
+        PHYSICS_CONSTANTS.ROVER_RADIUS
+      );
+
+      if (roverPhysicsRef.current.isGrounded && !nextRoverPhys.isGrounded && nextRoverPhys.vy > 0) {
+        soundEngine.playJump();
       }
+      if (nextRoverPhys.isBlocked && Math.abs(currentSpeed.current) > 0.5) {
+        currentSpeed.current *= 0.35;
+      }
+
+      roverPhysicsRef.current = nextRoverPhys;
+
+      const newX = nextRoverPhys.x;
+      const newZ = nextRoverPhys.z;
+      const newY = Math.max(-0.32, nextRoverPhys.y + 0.08);
 
       groupRef.current.position.x = newX;
       groupRef.current.position.z = newZ;
-      groupRef.current.position.y = -0.32;
+      groupRef.current.position.y = newY;
       groupRef.current.rotation.y = heading.current;
 
       // Update store positions so Cadet Leo & camera follow the rover
-      setRoverPos([newX, -0.32, newZ]);
-      setPlayerPos([newX, -0.32, newZ]);
+      setRoverPos([newX, newY, newZ]);
+      setPlayerPos([newX, newY, newZ]);
 
       // Wheel spin animations
       // If moving forward/backward: spin based on speed
@@ -306,7 +380,6 @@ export const MarsRover: React.FC = () => {
         rotation={[0, heading.current, 0]}
         dispose={null}
         onClick={handleRoverClick}
-        onPointerDown={handleRoverClick}
         onPointerOver={(e) => {
           e.stopPropagation();
           setHovered(true);

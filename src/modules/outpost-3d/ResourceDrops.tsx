@@ -5,60 +5,81 @@ import { useOutpostStore } from '@/modules/store/useOutpostStore';
 import { useStoryStore } from '@/modules/store/useStoryStore';
 import { soundEngine } from '@/modules/audio/soundEngine';
 
-interface CrystalDef {
-  id: number;
+interface FieldCacheNode {
+  id: string;
   position: [number, number, number];
-  scale: [number, number, number];
-  color: string;
+  kind: 'battery_cache' | 'mineral_outcrop';
+  label: string;
 }
 
-const CRYSTAL_NODES: CrystalDef[] = [
-  { id: 1, position: [-2.8, -0.25, 4.2], scale: [0.35, 0.65, 0.35], color: '#00F0FF' },
-  { id: 2, position: [-2.5, -0.3, 4.5], scale: [0.25, 0.45, 0.25], color: '#00F0FF' },
-  { id: 3, position: [5.2, -0.25, 1.8], scale: [0.4, 0.75, 0.4], color: '#FFB020' },
-  { id: 4, position: [5.5, -0.3, 2.1], scale: [0.22, 0.42, 0.22], color: '#FFB020' },
-  { id: 5, position: [-5.2, -0.25, -2.5], scale: [0.38, 0.7, 0.38], color: '#00F0FF' },
-  { id: 6, position: [2.2, -0.25, -4.8], scale: [0.32, 0.6, 0.32], color: '#00F0FF' }
+const FIELD_CACHE_NODES: FieldCacheNode[] = [
+  { id: 'cache-pwr-1', position: [-2.8, -0.34, 4.2], kind: 'battery_cache', label: 'Aux Li-S Power Cell' },
+  { id: 'cache-min-1', position: [-2.4, -0.35, 4.6], kind: 'mineral_outcrop', label: 'Basalt-Ferric Outcrop' },
+  { id: 'cache-min-2', position: [5.2, -0.34, 1.8], kind: 'mineral_outcrop', label: 'Hematite Regolith Nodule' },
+  { id: 'cache-pwr-2', position: [5.5, -0.34, 2.2], kind: 'battery_cache', label: 'Field Power Cartridge' },
+  { id: 'cache-pwr-3', position: [-5.2, -0.34, -2.5], kind: 'battery_cache', label: 'Solar Relay Power Pack' },
+  { id: 'cache-min-3', position: [2.2, -0.34, -4.8], kind: 'mineral_outcrop', label: 'Sintered Iron-Oxide Rock' }
 ];
 
 /**
- * Low-Poly Energy Crystals & Mineral Drops
- * Non-blocking instant harvest with sleek top-center toast feedback.
+ * Grounded Martian Field Supply Caches & Geological Mineral Outcrops
+ * - Replaces fantasy neon crystals with industrial Li-S power cases & natural ferric outcrops
+ * - Uses stable ID map (nodeRefs.current[node.id]) instead of children array index
+ * - Uses synchronous Set ref to prevent double-pickup on click + pointerDown
+ * - Uses batteryKwh as single source of truth (or adds backup_battery if grid is full)
  */
 export const ResourceDrops: React.FC = () => {
-  const crystalGroupRef = useRef<THREE.Group>(null);
-  const [collectedIds, setCollectedIds] = useState<number[]>([]);
+  const nodeRefs = useRef<Record<string, THREE.Group | null>>({});
+  const collectedSetRef = useRef<Set<string>>(new Set());
+  const [collectedIds, setCollectedIds] = useState<string[]>([]);
   const astronautPos = useOutpostStore((state) => state.playerPos);
 
-  const collectCrystal = (crystal: CrystalDef) => {
-    if (collectedIds.includes(crystal.id)) return;
+  const collectCache = (node: FieldCacheNode) => {
+    if (collectedSetRef.current.has(node.id)) return;
+    collectedSetRef.current.add(node.id);
 
     soundEngine.playCrystalPickup();
-    setCollectedIds((prev) => [...prev, crystal.id]);
+    setCollectedIds(Array.from(collectedSetRef.current));
 
-    if (crystal.color === '#00F0FF') {
-      useOutpostStore.setState((s) => ({
-        battery: Math.min(100, s.battery + 10),
-        batteryKwh: Math.min(s.batteryCapacityKwh, s.batteryKwh + 5)
-      }));
-      useStoryStore.getState().triggerFieldToast({
-        title: 'Piezo-Crystal Harvested',
-        fact: '+10% Auxiliary Battery Power',
-        icon: '⚡',
-        badge: 'POWER HARVESTED'
-      });
+    if (node.kind === 'battery_cache') {
+      const store = useOutpostStore.getState();
+      const addedKwh = store.addBatteryKwh(6.0);
+
+      if (addedKwh >= 0.5) {
+        const addedPct = Math.round((addedKwh / Math.max(1, store.batteryCapacityKwh)) * 100);
+        useStoryStore.getState().triggerFieldToast({
+          title: 'Recovered Field Power Cell',
+          fact: `+${addedKwh.toFixed(1)} kWh (+${addedPct}%) transferred to Outpost Battery Grid.`,
+          icon: '🔋',
+          badge: 'POWER CACHE RECOVERED'
+        });
+      } else {
+        // Grid is already full -> store as a spare backup_battery cartridge in backpack
+        useOutpostStore.setState((s) => ({
+          inventory: {
+            ...s.inventory,
+            backup_battery: (s.inventory.backup_battery ?? 0) + 1
+          }
+        }));
+        useStoryStore.getState().triggerFieldToast({
+          title: 'Stored Reserve Battery Cartridge',
+          fact: 'Outpost grid is full—stored +1 Solid-State Li-S Power Cartridge in EVA Backpack.',
+          icon: '🔋',
+          badge: 'ADDED TO BACKPACK'
+        });
+      }
     } else {
       useOutpostStore.setState((s) => ({
         inventory: {
           ...s.inventory,
-          mineral_shard: (s.inventory['mineral_shard'] || 0) + 1
+          mineral_shard: (s.inventory.mineral_shard ?? 0) + 1
         }
       }));
       useStoryStore.getState().triggerFieldToast({
-        title: 'Martian Hematite Harvested',
-        fact: '+1 Structural Mineral Specimen',
-        icon: '💎',
-        badge: 'MINERAL HARVESTED'
+        title: 'Collected Sorted Regolith Ore',
+        fact: '+1 Sorted Regolith & Hematite Ore (2.5 kg) stored in EVA Backpack for lab sintering.',
+        icon: '🪨',
+        badge: 'MINERAL ORE STORED'
       });
     }
   };
@@ -67,44 +88,46 @@ export const ResourceDrops: React.FC = () => {
     const t = state.clock.getElapsedTime();
     const [px, , pz] = astronautPos;
 
-    if (crystalGroupRef.current) {
-      crystalGroupRef.current.children.forEach((child, idx) => {
-        const crystal = CRYSTAL_NODES[idx];
-        if (!crystal || collectedIds.includes(crystal.id)) return;
+    for (let i = 0; i < FIELD_CACHE_NODES.length; i++) {
+      const node = FIELD_CACHE_NODES[i];
+      if (collectedSetRef.current.has(node.id)) continue;
 
-        // Individual crystal levitation & pulse
-        child.position.y = (crystal.position[1] ?? -0.25) + Math.sin(t * 2 + idx) * 0.04;
-        child.rotation.y = t * 0.5 + idx * 0.8;
+      const group = nodeRefs.current[node.id];
+      if (group) {
+        // Subtle beacon indicator pulse on ring, grounded mesh stays flush on terrain
+        group.rotation.y = Math.sin(t * 0.6 + i) * 0.08;
+      }
 
-        // Proximity auto-pickup within 1.8m
-        const dist = Math.hypot(px - crystal.position[0], pz - crystal.position[2]);
-        if (dist < 1.8) {
-          collectCrystal(crystal);
-        }
-      });
+      // Proximity auto-pickup within 1.65m
+      const dist = Math.hypot(px - node.position[0], pz - node.position[2]);
+      if (dist < 1.65) {
+        collectCache(node);
+      }
     }
   });
 
-  const handlePointerDown = (e: any, crystal: CrystalDef) => {
+  const handleInteract = (e: any, node: FieldCacheNode) => {
     e.stopPropagation();
     const [px, , pz] = astronautPos;
-    const dist = Math.hypot(px - crystal.position[0], pz - crystal.position[2]);
+    const dist = Math.hypot(px - node.position[0], pz - node.position[2]);
     if (dist <= 3.8) {
-      collectCrystal(crystal);
+      collectCache(node);
     }
   };
 
   return (
-    <group ref={crystalGroupRef} dispose={null}>
-      {CRYSTAL_NODES.map((crystal) => {
-        if (collectedIds.includes(crystal.id)) return null;
+    <group name="FieldSupplyCachesLayer" dispose={null}>
+      {FIELD_CACHE_NODES.map((node) => {
+        if (collectedIds.includes(node.id)) return null;
 
         return (
           <group
-            key={crystal.id}
-            position={crystal.position}
-            onClick={(e) => handlePointerDown(e, crystal)}
-            onPointerDown={(e) => handlePointerDown(e, crystal)}
+            key={node.id}
+            ref={(el) => {
+              nodeRefs.current[node.id] = el;
+            }}
+            position={node.position}
+            onClick={(e) => handleInteract(e, node)}
             onPointerOver={(e) => {
               e.stopPropagation();
               document.body.style.cursor = 'pointer';
@@ -113,38 +136,63 @@ export const ResourceDrops: React.FC = () => {
               document.body.style.cursor = 'auto';
             }}
           >
-            {/* Main Crystal Spire (Octahedron / Bipyramid) */}
-            <mesh scale={crystal.scale} castShadow receiveShadow>
-              <octahedronGeometry args={[1, 0]} />
-              <meshStandardMaterial
-                color={crystal.color}
-                emissive={crystal.color}
-                emissiveIntensity={1.3}
-                roughness={0.15}
-                metalness={0.2}
-                flatShading
+            {node.kind === 'battery_cache' ? (
+              /* Composite 3-Part Industrial Aerospace Li-S Power Cartridge Case */
+              <group position={[0, 0.14, 0]}>
+                {/* Main Anodized Graphite Case */}
+                <mesh castShadow receiveShadow>
+                  <boxGeometry args={[0.36, 0.24, 0.26]} />
+                  <meshStandardMaterial color="#1E293B" roughness={0.35} metalness={0.65} />
+                </mesh>
+                {/* Safety Amber Seal Band */}
+                <mesh position={[0, 0.02, 0]} castShadow>
+                  <boxGeometry args={[0.38, 0.06, 0.28]} />
+                  <meshStandardMaterial color="#D97706" roughness={0.3} metalness={0.5} />
+                </mesh>
+                {/* Top Status LED Strip */}
+                <mesh position={[0, 0.13, 0]}>
+                  <boxGeometry args={[0.18, 0.02, 0.08]} />
+                  <meshStandardMaterial
+                    color="#38BDF8"
+                    emissive="#38BDF8"
+                    emissiveIntensity={0.85}
+                  />
+                </mesh>
+              </group>
+            ) : (
+              /* Composite Natural Martian Ferric-Basalt Mineral Outcrop */
+              <group position={[0, 0.12, 0]}>
+                <mesh castShadow receiveShadow rotation={[0.2, 0.4, 0.1]}>
+                  <dodecahedronGeometry args={[0.24, 0]} />
+                  <meshStandardMaterial
+                    color="#8F3412"
+                    roughness={0.88}
+                    metalness={0.18}
+                    flatShading
+                  />
+                </mesh>
+                <mesh position={[0.16, -0.04, 0.08]} castShadow receiveShadow>
+                  <dodecahedronGeometry args={[0.14, 0]} />
+                  <meshStandardMaterial
+                    color="#475569"
+                    roughness={0.55}
+                    metalness={0.65}
+                    flatShading
+                  />
+                </mesh>
+              </group>
+            )}
+
+            {/* Subtle Ground Scan Ring */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
+              <ringGeometry args={[0.32, 0.37, 20]} />
+              <meshBasicMaterial
+                color={node.kind === 'battery_cache' ? '#38BDF8' : '#F59E0B'}
+                transparent
+                opacity={0.45}
+                depthWrite={false}
               />
             </mesh>
-
-            {/* Sub-Crystal Shards Base */}
-            <mesh position={[0.1, -0.1, 0.05]} scale={[0.15, 0.25, 0.15]}>
-              <octahedronGeometry args={[1, 0]} />
-              <meshStandardMaterial
-                color={crystal.color}
-                emissive={crystal.color}
-                emissiveIntensity={0.9}
-                flatShading
-              />
-            </mesh>
-
-            {/* Bioluminescent Radiant Glow Light */}
-            <pointLight
-              position={[0, 0.2, 0]}
-              color={crystal.color}
-              intensity={1.2}
-              distance={3.5}
-              decay={2}
-            />
           </group>
         );
       })}

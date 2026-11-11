@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "manifestVersion": "3.0.0",
+  "project": {
+    "name": "Ares Cradle — Extraterrestrial Outpost Simulator (v3.0 Prompt Pack Edition)",
+    "framework": "React 18 + TypeScript + Vite + Tailwind CSS + Three.js (@react-three/fiber) + Zustand",
+    "aiAgentGuideMarkdown": "/UI_UX_ARCHITECTURE.md",
+    "aiAgentManifestJson": "/ui-ux-manifest.json",
+    "publicUrlJson": "/ui-ux-manifest.json"
+  },
+  "promptPackChangelogSummary": {
+    "prompt1_3dHudAndSimulationTruth": [
+      "Synchronized 0-60s Sol diurnal cycle across LightingRig.tsx, SolarArray.tsx, formulas.ts, and CockpitVisorHUD.tsx clock",
+      "Enforced batteryKwh as single source of truth with derived battery % across all actions and HUD tiles",
+      "Replaced floating neon crystals in ResourceDrops.tsx with grounded Industrial Li-S Power Cartridge Caches and Ferric-Basalt Outcrops indexed by stable node.id ref map and synchronous collectedSetRef guard",
+      "Implemented 3-tier Graphics Quality (low | medium | high) controlling Canvas DPR, shadow maps, dust particle budget (240/540/900), and PostProcessingPipeline",
+      "Added Unified Modal Input Gate & Simulation Pause Ownership across all [role='dialog'] modals and changed right camera yaw hotkey from Shift+E to KeyC"
+    ],
+    "prompt2_24ItemCatalogAndBioDomeLab": [
+      "Created 24-item Industrial Aerospace Catalog (src/modules/survival-ui/itemRegistry.ts) with 12 active MVP items, 4 identity-tracked specimens, and 8 Phase-2 blueprints",
+      "Created code-authored SVG industrial silhouettes (src/modules/survival-ui/AerospaceItemIcon.tsx)",
+      "Rebuilt BackpackModal.tsx with 3 tabs (EVA Suit Pack, Rover Cargo, Phase-2 Specs), 3-Slot Hermetic Specimen Vial Rack, and separate Select/Inspect vs Use/Activate transaction flow",
+      "Added 5-Slot Quickbar [1-5] in HorizontalDatapadHUD.tsx and Digit1-Digit5 hotkeys in MissionControlOverlay.tsx",
+      "Updated BioDomeLabStation.tsx to report honest category-specific refinement yields and unlock corresponding NASA Science Capsules"
+    ],
+    "prompt3_automatedVerification": [
+      "12/12 unit tests passing in physicsEngine.test.ts and itemRegistry.test.ts",
+      "Zero TypeScript compilation or ESLint errors"
+    ]
+  },
+  "designSystem": {
+    "tokensFile": "/src/styles/hallmark-tokens.css",
+    "globalStylesFile": "/src/styles/index.css",
+    "tailwindConfigFile": "/tailwind.config.js",
+    "htmlEntryFile": "/index.html",
+    "fonts": {
+      "display": "Rajdhani",
+      "mono": "Share Tech Mono, Fira Code",
+      "sans": "Inter"
+    },
+    "themeAttribute": "data-hud-theme",
+    "defaultTheme": "solar-amber",
+    "cssVariables": [
+      "--hud-bg",
+      "--hud-surface",
+      "--hud-border",
+      "--hud-accent",
+      "--hud-accent-2",
+      "--hud-glow",
+      "--hud-text"
+    ],
+    "themes": [
+      {
+        "id": "solar-amber",
+        "label": "Solar Amber",
+        "accent": "#FFB020",
+        "accentSecondary": "#FF5722",
+        "surface": "#1E110C",
+        "background": "rgba(20, 11, 8, 0.94)",
+        "text": "#FFF7ED"
+      },
+      {
+        "id": "cerenkov-cyan",
+        "label": "Cryo Cyan",
+        "accent": "#00F0FF",
+        "accentSecondary": "#38BDF8",
+        "surface": "#0B1929",
+        "background": "rgba(6, 15, 25, 0.94)",
+        "text": "#ECFEFF"
+      },
+      {
+        "id": "biodome-emerald",
+        "label": "Bio Emerald",
+        "accent": "#10B981",
+        "accentSecondary": "#A3E635",
+        "surface": "#0A2218",
+        "background": "rgba(6, 20, 14, 0.94)",
+        "text": "#ECFDF5"
+      },
+      {
+        "id": "phobos-plasma",
+        "label": "Phobos Plasma",
+        "accent": "#C084FC",
+        "accentSecondary": "#F43F5E",
+        "surface": "#1A0E2E",
+        "background": "rgba(15, 8, 26, 0.94)",
+        "text": "#FAF5FF"
+      }
+    ]
+  },
+  "fileDirectory": {
+    "hudAndMissionControl": [
+      {
+        "path": "/src/modules/mission-control/MissionControlOverlay.tsx",
+        "category": "ui-hud-master",
+        "description": "Master 2D HUD overlay manager with [1-5] Quickbar hotkeys, Desktop Locomotion Deck, Mobile Joystick, and Modal routing"
+      },
+      {
+        "path": "/src/modules/story-engine/components/CockpitVisorHUD.tsx",
+        "category": "ui-hud-top",
+        "description": "Top Visor HUD bar: synchronized 24h Sol clock, objective pill, 3-Tier Graphics Quality toggle, 4-swatch HUD Color Palette picker, and action tray"
+      },
+      {
+        "path": "/src/modules/mission-control/HorizontalDatapadHUD.tsx",
+        "category": "ui-hud-bottom",
+        "description": "Bottom telemetry dock + 5-Slot Quickbar [1-5] + anchored NASA engineering micro-lesson popovers"
+      },
+      {
+        "path": "/src/modules/story-engine/components/MinimapRadar.tsx",
+        "category": "ui-hud-radar",
+        "description": "Top-right spatial radar showing Habitat, Rover, Specimen nodes, and player coordinates"
+      }
+    ],
+    "equipmentAndSurvivalUI": [
+      {
+        "path": "/src/modules/survival-ui/itemRegistry.ts",
+        "category": "domain-item-catalog",
+        "description": "24-Item Industrial Aerospace Catalog, ItemActionResult contract, evaluateItemTransaction, and evaluateCargoTransfer"
+      },
+      {
+        "path": "/src/modules/survival-ui/itemRegistry.test.ts",
+        "category": "domain-item-tests",
+        "description": "Automated node:test suite for the 24-item catalog and honest transaction contracts"
+      },
+      {
+        "path": "/src/modules/survival-ui/AerospaceItemIcon.tsx",
+        "category": "ui-svg-iconography",
+        "description": "Code-authored SVG industrial aerospace silhouettes for all 24 items"
+      },
+      {
+        "path": "/src/modules/survival-ui/BackpackModal.tsx",
+        "category": "ui-modal-inventory",
+        "description": "EVA Field Equipment & Specimen Manifest ([E]) with 3 tabs, 3-vial rack, and right-hand Equipment Inspector"
+      },
+      {
+        "path": "/src/modules/story-engine/components/BioDomeLabStation.tsx",
+        "category": "ui-modal-lab",
+        "description": "Interior Bio-Dome Specimen Refinement Lab with category-specific resource yields and Science Capsule unlocking"
+      }
+    ],
+    "locomotionPhysicsAndCamera": [
+      {
+        "path": "/src/modules/character/AstronautPlayer.tsx",
+        "category": "ux-locomotion-controller",
+        "description": "3D Player controller with Unified Modal Input Gate, WASD movement, Shift Ion Thruster sprint, and Space jump/double-jump"
+      },
+      {
+        "path": "/src/modules/character/physicsEngine.ts",
+        "category": "ux-physics-engine",
+        "description": "Deterministic 3D obstacle collision + vertical gravity, platform landing, coyote time, jump buffer, and double-jump"
+      },
+      {
+        "path": "/src/modules/character/physicsEngine.test.ts",
+        "category": "ux-physics-tests",
+        "description": "Unit tests verifying wall collisions, jumping onto obstacles, airlock entry, and double-jump inertia"
+      },
+      {
+        "path": "/src/modules/character/CameraRig.tsx",
+        "category": "ux-camera-controller",
+        "description": "3rd-person orbital camera rig with mouse drag orbit, scroll zoom, and Q/C yaw rotation"
+      }
+    ],
+    "scene3dAndDebug": [
+      {
+        "path": "/src/modules/outpost-3d/MarsCanvas.tsx",
+        "category": "3d-scene-root",
+        "description": "React Three Fiber WebGL Canvas connected to 3-tier graphicsQuality"
+      },
+      {
+        "path": "/src/modules/outpost-3d/ResourceDrops.tsx",
+        "category": "3d-field-caches",
+        "description": "Grounded Industrial Li-S Power Cartridge Caches & Ferric-Basalt Mineral Outcrops"
+      },
+      {
+        "path": "/src/modules/outpost-3d/LightingRig.tsx",
+        "category": "3d-lighting",
+        "description": "Synchronized 0-60s Sol diurnal lighting and shadow rig"
+      },
+      {
+        "path": "/src/modules/outpost-3d/SolarArray.tsx",
+        "category": "3d-environment-prop",
+        "description": "Sun-tracking solar array with single-click dust wiping"
+      },
+      {
+        "path": "/src/modules/outpost-3d/PhysicsDebugHitboxes.tsx",
+        "category": "3d-debug-overlay",
+        "description": "Interactive 3D wireframe hitbox & bounding box overlay ([B])"
+      }
+    ]
+  }
+}

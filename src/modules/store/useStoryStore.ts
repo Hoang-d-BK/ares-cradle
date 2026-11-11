@@ -18,6 +18,8 @@ import dustDevil from '../story-engine/content/capsules/dust_devil_vortex.json';
 import moxieOxygen from '../story-engine/content/capsules/moxie_atmosphere.json';
 import hydroponicsGreenhouse from '../story-engine/content/capsules/hydroponics_greenhouse.json';
 
+import { doesSpecimenMatchObjective } from '../survival-ui/itemRegistry';
+
 const INITIAL_CAPSULES: DataCapsule[] = [
   regolithIron as DataCapsule,
   hematiteBlueberries as DataCapsule,
@@ -34,6 +36,7 @@ export interface CarriedVial {
   icon: string;
   quickFact: string;
   capsuleId: string;
+  solCollected?: number;
 }
 
 export interface FieldToastData {
@@ -132,18 +135,27 @@ export const useStoryStore = create<StoryStoreState>()(
       },
 
       startSol: (solNumber: number) => {
-        const { chapters, unlockedSols } = get();
+        const { chapters, unlockedSols, specimens } = get();
         const index = chapters.findIndex((c) => c.sol === solNumber);
         if (index === -1) return;
 
-        // Auto-set waypoint to first objective
+        // Auto-set waypoint to first incomplete objective
         const targetChapter = chapters[index];
-        const firstObjAnchor = targetChapter.objectives[0]?.targetAnchorId || 'anchor-solar';
+        const firstIncomplete = targetChapter.objectives.find((o) => !o.completed) || targetChapter.objectives[0];
+        const firstObjAnchor = firstIncomplete?.targetAnchorId || 'anchor-solar';
+
+        // Ensure specimens for this Sol are available if objective is not yet completed
+        const resetSpecimens = specimens.map((s) =>
+          s.solAvailable === solNumber && !targetChapter.objectives.every((o) => o.completed)
+            ? { ...s, collected: false }
+            : s
+        );
 
         set({
           currentChapterIndex: index,
           activeWaypointAnchorId: firstObjAnchor,
           isBriefingOpen: true,
+          specimens: resetSpecimens,
           unlockedSols: Array.from(new Set([...unlockedSols, solNumber])),
         });
       },
@@ -153,8 +165,10 @@ export const useStoryStore = create<StoryStoreState>()(
         const nextIndex = currentChapterIndex + 1;
         if (nextIndex < chapters.length) {
           const nextSol = chapters[nextIndex].sol;
+          const nextAnchor = chapters[nextIndex].objectives[0]?.targetAnchorId || 'anchor-solar';
           set({
             currentChapterIndex: nextIndex,
+            activeWaypointAnchorId: nextAnchor,
             unlockedSols: Array.from(new Set([...unlockedSols, nextSol])),
             stemScore: stemScore + 500,
             isBriefingOpen: true,
@@ -230,15 +244,26 @@ export const useStoryStore = create<StoryStoreState>()(
 
       collectSpecimen: (specimenId: string) => {
         const { specimens, carriedVials, currentChapterIndex, chapters, incrementObjectiveProgress } = get();
-        if (carriedVials.length >= 3) {
-          soundEngine.playClick(600);
-          return false; // Vials full
+        const targetSpecimen = specimens.find((s) => s.id === specimenId);
+        if (!targetSpecimen || targetSpecimen.collected) {
+          return false; // Prevent duplicate pickup on double-click / pointerDown+click
         }
 
-        const targetSpecimen = specimens.find((s) => s.id === specimenId);
-        if (!targetSpecimen) return false;
+        if (carriedVials.length >= 3) {
+          soundEngine.playClick(520);
+          set({
+            fieldToast: {
+              title: 'Sample Vial Rack Full (3/3)',
+              fact: 'Return to the Habitat Bio-Dome Chemical Analyzer to process your carried samples before collecting more.',
+              icon: '🧪',
+              badge: 'VIAL RACK FULL'
+            }
+          });
+          return false;
+        }
 
         soundEngine.playCrystalPickup();
+        const activeChapter = chapters[currentChapterIndex];
 
         const newVial: CarriedVial = {
           specimenId: targetSpecimen.id,
@@ -247,6 +272,7 @@ export const useStoryStore = create<StoryStoreState>()(
           icon: targetSpecimen.icon,
           quickFact: targetSpecimen.quickFact,
           capsuleId: targetSpecimen.capsuleId,
+          solCollected: activeChapter?.sol ?? targetSpecimen.solAvailable
         };
 
         // Mark specimen as collected in world
@@ -254,16 +280,18 @@ export const useStoryStore = create<StoryStoreState>()(
           s.id === specimenId ? { ...s, collected: true } : s
         );
 
-        // Update related objectives (e.g. sol1-collect-regolith, sol5-collect-blueberries)
-        const activeChapter = chapters[currentChapterIndex];
+        // Update related collect objective ONLY if targetSpecimenId matches this specimen
         const collectObj = activeChapter.objectives.find(
-          (o) => o.type === 'collect' && !o.completed
+          (o) =>
+            o.type === 'collect' &&
+            !o.completed &&
+            doesSpecimenMatchObjective(specimenId, o.targetSpecimenId)
         );
         if (collectObj) {
           incrementObjectiveProgress(collectObj.id, 1);
         }
 
-        // Trigger 3s field toast
+        // Trigger field toast
         set({
           specimens: updatedSpecimens,
           carriedVials: [...carriedVials, newVial],
@@ -271,7 +299,7 @@ export const useStoryStore = create<StoryStoreState>()(
             title: targetSpecimen.name,
             fact: targetSpecimen.quickFact,
             icon: targetSpecimen.icon,
-            badge: `SPECIMEN COLLECTED (${carriedVials.length + 1}/3 VIALS)`,
+            badge: `MISSION SAMPLE SEALED (${carriedVials.length + 1}/3 VIALS)`,
           },
         });
 

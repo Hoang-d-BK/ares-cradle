@@ -17,36 +17,59 @@ export const CameraRig: React.FC = () => {
   const roverPos = useOutpostStore((state) => state.roverPos);
   const isInsideHabitat = useOutpostStore((state) => state.isInsideHabitat);
   const isDrivingRover = useOutpostStore((state) => state.isDrivingRover);
+  const isSprinting = useOutpostStore((state) => state.isSprinting);
   const isSkyViewActive = useOutpostStore((state) => state.isSkyViewActive);
   const toggleSkyView = useOutpostStore((state) => state.toggleSkyView);
-  const setCameraYaw = useOutpostStore((state) => state.setCameraYaw);
-  const setIsMouseDriving = useOutpostStore((state) => state.setIsMouseDriving);
+  const setCameraYaw = useOutpostStore((state) => state.cameraYaw !== undefined ? state.setCameraYaw : () => {});
 
   // Orbit Angles (radians)
   // yaw = 0 points towards -Z (North)
   const yaw = useRef(0);
   const pitch = useRef(0.48); // ~27 degrees elevation
   const distance = useRef(10.5); // meters
+  const orbitKeys = useRef<{ left: boolean; right: boolean }>({ left: false, right: false });
 
   // Dragging state
   const isDragging = useRef(false);
   const dragStart = useRef({ x: 0, y: 0 });
-  const hasMovedSignificantly = useRef(false);
 
   const currentLookAt = useRef(new THREE.Vector3(0, 0, 0));
   const targetLookAt = useRef(new THREE.Vector3(0, 0, 0));
   const targetCamPos = useRef(new THREE.Vector3(0, 6.5, 9.5));
 
-  // 'KeyV' shortcut to toggle Orrery Sky View
+  // 'KeyV' shortcut to toggle Orrery Sky View, plus 'KeyQ' / 'KeyC' for smooth keyboard camera rotation (no Shift+E conflict with Backpack [E])
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) return;
+      if (typeof document !== 'undefined' && document.querySelector('[role="dialog"]')) {
+        orbitKeys.current.left = false;
+        orbitKeys.current.right = false;
+        return;
+      }
       if (e.code === 'KeyV') {
         toggleSkyView();
+      } else if (e.code === 'KeyQ') {
+        orbitKeys.current.left = true;
+      } else if (e.code === 'KeyC') {
+        orbitKeys.current.right = true;
       }
     };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'KeyQ') orbitKeys.current.left = false;
+      if (e.code === 'KeyC') orbitKeys.current.right = false;
+    };
+    const handleBlur = () => {
+      orbitKeys.current.left = false;
+      orbitKeys.current.right = false;
+    };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('blur', handleBlur);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('blur', handleBlur);
+    };
   }, [toggleSkyView]);
 
   // Mouse & Touch Orbit Event Handlers
@@ -54,7 +77,6 @@ export const CameraRig: React.FC = () => {
     const dom = gl.domElement;
 
     const handlePointerDown = (e: PointerEvent) => {
-      // Don't capture if clicking an interactive HUD element
       const target = e.target as HTMLElement;
       if (target.tagName === 'BUTTON' || target.closest('button') || target.closest('.pointer-events-auto')) {
         return;
@@ -62,12 +84,6 @@ export const CameraRig: React.FC = () => {
 
       isDragging.current = true;
       dragStart.current = { x: e.clientX, y: e.clientY };
-      hasMovedSignificantly.current = false;
-
-      // If left click, enable forward driving
-      if (e.button === 0) {
-        setIsMouseDriving(true);
-      }
     };
 
     const handlePointerMove = (e: PointerEvent) => {
@@ -76,11 +92,7 @@ export const CameraRig: React.FC = () => {
       const dx = e.clientX - dragStart.current.x;
       const dy = e.clientY - dragStart.current.y;
 
-      if (Math.hypot(dx, dy) > 4) {
-        hasMovedSignificantly.current = true;
-      }
-
-      const rotSpeed = 0.0055;
+      const rotSpeed = 0.0058;
       yaw.current -= dx * rotSpeed;
 
       // Keep yaw within [0, 2*PI]
@@ -92,11 +104,8 @@ export const CameraRig: React.FC = () => {
       dragStart.current = { x: e.clientX, y: e.clientY };
     };
 
-    const handlePointerUp = (e: PointerEvent) => {
+    const handlePointerUp = () => {
       isDragging.current = false;
-      if (e.button === 0) {
-        setIsMouseDriving(false);
-      }
     };
 
     const handleWheel = (e: WheelEvent) => {
@@ -106,7 +115,7 @@ export const CameraRig: React.FC = () => {
     };
 
     const handleContextMenu = (e: MouseEvent) => {
-      e.preventDefault(); // Prevent right-click context menu so it can orbit freely
+      e.preventDefault();
     };
 
     dom.addEventListener('pointerdown', handlePointerDown);
@@ -122,11 +131,19 @@ export const CameraRig: React.FC = () => {
       dom.removeEventListener('wheel', handleWheel);
       dom.removeEventListener('contextmenu', handleContextMenu);
     };
-  }, [gl.domElement, setIsMouseDriving]);
+  }, [gl.domElement]);
 
   useFrame((_, delta) => {
-    const safeDelta = Math.min(delta, 0.1);
-    const lerpSpeed = safeDelta * 5.0;
+    const safeDelta = Math.min(delta, 0.05);
+    const dampFactor = 1 - Math.exp(-8.5 * safeDelta);
+
+    // Apply smooth keyboard orbit (Q / Shift+E)
+    if (orbitKeys.current.left) {
+      yaw.current = (yaw.current + 1.85 * safeDelta) % (Math.PI * 2);
+    }
+    if (orbitKeys.current.right) {
+      yaw.current = (yaw.current - 1.85 * safeDelta + Math.PI * 2) % (Math.PI * 2);
+    }
 
     // Broadcast current camera yaw to outpost store
     setCameraYaw(yaw.current);
@@ -136,13 +153,12 @@ export const CameraRig: React.FC = () => {
       targetLookAt.current.set(0, 16.0, -10.0);
       targetCamPos.current.set(0, 2.2, 5.5);
     } else {
-      // Active target entity (Rover if driving, Cadet Leo otherwise)
       const targetPos = isDrivingRover ? roverPos : playerPos;
       const targetHeightOffset = isDrivingRover ? 0.6 : 0.8;
+      const sprintPullback = isSprinting ? 0.85 : 0;
 
       if (isInsideHabitat) {
-        // Interior Dome View: Closer intimate distance
-        const domeDist = Math.min(distance.current, 5.5);
+        const domeDist = Math.min(distance.current + sprintPullback * 0.4, 5.8);
         targetLookAt.current.set(targetPos[0], targetPos[1] + 0.6, targetPos[2]);
         targetCamPos.current.set(
           targetPos[0] + domeDist * Math.cos(pitch.current) * Math.sin(yaw.current),
@@ -150,14 +166,14 @@ export const CameraRig: React.FC = () => {
           targetPos[2] + domeDist * Math.cos(pitch.current) * Math.cos(yaw.current)
         );
       } else {
-        // Exterior 360° Orbit View with Stargazing elevation
         const lookUpElevation = pitch.current < 0 ? -pitch.current * 4.8 : 0;
         targetLookAt.current.set(
           targetPos[0],
           targetPos[1] + targetHeightOffset + lookUpElevation,
           targetPos[2]
         );
-        const curDist = isDrivingRover ? Math.max(distance.current, 7.5) : distance.current;
+        const curDist =
+          (isDrivingRover ? Math.max(distance.current, 7.5) : distance.current) + sprintPullback;
 
         targetCamPos.current.set(
           targetPos[0] + curDist * Math.cos(pitch.current) * Math.sin(yaw.current),
@@ -167,8 +183,8 @@ export const CameraRig: React.FC = () => {
       }
     }
 
-    camera.position.lerp(targetCamPos.current, lerpSpeed);
-    currentLookAt.current.lerp(targetLookAt.current, lerpSpeed);
+    camera.position.lerp(targetCamPos.current, dampFactor);
+    currentLookAt.current.lerp(targetLookAt.current, dampFactor);
     camera.lookAt(currentLookAt.current);
   });
 
