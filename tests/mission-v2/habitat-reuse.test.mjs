@@ -10,18 +10,31 @@ const destinationPath = path.join(repoRoot, 'src/game/art/realism/RealHabitatCra
 const destination = readFileSync(destinationPath);
 const destinationText = destination.toString('utf8');
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
+const canonicalLf = bytes => Buffer.from(bytes.toString('utf8').replace(/\r\n/g, '\n'), 'utf8');
 const expectedSha256 = '674b18b8b56e6a3da843be62d6fca1e6d07ec07eb678b9a8178fc9a2c1e41646';
 
 test('release habitat matches the approved source SHA-256', () => {
-  assert.equal(sha256(destination), expectedSha256);
+  assert.equal(sha256(canonicalLf(destination)), expectedSha256);
+});
+
+test('canonical LF hashing accepts CRLF only and rejects a changed source character', () => {
+  const canonicalDestination = canonicalLf(destination);
+  const crlfVariant = Buffer.from(canonicalDestination.toString('utf8').replace(/\n/g, '\r\n'), 'utf8');
+  assert.equal(sha256(canonicalLf(crlfVariant)), expectedSha256);
+
+  const changedText = canonicalDestination.toString('utf8').replace('3.45', '3.46');
+  assert.notEqual(changedText, canonicalDestination.toString('utf8'));
+  assert.notEqual(sha256(canonicalLf(Buffer.from(changedText, 'utf8'))), expectedSha256);
 });
 
 test('release habitat matches an explicitly supplied external source when requested', t => {
   const sourcePath = process.env.HABITAT_SOURCE;
   if (!sourcePath) return t.skip('HABITAT_SOURCE not provided; destination SHA-256 is always checked');
   const source = readFileSync(sourcePath);
-  assert.equal(sha256(source), expectedSha256);
-  assert.deepEqual(destination, source);
+  const canonicalSource = canonicalLf(source);
+  const canonicalDestination = canonicalLf(destination);
+  assert.equal(sha256(canonicalSource), expectedSha256);
+  assert.deepEqual(canonicalDestination, canonicalSource);
 });
 
 test('copied habitat retains props, source geometry markers and +Z entry contract', () => {
