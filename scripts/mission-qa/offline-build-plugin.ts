@@ -1,9 +1,83 @@
+import { execFile as execFileCallback } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { Plugin } from 'vite';
 
 const POLICY_VERSION = 'static-ignore-vary-v1';
+const SHA_RE = /^[a-f\d]{40}$/i;
+const CAMPAIGN_ID = 'ares-cradle';
+
+type GitResult = { code: number; stdout: string };
+type DeploymentMarker = {
+  schemaVersion: 1;
+  campaignId: string;
+  mode: string;
+  builtAt: string;
+  gitCommit: string | null;
+  provenanceSource: string;
+  verified: boolean;
+  trackedChanges: boolean | null;
+};
+
+function runGit(args: string[], cwd: string): Promise<GitResult> {
+  return new Promise(resolve => {
+    execFileCallback('git', args, { cwd, timeout: 1500, windowsHide: true }, (error, stdout) => {
+      const code = error ? (typeof error.code === 'number' ? error.code : -1) : 0;
+      resolve({ code, stdout: String(stdout) });
+    });
+  });
+}
+
+export async function createDeploymentMarker(options: {
+  root: string;
+  mode: string;
+  env?: NodeJS.ProcessEnv;
+  git?: (args: string[], cwd: string) => Promise<GitResult>;
+  builtAt?: string;
+}): Promise<DeploymentMarker> {
+  const envValue = (options.env ?? process.env).VERCEL_GIT_COMMIT_SHA;
+  const envCommit = typeof envValue === 'string' && SHA_RE.test(envValue) ? envValue.toLowerCase() : null;
+  let gitCommit: string | null = null;
+  let trackedChanges: boolean | null = null;
+  let verifiedGitHead = false;
+  const git = options.git ?? runGit;
+  try {
+    const top = await git(['rev-parse', '--show-toplevel'], options.root);
+    if (top.code === 0 && path.relative(path.resolve(options.root), path.resolve(top.stdout.trim())) === '') {
+      const [head, diff] = await Promise.all([
+        git(['rev-parse', '--verify', 'HEAD'], options.root),
+        git(['diff', '--quiet', 'HEAD', '--'], options.root),
+      ]);
+      if (head.code === 0 && SHA_RE.test(head.stdout.trim())) {
+        gitCommit = head.stdout.trim().toLowerCase();
+        verifiedGitHead = true;
+        if (diff.code === 0) trackedChanges = false;
+        else if (diff.code === 1) trackedChanges = true;
+      }
+    }
+  } catch { /* Git provenance is optional; unknown must remain explicit. */ }
+
+  const invalidEnv = envValue !== undefined && envCommit === null;
+  const mismatch = envCommit !== null && gitCommit !== null && envCommit !== gitCommit;
+  if (gitCommit === null && envCommit !== null) gitCommit = envCommit;
+  const provenanceSource = invalidEnv ? 'invalid-vercel-env'
+    : mismatch ? 'vercel-git-mismatch'
+      : envCommit !== null && trackedChanges !== null ? 'vercel+git'
+        : envCommit !== null ? 'vercel-env-only'
+          : gitCommit !== null ? 'git-head' : 'unknown';
+  const verified = verifiedGitHead && gitCommit !== null && trackedChanges === false && !invalidEnv && !mismatch;
+  return {
+    schemaVersion: 1,
+    campaignId: CAMPAIGN_ID,
+    mode: options.mode,
+    builtAt: options.builtAt ?? new Date().toISOString(),
+    gitCommit,
+    provenanceSource,
+    verified,
+    trackedChanges,
+  };
+}
 
 async function listFiles(directory: string, relative = ''): Promise<string[]> {
   const entries = await readdir(path.join(directory, relative), { withFileTypes: true });
@@ -18,15 +92,26 @@ async function listFiles(directory: string, relative = ''): Promise<string[]> {
 
 export function offlineBuildPlugin(): Plugin {
   let outputDirectory = '';
+  let root = '';
   let base = '/';
+  let mode = 'unknown';
+  let markerContents: string | null = null;
   return {
     name: 'ares-offline-build',
     apply: 'build',
     configResolved(config) {
+      root = config.root;
       outputDirectory = path.resolve(config.root, config.build.outDir);
       base = config.base;
+      mode = config.mode;
+    },
+    async generateBundle() {
+      const marker = await createDeploymentMarker({ root, mode });
+      markerContents = `${JSON.stringify(marker, null, 2)}\n`;
+      this.emitFile({ type: 'asset', fileName: 'deployment-check.json', source: markerContents });
     },
     async writeBundle() {
+      if (markerContents !== null) await writeFile(path.join(outputDirectory, 'deployment-check.json'), markerContents, 'utf8');
       const files = (await listFiles(outputDirectory)).sort();
       if (!files.includes('index.html')) throw new Error('Offline build requires emitted index.html');
 

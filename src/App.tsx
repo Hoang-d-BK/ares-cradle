@@ -10,7 +10,7 @@ export const App: React.FC = () => {
   if (query.get('review') === 'rover') {
     return <Suspense fallback={<p role="status">Loading field rover…</p>}><RoverReview /></Suspense>;
   }
-  if (query.get('mission') === 'frontiers') {
+  if (query.get('legacy') !== '1') {
     return <Suspense fallback={<p role="status">Loading Five Frontiers…</p>}><MissionGame /></Suspense>;
   }
   return (
