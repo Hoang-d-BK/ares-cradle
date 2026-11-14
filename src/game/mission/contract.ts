@@ -88,6 +88,7 @@ export type MissionState = {
   startRegion: RegionId;
   leo: Pose;
   rovers: Record<RegionId, Pose>;
+  roverSafePoses?: Record<RegionId, Pose>;
   activeRover: RegionId | null;
   leoReturnPose: Pose | null;
   bases: Record<RegionId, BaseState>;
@@ -110,6 +111,7 @@ export type MissionEvent =
   | { type: 'BRANCH'; region: RegionId; id: string }
   | { type: 'ENTER_ROVER'; region: RegionId }
   | { type: 'EXIT_ROVER' }
+  | { type: 'HELP_ROVER' }
   | { type: 'TRAVEL'; region: RegionId }
   | { type: 'PAY_SURVEY'; region: RegionId }
   | { type: 'ACTIVITY_PROGRESS'; region: RegionId; progress: unknown }

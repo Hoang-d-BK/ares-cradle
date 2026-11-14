@@ -1,31 +1,10 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
-import ts from 'typescript';
+import { loadTsModule } from './support/load-ts-module.mjs';
 
-const compileModule = async (relativePath) => {
-  const source = await readFile(new URL(relativePath, import.meta.url), 'utf8');
-  const compiled = ts.transpileModule(source, {
-    compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 },
-  }).outputText;
-  return `data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`;
-};
-
-const contentUrl = await compileModule('../../src/game/mission/content.ts');
-const rulesUrl = await compileModule('../../src/game/mission/activities/rules.ts');
-const contractUrl = await compileModule('../../src/game/mission/contract.ts');
-const stateSource = await readFile(new URL('../../src/game/mission/state.ts', import.meta.url), 'utf8');
-const stateCompiled = ts.transpileModule(stateSource, {
-  compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 },
-})
-  .outputText
-  .replaceAll("from './content'", `from '${contentUrl}'`)
-  .replaceAll("from './activities/rules'", `from '${rulesUrl}'`)
-  .replaceAll("from './contract'", `from '${contractUrl}'`);
-const missionUrl = `data:text/javascript;base64,${Buffer.from(stateCompiled).toString('base64')}`;
-const mission = await import(missionUrl);
-const content = await import(contentUrl);
-const rules = await import(rulesUrl);
+const mission = await loadTsModule('../../src/game/mission/state.ts', import.meta.url);
+const content = await loadTsModule('../../src/game/mission/content.ts', import.meta.url);
+const rules = await loadTsModule('../../src/game/mission/activities/rules.ts', import.meta.url);
 
 const initialStock = { energy: 12, meals: 4, water: 5, air: 4 };
 const essentialStock = { energy: 10, meals: 3, water: 4, air: 3 };

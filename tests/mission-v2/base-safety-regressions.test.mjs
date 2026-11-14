@@ -1,29 +1,10 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
-import ts from 'typescript';
+import { loadTsModule } from './support/load-ts-module.mjs';
 
-// Reuse integration-state's TypeScript-transpile/data-URL harness for the real reducer.
-const compileModule = async (relativePath) => {
-  const source = await readFile(new URL(relativePath, import.meta.url), 'utf8');
-  const compiled = ts.transpileModule(source, {
-    compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 },
-  }).outputText;
-  return `data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`;
-};
-const contentUrl = await compileModule('../../src/game/mission/content.ts');
-const rulesUrl = await compileModule('../../src/game/mission/activities/rules.ts');
-const contractUrl = await compileModule('../../src/game/mission/contract.ts');
-const source = await readFile(new URL('../../src/game/mission/state.ts', import.meta.url), 'utf8');
-const compiled = ts.transpileModule(source, {
-  compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 },
-}).outputText
-  .replaceAll("from './content'", `from '${contentUrl}'`)
-  .replaceAll("from './activities/rules'", `from '${rulesUrl}'`)
-  .replaceAll("from './contract'", `from '${contractUrl}'`);
-const stateUrl = `data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`;
-const mission = await import(stateUrl);
-const content = await import(contentUrl);
+// Reuse the shared TypeScript closure loader for the real reducer.
+const mission = await loadTsModule('../../src/game/mission/state.ts', import.meta.url);
+const content = await loadTsModule('../../src/game/mission/content.ts', import.meta.url);
 const center = (region) => content.regionById(region).center;
 const pose = (region, dx = 0, dz = 0) => ({ x: center(region)[0] + dx, z: center(region)[1] + dz, heading: 0 });
 const reduce = (state, event) => mission.missionReducer(state, event);

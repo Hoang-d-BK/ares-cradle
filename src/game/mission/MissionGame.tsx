@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { BookOpen, Check, ChevronRight, CircleHelp, Map as MapIcon, Pause, Play, Radio, RotateCcw, ShieldCheck, X } from 'lucide-react';
 import type { MissionEvent, MissionState, RegionId, Stock } from './contract';
-import { REGIONS, SOURCES } from './content';
+import { prepareMissionContent, REGIONS, SOURCES } from './contentPack';
+import { useMissionAudio } from './presentation/audio';
 import { currentRegion, readiness, reportCount } from './state';
 import { useMissionStore } from './store';
 import MissionWorld, { type MissionWorldProps } from './world/MissionWorld';
@@ -45,7 +46,7 @@ function StockStrip({ stock, compact = false }: { stock: Stock; compact?: boolea
   </div>;
 }
 
-function StartScreen({ selected, onSelect, onStart, loadWarning, storageError }: { selected: RegionId; onSelect: (region: RegionId) => void; onStart: () => void; loadWarning: string | null; storageError: string | null }) {
+function StartScreen({ selected, onSelect, onStart, loadWarning, storageError, contentLoading, contentWarning }: { selected: RegionId; onSelect: (region: RegionId) => void; onStart: () => void; loadWarning: string | null; storageError: string | null; contentLoading: boolean; contentWarning: string | null }) {
   return <main className="mission-shell mission-start-screen">
     <section className="start-copy" aria-labelledby="mission-title">
       <p className="start-kicker">ARES CRADLE · FIELD PREPARATION</p>
@@ -60,8 +61,9 @@ function StartScreen({ selected, onSelect, onStart, loadWarning, storageError }:
           {selected === region.id && <Check size={20} aria-hidden="true" />}
         </button>)}
       </div>
-      <button type="button" className="primary-action start-action" onClick={onStart}>Begin field mission <ChevronRight size={21} aria-hidden="true" /></button>
-      {(loadWarning || storageError) && <p className="start-footnote warning-copy">{loadWarning ?? storageError}</p>}
+      <button type="button" className="primary-action start-action" onClick={onStart} disabled={contentLoading}>{contentLoading ? 'Preparing mission content…' : 'Begin field mission'} <ChevronRight size={21} aria-hidden="true" /></button>
+      {contentLoading && <p className="start-footnote" role="status">Checking the local mission pack before field deployment.</p>}
+      {(contentWarning || loadWarning || storageError) && <p className="start-footnote warning-copy" role="status">{contentWarning ?? loadWarning ?? storageError}</p>}
       <p className="start-footnote">A fictional future mission using real science references. Game units are not mission requirements.</p>
     </section>
     <aside className="start-visual" aria-label="Mission overview">
@@ -214,7 +216,7 @@ function FinalePanel({ state, onDispatch, onStartCinematic, onClose }: { state: 
 }
 
 function PausePanel({ state, dispatch, onClose }: { state: MissionState; dispatch: (event: MissionEvent) => void; onClose: () => void }) {
-  return <ModalFrame title="Mission paused" eyebrow="No stock drain / state is safe" onClose={onClose}><div className="pause-panel"><p className="panel-lede">The world is stopped. Opening this panel, waiting, skipping the intro, and retrying an activity never charges stock or repeats a reward.</p><div className="settings-list"><label><span><strong>Reduced motion</strong><small>Use static transitions and calmer world movement.</small></span><input type="checkbox" checked={state.settings.reducedMotion} onChange={(event) => dispatch({ type: 'SETTING', key: 'reducedMotion', value: event.target.checked })} /></label><label><span><strong>Mute mission audio</strong><small>Audio integration stays optional; this preference is saved.</small></span><input type="checkbox" checked={state.settings.muted} onChange={(event) => dispatch({ type: 'SETTING', key: 'muted', value: event.target.checked })} /></label><label><span><strong>Larger text</strong><small>Increase mission UI text and control spacing.</small></span><input type="checkbox" checked={state.settings.largeText} onChange={(event) => dispatch({ type: 'SETTING', key: 'largeText', value: event.target.checked })} /></label></div><div className="quality-setting"><span><strong>World quality</strong><small>Lower quality keeps the field readable on smaller devices.</small></span><div><button type="button" className={state.settings.quality === 'low' ? 'is-active' : ''} onClick={() => dispatch({ type: 'SETTING', key: 'quality', value: 'low' })}>Low</button><button type="button" className={state.settings.quality === 'high' ? 'is-active' : ''} onClick={() => dispatch({ type: 'SETTING', key: 'quality', value: 'high' })}>High</button></div></div><button type="button" className="primary-action" onClick={onClose}>Return to field <Play size={20} /></button></div></ModalFrame>;
+  return <ModalFrame title="Mission paused" eyebrow="No stock drain / state is safe" onClose={onClose}><div className="pause-panel"><p className="panel-lede">The world is stopped. Opening this panel, waiting, skipping the intro, and retrying an activity never charges stock or repeats a reward.</p><div className="settings-list"><label><span><strong>Reduced motion</strong><small>Use static transitions and calmer world movement.</small></span><input type="checkbox" checked={state.settings.reducedMotion} onChange={(event) => dispatch({ type: 'SETTING', key: 'reducedMotion', value: event.target.checked })} /></label><label><span><strong>Mute mission audio</strong><small>Silence mission audio; this preference is saved.</small></span><input type="checkbox" checked={state.settings.muted} onChange={(event) => dispatch({ type: 'SETTING', key: 'muted', value: event.target.checked })} /></label><label><span><strong>Larger text</strong><small>Increase mission UI text and control spacing.</small></span><input type="checkbox" checked={state.settings.largeText} onChange={(event) => dispatch({ type: 'SETTING', key: 'largeText', value: event.target.checked })} /></label></div><div className="quality-setting"><span><strong>World quality</strong><small>Lower quality keeps the field readable on smaller devices.</small></span><div><button type="button" className={state.settings.quality === 'low' ? 'is-active' : ''} onClick={() => dispatch({ type: 'SETTING', key: 'quality', value: 'low' })}>Low</button><button type="button" className={state.settings.quality === 'high' ? 'is-active' : ''} onClick={() => dispatch({ type: 'SETTING', key: 'quality', value: 'high' })}>High</button></div></div><button type="button" className="primary-action" onClick={onClose}>Return to field <Play size={20} /></button></div></ModalFrame>;
 }
 
 function TouchControls({ disabled, onInput, onInteract }: { disabled: boolean; onInput: (input: WorldInput | undefined) => void; onInteract: () => void }) {
@@ -226,7 +228,22 @@ export default function MissionGame() {
   const { state, dispatch, storageError, loadWarning } = useMissionStore();
   const [startRegion, setStartRegion] = useState<RegionId>('impact');
   const [panel, setPanel] = useState<{ kind: 'map' | 'notebook' | 'base' | 'observation' | 'branch' | 'activity' | 'finale'; region?: RegionId; id?: string } | null>(null);
+  const [contentLoading, setContentLoading] = useState(true);
+  const [contentWarning, setContentWarning] = useState<string | null>(null);
   const [pauseOpen, setPauseOpen] = useState(false);
+  useEffect(() => {
+    let active = true;
+    void prepareMissionContent().then((result) => {
+      if (!active) return;
+      setContentWarning(result.warning ?? null);
+      setContentLoading(false);
+    }).catch(() => {
+      if (!active) return;
+      setContentWarning('Using bundled mission content: local content preparation failed.');
+      setContentLoading(false);
+    });
+    return () => { active = false; };
+  }, []);
   const [cinematic, setCinematic] = useState<'intro' | 'arrival' | 'departure' | null>(null);
   const [input, setInput] = useState<WorldInput | undefined>(undefined);
   const [interactRequested, setInteractRequested] = useState(0);
@@ -234,6 +251,8 @@ export default function MissionGame() {
   const [lakeSurveyContext, setLakeSurveyContext] = useState<LakeSurveyContext | undefined>(undefined);
   const [lakeAim, setLakeAim] = useState(0);
   const [selectedMapRegion, setSelectedMapRegion] = useState<RegionId>('impact');
+  const audioPaused = pauseOpen || Boolean(cinematic) || !state.started || !state.introSeen;
+  useMissionAudio(state, audioPaused);
 
   const closePanel = useCallback(() => setPanel(null), []);
   const finishCinematic = useCallback((kind: 'intro' | 'arrival' | 'departure') => {
@@ -298,7 +317,8 @@ export default function MissionGame() {
     setPanel({ kind: 'activity', region: 'lake' });
   }, [dispatch, state.activeRover, state.bases.lake.unlocked, state.leo, state.rovers.lake.heading]);
 
-  if (!state.started) return <StartScreen selected={startRegion} onSelect={setStartRegion} onStart={() => dispatch({ type: 'START', region: startRegion })} loadWarning={loadWarning} storageError={storageError} />;
+  if (contentLoading) return <main className="mission-shell mission-start-screen" aria-busy="true"><section className="start-copy"><h1>Preparing field mission</h1><p className="start-lede" role="status">Checking the local mission pack before field deployment.</p></section></main>;
+  if (!state.started) return <StartScreen selected={startRegion} onSelect={setStartRegion} onStart={() => dispatch({ type: 'START', region: startRegion })} loadWarning={loadWarning} storageError={storageError} contentLoading={false} contentWarning={contentWarning} />;
   if (cinematic) {
     const baseCenter = cinematic === 'intro'
       ? regionById(state.startRegion).center
@@ -320,7 +340,7 @@ export default function MissionGame() {
     <MissionHeader region={current} reports={reports} onMap={() => setPanel({ kind: 'map' })} onNotebook={() => setPanel({ kind: 'notebook' })} onPause={() => setPauseOpen(true)} />
     <div className="mission-alerts" aria-live="polite">{loadWarning && <div className="mission-alert warning-note"><ShieldCheck size={18} /><span><strong>Save warning:</strong> {loadWarning} Your previous bytes were kept; this session will not overwrite them.</span></div>}{storageError && <div className="mission-alert warning-note"><ShieldCheck size={18} /><span><strong>Save unavailable:</strong> {storageError} You can keep exploring, but the last good snapshot remains protected.</span></div>}{state.message && <div className="mission-toast" role="status">{state.message}</div>}</div>
     <aside className="mission-hud mission-hud-left"><div className="hud-card"><span>Current objective</span><strong>{current.question}</strong><small>{currentSurvey.observations.length}/3 observations · {currentSurvey.activityDone ? 'activity solved' : 'activity pending'}</small></div><StockStrip stock={currentBase.stock} compact /></aside>
-    <aside className="mission-hud mission-hud-right"><div className="control-hint"><span>Move</span><strong>WASD / arrows</strong><small>Shift to sprint · E to interact · R to switch actor</small></div><TouchControls disabled={worldPaused} onInput={setInput} onInteract={() => setInteractRequested((value) => value + 1)} /></aside>
+    <aside className="mission-hud mission-hud-right"><div className="control-hint"><span>Move</span><strong>WASD / arrows</strong><small>Shift to sprint · E to interact · R to switch actor</small></div><TouchControls disabled={worldPaused} onInput={setInput} onInteract={() => setInteractRequested((value) => value + 1)} />{state.activeRover !== null && <button type="button" className="secondary-action" style={{ minHeight: 48 }} aria-label="Help rover" title="Help rover" disabled={worldPaused} onClick={() => dispatch({ type: 'HELP_ROVER' })}>Help rover</button>}</aside>
     <div className="mission-context-action"><button type="button" className="context-action" disabled={worldPaused} onClick={contextAction.onClick}><span>{contextAction.label}</span><ChevronRight size={19} /></button></div>
     <div className="mission-bottom-status"><span><span className="status-dot" /> Local mission pack · v{state.contentVersion}</span><span>Leo · Sol relay</span></div>
 

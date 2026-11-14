@@ -113,6 +113,42 @@ export function canOccupy(x: number, z: number, radius = 0.65): boolean {
   return inWorldBounds(x, z, radius) && !collidesStatic(x, z, radius);
 }
 
+const ROVER_HELP_CLEARANCE_RADIUS = 2.25;
+const ROVER_HELP_MAX_DISTANCE = 8;
+
+/** Bounded deterministic recovery for the currently controlled rover. */
+export function findNearestSafeRoverPose(current: Pose, lastSafe: Pose | null = null): Pose | null {
+  if (!isFinitePose(current)) return null;
+
+  const withinBound = (pose: Pose): boolean =>
+    isFinitePose(pose)
+    && Math.hypot(pose.x - current.x, pose.z - current.z) <= ROVER_HELP_MAX_DISTANCE
+    && canOccupy(pose.x, pose.z, ROVER_HELP_CLEARANCE_RADIUS);
+
+  if (canOccupy(current.x, current.z, ROVER_HELP_CLEARANCE_RADIUS)) return null;
+  if (lastSafe !== null && withinBound(lastSafe)
+    && Math.hypot(lastSafe.x - current.x, lastSafe.z - current.z) > 0.01) {
+    return { x: lastSafe.x, z: lastSafe.z, heading: current.heading };
+  }
+
+  let nearest: Pose | null = null;
+  let nearestDistance = Number.POSITIVE_INFINITY;
+  const step = 0.5;
+  const steps = Math.floor(ROVER_HELP_MAX_DISTANCE / step);
+  for (let ix = -steps; ix <= steps; ix += 1) {
+    for (let iz = -steps; iz <= steps; iz += 1) {
+      const x = current.x + ix * step;
+      const z = current.z + iz * step;
+      const distance = Math.hypot(x - current.x, z - current.z);
+      if (distance > ROVER_HELP_MAX_DISTANCE || distance >= nearestDistance) continue;
+      if (!canOccupy(x, z, ROVER_HELP_CLEARANCE_RADIUS)) continue;
+      nearest = { x, z, heading: current.heading };
+      nearestDistance = distance;
+    }
+  }
+  return nearest;
+}
+
 export function constrainMove(from: Pose, to: Pose, radius = 0.65): Pose {
   if (!isFinitePose(from)) {
     const x = clamp(finite(to.x), WORLD_BOUNDS.minX + radius, WORLD_BOUNDS.maxX - radius);

@@ -1,5 +1,6 @@
 import { REGIONS, REGION_IDS, regionById } from './content';
 import { isActivityComplete, isActivityProgressValid } from './activities/rules';
+import { canOccupy, findNearestSafeRoverPose } from './world/worldNavigation';
 import {
   addStock,
   BASE_ACTIVATION_DISTANCE,
@@ -67,6 +68,17 @@ const exactRegionKeys = (value: unknown): value is Record<RegionId, unknown> =>
 
 const finiteHeading = (value: unknown): value is number => isFiniteNumber(value) && Math.abs(value) <= 1000000;
 
+const validRoverPose = (value: unknown): value is Pose =>
+  isPose(value) && poseWithinWorld(value) && finiteHeading(value.heading) && canOccupy(value.x, value.z, 2.25);
+
+const roverSafePosesOf = (state: MissionState): Record<RegionId, Pose> => state.roverSafePoses ?? ({
+  impact: copyPose(state.rovers.impact),
+  dust: copyPose(state.rovers.dust),
+  volcano: copyPose(state.rovers.volcano),
+  ice: copyPose(state.rovers.ice),
+  lake: copyPose(state.rovers.lake),
+});
+
 const validPose = (value: unknown): value is Pose =>
   isPose(value) && poseWithinWorld(value) && finiteHeading(value.heading);
 
@@ -120,7 +132,7 @@ const validSettings = (value: unknown): value is MissionSettings => {
 const validStringArray = (value: unknown): value is string[] => uniqueStrings(value);
 
 const hasExactRootKeys = (value: Record<string, unknown>): boolean => {
-  const keys = [
+  const required = [
     'schemaVersion',
     'campaignId',
     'contentVersion',
@@ -144,7 +156,9 @@ const hasExactRootKeys = (value: Record<string, unknown>): boolean => {
     'settings',
     'message',
   ];
-  return Object.keys(value).length === keys.length && keys.every((key) => key in value);
+  const keys = Object.keys(value);
+  return keys.every((key) => required.includes(key) || key === 'roverSafePoses')
+    && required.every((key) => key in value);
 };
 
 const validOperationsFor = (region: RegionId): Set<string> =>
@@ -158,6 +172,9 @@ const normalizeMission = (value: Record<string, unknown>): MissionState | null =
   if (!validPose(value.leo) || !exactRegionKeys(value.rovers)) return null;
   const rawRovers = value.rovers;
   if (!REGION_IDS.every((id) => validPose(rawRovers[id]))) return null;
+  const rawRoverSafePoses = value.roverSafePoses;
+  if (rawRoverSafePoses !== undefined && (!exactRegionKeys(rawRoverSafePoses)
+    || !REGION_IDS.every((id) => validRoverPose(rawRoverSafePoses[id])))) return null;
   if (value.activeRover !== null && !isRegionId(value.activeRover)) return null;
   if (value.leoReturnPose !== null && !validPose(value.leoReturnPose)) return null;
   if (!exactRegionKeys(value.bases) || !exactRegionKeys(value.surveys)) return null;
@@ -195,7 +212,10 @@ const normalizeMission = (value: Record<string, unknown>): MissionState | null =
     if (base.report && (!survey.activityDone || survey.observations.length < 2 || (survey.operation === null && !value.supportIds.some((item) => item.startsWith(`support:${id}:`))))) return null;
   }
 
-  return cloneJson(value) as unknown as MissionState;
+  const roverSafePoses = rawRoverSafePoses === undefined
+    ? Object.fromEntries(REGION_IDS.map((id) => [id, validRoverPose(rawRovers[id]) ? rawRovers[id] : baseApronPose(id, 8)])) as Record<RegionId, Pose>
+    : rawRoverSafePoses as Record<RegionId, Pose>;
+  return cloneJson({ ...value, roverSafePoses }) as unknown as MissionState;
 };
 
 const changed = (state: MissionState, patch: Partial<MissionState>): MissionState => ({
@@ -336,6 +356,7 @@ export const initialMission = (start: RegionId = 'impact'): MissionState => {
     startRegion,
     leo: baseApronPose(startRegion),
     rovers,
+    roverSafePoses: Object.fromEntries(REGION_IDS.map((id) => [id, { ...rovers[id] }])) as Record<RegionId, Pose>,
     activeRover: null,
     leoReturnPose: null,
     bases,
@@ -446,10 +467,40 @@ export const missionReducer = (state: MissionState, event: MissionEvent): Missio
         if (state.activeRover !== null) return state;
         return changed(state, { leo: copyPose(event.pose), message: `Leo moved to ${currentRegion(event.pose)}.` });
       }
-      if (!isRegionId(event.actor) || state.activeRover !== event.actor) return state;
+      if (!isRegionId(event.actor) || state.activeRover !== event.actor
+        || !canOccupy(event.pose.x, event.pose.z, 1.35)) return state;
+      const previous = state.rovers[event.actor];
+      const samePosition = event.pose.x === previous.x && event.pose.z === previous.z;
+      const safePoses = roverSafePosesOf(state);
+      const rememberedSafe = safePoses[event.actor];
+      const previousSafe = !samePosition && canOccupy(previous.x, previous.z, 2.25)
+        ? copyPose(previous)
+        : validRoverPose(rememberedSafe)
+          ? copyPose(rememberedSafe)
+          : validRoverPose(previous)
+            ? copyPose(previous)
+            : copyPose(baseApronPose(event.actor, 8));
       return changed(state, {
         rovers: { ...state.rovers, [event.actor]: copyPose(event.pose) },
+        roverSafePoses: samePosition ? safePoses : { ...safePoses, [event.actor]: previousSafe },
         message: `${event.actor} rover moved.`,
+      });
+    }
+    case 'HELP_ROVER': {
+      if (!state.started || state.activeRover === null) return state;
+      const region = state.activeRover;
+      const current = state.rovers[region];
+      const safePoses = roverSafePosesOf(state);
+      const lastSafe = safePoses[region] ?? null;
+      const recovered = findNearestSafeRoverPose(current, lastSafe);
+      if (recovered === null) {
+        const message = 'No safe rover recovery point is nearby.';
+        return state.message === message ? state : changed(state, { message });
+      }
+      return changed(state, {
+        rovers: { ...state.rovers, [region]: recovered },
+        roverSafePoses: { ...safePoses, [region]: recovered },
+        message: `${region} rover recovered to nearby safe ground.`,
       });
     }
     case 'UNLOCK': {
