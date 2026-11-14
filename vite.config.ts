@@ -2,13 +2,14 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import fs from 'fs';
+import { offlineBuildPlugin } from './scripts/mission-qa/offline-build-plugin';
 
 const projectRoot = fs.realpathSync(process.cwd());
 
 // https://vitejs.dev/config/
 export default defineConfig({
   root: projectRoot,
-  plugins: [react()],
+  plugins: [react(), offlineBuildPlugin()],
   resolve: {
     alias: {
       '@': path.resolve(projectRoot, './src'),
