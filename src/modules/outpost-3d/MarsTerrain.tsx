@@ -133,24 +133,49 @@ export const MarsTerrain: React.FC = () => {
   return (
     <group position={[0, 0, 0]}>
       {/* ========================================================
-          1. PRIMARY PLANETOID SURFACE DISC (Radius 135m)
+          1. PRIMARY 600x600 MARTIAN REGOLITH EXPANSE (Invariant I01)
           ======================================================== */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]} receiveShadow>
-        <circleGeometry args={[135, 64]} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.52, 0]} receiveShadow>
+        <planeGeometry args={[680, 680, 32, 32]} />
         <meshStandardMaterial
-          color="#943109"
-          roughness={0.92}
-          metalness={0.08}
+          color="#852E0A"
+          roughness={0.94}
+          metalness={0.06}
         />
       </mesh>
 
-      {/* Distant Horizon Curved Dunes Ring (Radius 134m to 210m) */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.56, 0]} receiveShadow>
-        <ringGeometry args={[134, 210, 64]} />
+      {/* Regional Distinctive Biome Ground Patches */}
+      {/* Sector 1: Echo Crater (Impact Basalt & Shock Ejecta) */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-200, -0.50, -170]} receiveShadow>
+        <circleGeometry args={[110, 36]} />
+        <meshStandardMaterial color="#3F4652" roughness={0.92} metalness={0.15} />
+      </mesh>
+
+      {/* Sector 3: Black Rock Terrace (Volcanic Cooling Sheets) */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-210, -0.50, 180]} receiveShadow>
+        <circleGeometry args={[105, 36]} />
+        <meshStandardMaterial color="#232830" roughness={0.95} metalness={0.2} />
+      </mesh>
+
+      {/* Sector 4: Sealed Ice Cliff (Subsurface Cryogenic Glacial Apron) */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[210, -0.50, -180]} receiveShadow>
+        <circleGeometry args={[110, 36]} />
+        <meshStandardMaterial color="#5CAAB8" roughness={0.85} metalness={0.18} />
+      </mesh>
+
+      {/* Sector 5: Ancient Lake Shore (Sedimentary Jezero Delta Mudstone) */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[200, -0.50, 170]} receiveShadow>
+        <circleGeometry args={[105, 36]} />
+        <meshStandardMaterial color="#544336" roughness={0.92} metalness={0.08} />
+      </mesh>
+
+      {/* Distant Horizon Curved Dunes Ring */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.55, 0]} receiveShadow>
+        <ringGeometry args={[335, 480, 64]} />
         <meshStandardMaterial
-          color="#752405"
+          color="#5C1C05"
           roughness={0.98}
-          metalness={0.04}
+          metalness={0.02}
         />
       </mesh>
 

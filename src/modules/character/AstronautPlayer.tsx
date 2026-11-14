@@ -71,8 +71,18 @@ export const AstronautPlayer: React.FC = () => {
     }
     groupRef.current.visible = true;
 
+    // Sync external position change (e.g. Fast Travel or base change)
+    const storePlayerPos = useOutpostStore.getState().playerPos;
+    const diffFromStore = Math.hypot(
+      groupRef.current.position.x - storePlayerPos[0],
+      groupRef.current.position.z - storePlayerPos[2]
+    );
+    if (diffFromStore > 3.0) {
+      groupRef.current.position.set(storePlayerPos[0], storePlayerPos[1], storePlayerPos[2]);
+    }
+
     const safeDelta = Math.min(delta, 0.1);
-    const speed = 3.6; // m/s
+    const speed = 4.2; // m/s comfortable walking speed
 
     // Camera-relative direction vectors (yaw = 0 points towards -Z)
     const forwardX = -Math.sin(cameraYaw);
@@ -114,13 +124,9 @@ export const AstronautPlayer: React.FC = () => {
       let newX = groupRef.current.position.x + normX * speed * safeDelta;
       let newZ = groupRef.current.position.z + normZ * speed * safeDelta;
 
-      // Planetary circumnavigation loop (calibrated 80m world radius)
-      const distFromCenter = Math.hypot(newX, newZ);
-      if (distFromCenter > 78) {
-        // Continuous Planetoid Circumnavigation: wrap smoothly to opposite horizon
-        newX = -newX * 0.96;
-        newZ = -newZ * 0.96;
-      }
+      // 600x600 Martian Grid boundary clamping (Invariant I01)
+      newX = Math.max(-295, Math.min(295, newX));
+      newZ = Math.max(-295, Math.min(295, newZ));
 
       groupRef.current.position.x = newX;
       groupRef.current.position.z = newZ;

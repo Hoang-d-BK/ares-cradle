@@ -17,21 +17,21 @@
         "speaker": "commander",
         "avatar": "🧑‍🚀",
         "title": "Earth Command Transmission",
-        "dialogue": "Cadet Leo! You have landed safely in Elysium Planitia. Before night falls, we must secure the base power grid.",
+        "dialogue": "CRADLE-01 is down. The habitat shell is safe, but its solar mast is offline. Leo, bring the rover online.",
         "highlightText": "Secure base power grid"
       },
       {
         "speaker": "chipi",
         "avatar": "🤖",
         "title": "Chipi-Bot Telemetry",
-        "dialogue": "Dust deposits are cutting solar panel output! Walk 8 meters to the Solar Array, wipe the panels, and return to base.",
+        "dialogue": "Rover link restored. One clean solar array should wake the base.",
         "highlightText": "Wipe solar panels"
       },
       {
         "speaker": "system",
         "avatar": "📡",
         "title": "Mission Directive",
-        "dialogue": "Clean the solar panels, collect 2x regolith samples, and return to the Habitat Airlock before night freeze.",
+        "dialogue": "Drive to the solar mast, clear its dust, collect 2 regolith samples, and return before sunset.",
         "highlightText": "Return to Habitat Base"
       }
     ],
@@ -39,7 +39,7 @@
       {
         "id": "sol1-wipe-panels",
         "type": "operate",
-        "label": "Reach Solar Array & Clean Dust Deposits",
+        "label": "Drive to Solar Array & Clear Dust Deposits",
         "targetAnchorId": "anchor-solar",
         "requiredCount": 1,
         "currentCount": 0,

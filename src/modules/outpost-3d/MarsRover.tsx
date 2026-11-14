@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useOutpostStore } from '@/modules/store/useOutpostStore';
 import { soundEngine } from '@/modules/audio/soundEngine';
+import { OpeningStep } from './OpeningSequence3D';
 
 const MAX_TRACKS = 64;
 
@@ -16,7 +17,7 @@ const MAX_TRACKS = 64;
  * - Smooth planetary driving with forward, reverse gear, and zero-turn 360° on-the-spot rotation
  * - Planetary circumnavigation: wrap-around at 120m exploration perimeter
  */
-export const MarsRover: React.FC = () => {
+export const MarsRover: React.FC<{ openingStep: OpeningStep }> = ({ openingStep }) => {
   const groupRef = useRef<THREE.Group>(null);
   const mastHeadRef = useRef<THREE.Group>(null);
   const dishRef = useRef<THREE.Group>(null);
@@ -118,6 +119,16 @@ export const MarsRover: React.FC = () => {
 
     if (!groupRef.current) return;
 
+    // Sync external position changes (e.g. Fast Travel or base switch)
+    const storeRoverPos = useOutpostStore.getState().roverPos;
+    const diffFromStore = Math.hypot(
+      groupRef.current.position.x - storeRoverPos[0],
+      groupRef.current.position.z - storeRoverPos[2]
+    );
+    if (diffFromStore > 3.0) {
+      groupRef.current.position.set(storeRoverPos[0], storeRoverPos[1], storeRoverPos[2]);
+    }
+
     if (isDrivingRover) {
       let forwardInput = 0;
       let steerInput = 0;
@@ -166,13 +177,9 @@ export const MarsRover: React.FC = () => {
       let newX = groupRef.current.position.x + dx;
       let newZ = groupRef.current.position.z + dz;
 
-      // Continuous Planetoid Circumnavigation Loop (calibrated 80m world radius)
-      const distFromCenter = Math.hypot(newX, newZ);
-      if (distFromCenter > 78) {
-        // Smoothly loop to opposite side of Mars
-        newX = -newX * 0.96;
-        newZ = -newZ * 0.96;
-      }
+      // 600x600 Martian Grid boundary clamping (Invariant I01)
+      newX = Math.max(-295, Math.min(295, newX));
+      newZ = Math.max(-295, Math.min(295, newZ));
 
       groupRef.current.position.x = newX;
       groupRef.current.position.z = newZ;
@@ -302,6 +309,7 @@ export const MarsRover: React.FC = () => {
 
       <group
         ref={groupRef}
+        visible={openingStep === 'briefing' || openingStep === 'complete'}
         position={roverPos}
         rotation={[0, heading.current, 0]}
         dispose={null}

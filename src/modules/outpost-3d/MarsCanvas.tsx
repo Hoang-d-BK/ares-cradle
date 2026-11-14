@@ -22,6 +22,13 @@ import SpecimenNodesCollection from './SpecimenNode';
 import SpaceSkybox from './SpaceSkybox';
 import AstronautPlayer from '@/modules/character/AstronautPlayer';
 import CameraRig from '@/modules/character/CameraRig';
+import OpeningSequence3D, { OpeningStep } from './OpeningSequence3D';
+import { FiveFrontiersWorld } from '@/game/mission/world/FiveFrontiersWorld';
+
+interface MarsCanvasProps {
+  openingStep: OpeningStep;
+  onLanded: () => void;
+}
 
 /**
  * High-performance frame driver connecting R3F render loop with the domain simulation tick.
@@ -108,7 +115,7 @@ function DynamicCameraController({ isDebug }: { isDebug: boolean }) {
  * Integrates CC0 Low-Poly Astronaut, Mars Rover, Energy Crystals, NASA InSight Hologram,
  * and GPU Post-Processing Shader Pipeline.
  */
-export const MarsCanvas: React.FC = () => {
+export const MarsCanvas: React.FC<MarsCanvasProps> = ({ openingStep, onLanded }) => {
   // Query flag check for ?debug=true
   const isDebug = useMemo(() => {
     if (typeof window === 'undefined') return false;
@@ -134,7 +141,7 @@ export const MarsCanvas: React.FC = () => {
       />
 
       <Canvas
-        camera={{ position: [0, 6.5, 13], fov: 45 }}
+        camera={{ position: [12, 16, 30], fov: 45 }}
         dpr={[1, 2]} // Memory Hygiene: clamp device pixel ratio to max 2
         shadows
         gl={{
@@ -155,6 +162,8 @@ export const MarsCanvas: React.FC = () => {
         {/* Dynamic Camera Controller with Leva tuning */}
         <DynamicCameraController isDebug={isDebug} />
 
+        <OpeningSequence3D step={openingStep} onLanded={onLanded} />
+
         {/* Dynamic Mars Sun, Atmosphere & Storm Lighting */}
         <LightingRig />
 
@@ -163,6 +172,9 @@ export const MarsCanvas: React.FC = () => {
 
         {/* Mars Surface, Craters, Foundation & Mineral Rocks */}
         <MarsTerrain />
+
+        {/* Five Frontiers Campaign 3D World - 5 Outposts, Landmarks, Beacons & Sol Robot Companion */}
+        <FiveFrontiersWorld />
 
         {/* Pressurized Habitat with Reactive Bioluminescent Core */}
         <HabitatDome />
@@ -174,7 +186,7 @@ export const MarsCanvas: React.FC = () => {
         <AstronautPlayer />
 
         {/* Task 9.1: Low-Poly Mars Rover Unit (Kenney Space Kit Style) */}
-        <MarsRover />
+        <MarsRover openingStep={openingStep} />
 
         {/* Task 9.1: Low-Poly Floating Radiant Energy Crystals */}
         <ResourceDrops />
@@ -195,7 +207,7 @@ export const MarsCanvas: React.FC = () => {
         <PostProcessingPipeline isDebug={isDebug} />
 
         {/* Task 12.2: Smooth 45° Isometric Camera Rig with Interior/Exterior Switching */}
-        {!isDebug && <CameraRig />}
+        {!isDebug && openingStep === 'complete' && <CameraRig />}
 
         {/* Safe OrbitControls for Developer Leva Tuning Deck */}
         {isDebug && (

@@ -10,7 +10,7 @@
 ### 1.1 The Premise: "Countdown to Ares-1"
 It is the year 2038. Humanity stands on the precipice of its greatest achievement: the launch of **Ares-1**, the first crewed interplanetary transport vessel carrying 12 pioneering astronauts to Mars.
 
-However, a human landing fleet cannot survive on an unconditioned alien world. Three months prior to Ares-1's arrival, Earth Command deployed an automated Habitat Bio-Dome and a solo advance engineer to Elysium Planitia / Jezero Basin:
+However, a human landing fleet cannot survive on an unconditioned alien world. Three months before Ares-1's arrival, Earth Command pre-deployed an automated Habitat Bio-Dome to Elysium Planitia / Jezero Basin. The dome shell landed safely, but dust buried its solar mast and the habitat entered safe mode. Twenty Sols before Ares-1 is due, the CRADLE-01 cargo lander delivers solo advance engineer Cadet Leo, the exploration rover, a reserve battery, and Chipi-Bot. The player restores the solar array to turn the dormant shell into a working outpost:
 
 - **Protagonist: Cadet Leo (Age 12)**  
   A student astronaut prodigy selected through the global NASA Youth Pioneer Program. Leo is resourceful, curious, and skilled in mechanical diagnostics and power routing.
@@ -26,12 +26,12 @@ However, a human landing fleet cannot survive on an unconditioned alien world. T
 ### Sol 1: First Light (Establish Energy Grid & Wipe Regolith Dust)
 - **Setting:** Elysium Planitia, twilight transition ($-20^\circ\text{C} \to -60^\circ\text{C}$).
 - **Prologue Dialogue:**
-  - *Commander (Earth Comms):* "Cadet Leo! You have touched down safely in Elysium Planitia. Before night falls, we must secure the base power grid."
-  - *Chipi-Bot:* "Dust deposits are cutting solar panel output! Walk 8 meters to the Solar Array, wipe the panels, and return to base."
-  - *Mission System:* "Clean the solar panels, collect 2x regolith samples, and return to the Habitat Airlock before night freeze."
+  - *Commander (Earth Comms):* "CRADLE-01 is down. The habitat shell is safe, but its solar mast is offline. Leo, bring the rover online."
+  - *Chipi-Bot:* "Rover link restored. One clean solar array should wake the base."
+  - *Mission System:* "Drive to the solar mast, clear its dust, collect 2 regolith samples, and return before sunset."
 - **4-Phase Progression:**
-  1. *Briefing:* Leo verifies suit battery in the Bio-Dome.
-  2. *Sortie:* Leo walks $8\text{m}$ West to the Solar Array, wipes dust, and collects 2 regolith nodules.
+  1. *Briefing:* Leo checks the reserve battery and rover link after CRADLE-01 touchdown.
+  2. *Sortie:* Leo drives to the nearby Solar Array, clears the dust, and collects 2 regolith nodules.
   3. *Return Leg:* The sun dips below the horizon; suit heater drain spikes. Leo follows the radar back to the airlock.
   4. *Lab:* Leo analyzes regolith in the console. The dome's perimeter lights power on.
 

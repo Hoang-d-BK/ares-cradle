@@ -63,11 +63,6 @@ export const CameraRig: React.FC = () => {
       isDragging.current = true;
       dragStart.current = { x: e.clientX, y: e.clientY };
       hasMovedSignificantly.current = false;
-
-      // If left click, enable forward driving
-      if (e.button === 0) {
-        setIsMouseDriving(true);
-      }
     };
 
     const handlePointerMove = (e: PointerEvent) => {
@@ -92,11 +87,8 @@ export const CameraRig: React.FC = () => {
       dragStart.current = { x: e.clientX, y: e.clientY };
     };
 
-    const handlePointerUp = (e: PointerEvent) => {
+    const handlePointerUp = () => {
       isDragging.current = false;
-      if (e.button === 0) {
-        setIsMouseDriving(false);
-      }
     };
 
     const handleWheel = (e: WheelEvent) => {

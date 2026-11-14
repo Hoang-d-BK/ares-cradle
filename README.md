@@ -33,7 +33,7 @@ npm run build
 ## 2. Synthesis of the 4 Core Questions: Narrative, NASA Data & STEM Pedagogy
 
 ### Question 1: What is the current storyline and narrative premise?
-The game is titled **"Countdown to Ares-1"**.
+The game is titled **"Countdown to Ares-1"**. An automated habitat shell was pre-deployed to Elysium Planitia but entered safe mode when dust disabled its solar mast. Twenty Sols before the crew ship arrives, the CRADLE-01 cargo lander brings Cadet Leo, the exploration rover, a reserve battery, and Chipi-Bot. Restoring the solar grid establishes the first functioning outpost.
 - **Protagonist:** *Cadet Leo*, a prodigy astronaut engineer deployed as the sole advance scout on the surface of Mars (Elysium Planitia / Jezero Crater Basin).
 - **Companion:** *Chipi-Bot*, an autonomous AI rover-drone companion that delivers humorous, scientifically grounded NASA lore and urgent environmental telemetry.
 - **Narrative Arc:** Cadet Leo has 20 Martian Sols to establish, repair, and expand the outpost before the primary crewed transport fleet, **Ares-1**, enters the Martian stratosphere.

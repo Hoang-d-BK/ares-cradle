@@ -45,7 +45,7 @@ All checkpoints are placed within an 80-meter operational sphere around the Bio-
 
 | Sol | Title & POI | Coordinates & Range | Transit Mode | NASA Mission Reference | Survival Challenge & Engineering Trade-Off |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Sol 1** | *First Light: Solar Array* | `[-6.0, 0, 4.0]` (7.2m) | Foot EVA | **Opportunity Rover** (Photovoltaic Dust & RAT Tool) | Daylight generation drops due to dust; clean panels and balance 50/50 battery allocation overnight. |
+| **Sol 1** | *First Light: Solar Array* | `[-6.0, 0, 4.0]` (7.2m) | Rover, then foot EVA | **Opportunity Rover** (Photovoltaic Dust & RAT Tool) | The pre-deployed habitat is in safe mode; drive to the dusty solar mast, clear the panels, and bring the first outpost online. |
 | **Sol 5** | *Red Wall: Crater Alpha* | `[18.0, 0, -30.0]` (35.0m) | Rover Recommended | **Spirit & Opportunity** (Hematite Blueberries) | Electrostatic dust devil approaches (-60% solar); harvest blueberries and race back before visibility drops. |
 | **Sol 9** | *Frozen Water: North Glacier* | `[-25.0, 0, -50.0]` (55.9m) | Rover Required | **Phoenix Lander & MRO** (Permafrost Ice Trench) | Extreme polar cold ($-80^\circ\text{C}$); high heater power draw; extract ice cores and return to purify water in lab. |
 | **Sol 12** | *Breath of Mars: MOXIE Tower* | `[35.0, 0, 18.0]` (39.3m) | Foot / Rover | **Perseverance Rover** (MOXIE CO₂-to-O₂ Electrolysis) | Hull seal Bravo breach causes pressure drop; retrieve catalyst from tower, patch dome with tape, stabilize O₂ > 19.5%. |

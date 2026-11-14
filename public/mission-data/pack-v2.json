@@ -1,0 +1,755 @@
+{
+  "schemaVersion": 2,
+  "campaignId": "five-frontiers",
+  "contentVersion": "2.0.0",
+  "rulesVersion": "2.0.0",
+  "title": "Ares Cradle — Five Frontiers Junior Mission Trainer",
+  "targetAudience": "Cadets aged 7-12 (Junior Astronaut Training Academy)",
+  "language": "en",
+  "balance": {
+    "initialBaseResources": {
+      "energy": 12,
+      "meals": 4,
+      "water": 5,
+      "airPacks": 4
+    },
+    "essentialShiftCost": {
+      "energy": 2,
+      "meals": 1,
+      "water": 1,
+      "airPacks": 1
+    },
+    "secondaryJobCost": {
+      "energy": 2,
+      "meals": 0,
+      "water": 0,
+      "airPacks": 0
+    },
+    "arrivalGoThreshold": {
+      "energy": 8,
+      "meals": 3,
+      "water": 3,
+      "airPacks": 3
+    },
+    "requiredSafetyChecks": [
+      {
+        "id": "diagnostics",
+        "label": "Life Support & Thermal Diagnostics",
+        "description": "Verify oxygen loop valves, pressure seal buffers, and cabin temperature homeostasis."
+      },
+      {
+        "id": "shelter",
+        "label": "Triple-Berth Habitat Shelter Verification",
+        "description": "Confirm pressurized sleep quarters and regolith radiation shielding for 3 crew members."
+      },
+      {
+        "id": "comms",
+        "label": "Deep Space Telemetry Loop Check",
+        "description": "Ping local relay mast and verify direct-to-Earth carrier signal frequency."
+      }
+    ]
+  },
+  "researchGoals": [
+    {
+      "id": "geology",
+      "title": "Geological History & Planetary Crust",
+      "recommendedBases": ["impact", "volcano"],
+      "description": "Investigate impact cratering dynamics and volcanic flow stratigraphy to unravel Mars' crustal evolution.",
+      "focalQuestion": "How did impacts and ancient volcanism shape the surface layers of Mars?"
+    },
+    {
+      "id": "water_ops",
+      "title": "Water Reclamation & Operational Resilience",
+      "recommendedBases": ["ice", "dust"],
+      "description": "Master dust mitigation on power arrays and extract glacial ice resources for closed-loop ECLSS life support.",
+      "focalQuestion": "How can an outpost survive dust deposition and harvest potable water reliably?"
+    },
+    {
+      "id": "ancient_life",
+      "title": "Ancient Habitable Environments & Biosignatures",
+      "recommendedBases": ["lake", "ice"],
+      "description": "Collect uncompromised lacustrine sediment cores and cryo-samples to search for organic chemical biosignatures.",
+      "focalQuestion": "What geological signs tell us where past liquid water and life may have existed?"
+    }
+  ],
+  "regions": [
+    {
+      "id": "impact",
+      "name": "Echo Crater",
+      "sectorCode": "SECTOR-01",
+      "coordinates": [-200, 0, -170],
+      "color": "#FF5A1F",
+      "landmark": "Broken Radar Dome on Crater Rim",
+      "roverId": "rover-impact",
+      "roverName": "Echo Seeker-1",
+      "roverTool": "Mast Camera & Survey Spotlight",
+      "pedagogicalQuestion": "What clues link an impact event to the surrounding rocks and landscape?",
+      "coreLesson": "A strange rock is a clue. Its appearance alone cannot prove where it came from without chemical and orbital context.",
+      "focalPoints": [
+        {
+          "id": "H1",
+          "title": "Crater Rim & Ejecta Blanket",
+          "coordinates": [-185, 2, -155],
+          "type": "orbital_comparison",
+          "summary": "Observe the raised rim and outward rays of pulverized rock thrown during meteoroid impact.",
+          "kidNote": "Meteoroids hit Mars so hard they carve bowls and splash rocks outward like a puddle!",
+          "fieldNote": "High-velocity shockwaves excavate target crust, depositing an inverted stratigraphy ejecta blanket.",
+          "sourceId": "insight_impacts"
+        },
+        {
+          "id": "H2",
+          "title": "Before & After Orbital Pair",
+          "coordinates": [-215, 1, -185],
+          "type": "spectral_comparison",
+          "summary": "Match MRO HiRISE orbital satellite images taken before and after the fresh impact.",
+          "kidNote": "Satellites orbiting Mars take pictures before and after an impact to spot fresh dark streaks.",
+          "fieldNote": "Dark blast zones indicate dust displacement by meteoroid atmospheric shock front.",
+          "sourceId": "mro_impacts"
+        },
+        {
+          "id": "H3",
+          "title": "Candidate Meteorite vs Basalt",
+          "coordinates": [-195, 0, -190],
+          "type": "sample_analysis",
+          "summary": "Compare visual fusion crust and density metrics against surrounding Mars crustal rocks.",
+          "kidNote": "Not every dark rock fell from space. Real meteorites often have a melted glassy crust.",
+          "fieldNote": "Fusion crust forms during hypersonic atmospheric entry; olivine basalt lacks this quench texture.",
+          "sourceId": "mars_meteorites"
+        }
+      ],
+      "optionalBranches": [
+        {
+          "id": "H_opt1",
+          "title": "Crater Rim Panorama Perch",
+          "coordinates": [-170, 3, -160],
+          "perkId": "perk_impact_pins",
+          "perkTitle": "Wide/Close Alignment Grid",
+          "benefit": "Pins wide and close-up views side-by-side during seismic profile analysis."
+        },
+        {
+          "id": "H_opt2",
+          "title": "Sample Preservation Staging Point",
+          "coordinates": [-225, 1, -165],
+          "perkId": "perk_impact_tags",
+          "perkTitle": "Provenance Tagging Aid",
+          "benefit": "Highlights timestamp and seismic coordinates next to mystery impact profiles."
+        }
+      ],
+      "minigame": {
+        "id": "impact_seismology",
+        "title": "Seismic Impact Waveform Matcher",
+        "description": "Match 3 recorded ground vibration profiles with their corresponding impact crater sites.",
+        "pairs": [
+          {
+            "id": "ev-01",
+            "name": "High-Frequency Chirp Event",
+            "frequency": 820,
+            "waveformType": "sharp_peak",
+            "craterDistance": "42 km South-East",
+            "correctPhoto": "photo_fresh_streak",
+            "clue": "Sharp high-pitch acoustic sonification indicates a compact stony bolide impact."
+          },
+          {
+            "id": "ev-02",
+            "name": "Dispersed Multi-Ring Rumble",
+            "frequency": 340,
+            "waveformType": "broad_envelope",
+            "craterDistance": "128 km West Rim",
+            "correctPhoto": "photo_nested_bowl",
+            "clue": "Broad low rumbling reverberation reflects an impact into layered sedimentary crust."
+          },
+          {
+            "id": "ev-03",
+            "name": "Double Blast Atmospheric Wave",
+            "frequency": 560,
+            "waveformType": "twin_burst",
+            "craterDistance": "75 km North Mesa",
+            "correctPhoto": "photo_cluster_pit",
+            "clue": "Twin bursts show meteoroid fragmentation before impacting the surface as a cluster."
+          }
+        ]
+      },
+      "secondaryJobs": [
+        {
+          "id": "job_impact_protect",
+          "title": "Protected Nitrogen-Sealed Sample Vault",
+          "description": "Install hermetic nitrogen lockers to preserve delicate meteorite samples for deep Earth laboratory analysis.",
+          "cost": { "energy": 2, "meals": 0, "water": 0, "airPacks": 0 },
+          "outputKey": "sampleLayout",
+          "outputValue": "protected",
+          "readout": "Sample specimens secured in hermetic sealed vaults. Pristine preservation ensured."
+        },
+        {
+          "id": "job_impact_access",
+          "title": "Accessible Workspace Sample Racks",
+          "description": "Mount open-access racks next to the analytical mass spectrometer for instant comparison during sorties.",
+          "cost": { "energy": 2, "meals": 0, "water": 0, "airPacks": 0 },
+          "outputKey": "sampleLayout",
+          "outputValue": "accessible",
+          "readout": "Specimens mounted on instant analysis racks beside microscope."
+        }
+      ]
+    },
+    {
+      "id": "dust",
+      "name": "Wind Basin",
+      "sectorCode": "SECTOR-02",
+      "coordinates": [0, 0, 0],
+      "color": "#FFB800",
+      "landmark": "Anemometer Wind Tower & Solar Array Mast",
+      "roverId": "rover-dust",
+      "roverName": "Gale Strider-2",
+      "roverTool": "Mast Camera & Atmospheric Sensors",
+      "pedagogicalQuestion": "How do wind patterns move fine dust, and how does dust affect solar energy systems?",
+      "coreLesson": "Dust can dim the sky and cover equipment. Engineering models help us simulate particle movement before storms hit.",
+      "focalPoints": [
+        {
+          "id": "D1",
+          "title": "Wind Shadows Behind Boulders",
+          "coordinates": [15, 0, -10],
+          "type": "aerodynamic_trace",
+          "summary": "Inspect elongated sand streaks formed in the aerodynamic wake behind basalt rocks.",
+          "kidNote": "Just like hiding behind a wall from the wind, dust piles up behind rocks where the air is calm.",
+          "fieldNote": "Lee-side deceleration creates deposition zones indicating prevailing storm azimuths.",
+          "sourceId": "dust_storms_nasa"
+        },
+        {
+          "id": "D2",
+          "title": "Clean vs Dusted Solar Mast",
+          "coordinates": [-8, 0, 12],
+          "type": "photovoltaic_audit",
+          "summary": "Measure light transmission drop on dusted solar glass panels compared to wiped sensors.",
+          "kidNote": "Even a thin layer of red Mars dust can block half the sunlight our solar panels need!",
+          "fieldNote": "Fine iron-oxide dust (particle size < 5 microns) causes optical extinction and power loss.",
+          "sourceId": "opportunity_dust"
+        },
+        {
+          "id": "D3",
+          "title": "Dust Devil Tracks vs Global Storm",
+          "coordinates": [22, 0, 18],
+          "type": "atmospheric_scale",
+          "summary": "Distinguish localized mini convective vortices from planet-wide dust hazes.",
+          "kidNote": "Dust devils leave dark curvy tracks on the ground, while giant storms turn the whole sky orange.",
+          "fieldNote": "Convective thermal columns scrub dust, exposing darker underlying substrate.",
+          "sourceId": "mars_dust_scales"
+        }
+      ],
+      "optionalBranches": [
+        {
+          "id": "D_opt1",
+          "title": "Dune Crest Observation Point",
+          "coordinates": [-25, 1, -20],
+          "perkId": "perk_dust_arrows",
+          "perkTitle": "Flow Vector Indicators",
+          "benefit": "Displays inlet and exhaust directional arrows directly on the model grid."
+        },
+        {
+          "id": "D_opt2",
+          "title": "Space Weather Comparison Lab",
+          "coordinates": [28, 0, -22],
+          "perkId": "perk_dust_preview",
+          "perkTitle": "Airflow Path Preview",
+          "benefit": "Enables single-step airflow visualization before committing the full model run."
+        }
+      ],
+      "minigame": {
+        "id": "dust_grid_flow",
+        "title": "Dust Particle Flow Pathway Model",
+        "description": "Rotate 3x3 aerodynamic baffle tiles to guide clean filtered airflow from inlet to intake filter while avoiding clogged obstacles.",
+        "gridSize": 3,
+        "initialTiles": [
+          { "r": 0, "c": 0, "type": "curve", "rotation": 90, "fixed": true },
+          { "r": 0, "c": 1, "type": "straight", "rotation": 0 },
+          { "r": 0, "c": 2, "type": "obstacle", "rotation": 0, "fixed": true },
+          { "r": 1, "c": 0, "type": "straight", "rotation": 90 },
+          { "r": 1, "c": 1, "type": "curve", "rotation": 0 },
+          { "r": 1, "c": 2, "type": "straight", "rotation": 0 },
+          { "r": 2, "c": 0, "type": "obstacle", "rotation": 0, "fixed": true },
+          { "r": 2, "c": 1, "type": "curve", "rotation": 180 },
+          { "r": 2, "c": 2, "type": "target", "rotation": 0, "fixed": true }
+        ]
+      },
+      "secondaryJobs": [
+        {
+          "id": "job_dust_clean",
+          "title": "Solar Array Dust Sweeping Protocol",
+          "description": "Deploy automated brush arms across primary photovoltaic masts. Yields +2 EU reserve energy recharge.",
+          "cost": { "energy": 2, "meals": 0, "water": 0, "airPacks": 0 },
+          "outputKey": "panelsClean",
+          "outputValue": true,
+          "energyBonus": 2,
+          "readout": "Solar arrays polished clean. Energy generation boosted (+2 EU post-shift reserve)."
+        },
+        {
+          "id": "job_dust_water",
+          "title": "Atmospheric Moisture Recovery Cycle",
+          "description": "Recycle 2 units of condensation greywater into certified ultra-pure potable water (+2 Clean Water).",
+          "cost": { "energy": 2, "meals": 0, "water": 0, "airPacks": 0 },
+          "outputKey": "waterCleaned",
+          "outputValue": true,
+          "waterBonus": 2,
+          "readout": "Greywater batch processed and sanitized (+2 Clean Water certified)."
+        }
+      ]
+    },
+    {
+      "id": "volcano",
+      "name": "Black Rock Terrace",
+      "sectorCode": "SECTOR-03",
+      "coordinates": [-210, 0, 180],
+      "color": "#E63946",
+      "landmark": "Survey Truss Bridge across Ancient Lava Channel",
+      "roverId": "rover-volcano",
+      "roverName": "Vulcan Rig-3",
+      "roverTool": "Low-Angle Chassis Camera & Rock Illumination Array",
+      "pedagogicalQuestion": "How does rock layer superposition reveal the chronological timeline of ancient volcanic eruptions?",
+      "coreLesson": "A layer on top was laid down later than the layer beneath it. Relative order tells history without needing rock dates.",
+      "focalPoints": [
+        {
+          "id": "V1",
+          "title": "Lava Sheet Superposition Margin",
+          "coordinates": [-195, 2, 165],
+          "type": "contact_stratigraphy",
+          "summary": "Inspect the direct boundary where a dark vesicular basalt flow caps an oxidized older bench.",
+          "kidNote": "When lava spills over an older rock, the new lava hardens on top. Top is younger!",
+          "fieldNote": "Law of Superposition: Undeformed sedimentary and extrusive volcanic strata place younger units above older.",
+          "sourceId": "olympus_flows"
+        },
+        {
+          "id": "V2",
+          "title": "Collapsed Lava Tube Channel",
+          "coordinates": [-225, 0, 195],
+          "type": "structural_morphology",
+          "summary": "Trace a sinuous rille carved by underground magma rivers where the roof has collapsed.",
+          "kidNote": "Underground lava rivers left hollow tunnels. Today, hollow tubes could protect astronauts from space radiation!",
+          "fieldNote": "Intact lava tubes provide several meters of regolith shielding, attenuating GCR and SPE radiation.",
+          "sourceId": "lava_tubes_nasa"
+        },
+        {
+          "id": "V3",
+          "title": "Vesicular Basalt vs Pyroclastic Ash",
+          "coordinates": [-205, 1, 180],
+          "type": "petrology_comparison",
+          "summary": "Compare gas bubble vesicles in cooled lava against fine-grained volcanic ash tuff.",
+          "kidNote": "Little holes inside volcanic rocks are bubbles where hot gas escaped as the rock froze solid.",
+          "fieldNote": "Vesicle density indicates volatile content and atmospheric pressure during effusive extrusion.",
+          "sourceId": "mars_volcanism"
+        }
+      ],
+      "optionalBranches": [
+        {
+          "id": "V_opt1",
+          "title": "Sinuous Channel Lookout",
+          "coordinates": [-240, 3, 175],
+          "perkId": "perk_volcano_edge",
+          "perkTitle": "Stratigraphic Margin Highlight",
+          "benefit": "Marks the clearest cross-cutting contact edge with an illuminated trace."
+        },
+        {
+          "id": "V_opt2",
+          "title": "Lava Tube Habitat Vault Study",
+          "coordinates": [-190, 0, 205],
+          "perkId": "perk_volcano_cut",
+          "perkTitle": "Geological Cross-Section",
+          "benefit": "Unlocks a clear 2D cutaway diagram showing subterranean lava layer ordering."
+        }
+      ],
+      "minigame": {
+        "id": "volcano_stratigraphy",
+        "title": "Lava Layer Chronology Ordering",
+        "description": "Arrange 4 geological flow units (A, B, C, D) in order from OLDEST (Deepest) to YOUNGEST (Uppermost).",
+        "correctOrder": ["D", "B", "A", "C"],
+        "layers": [
+          { "id": "A", "name": "Flow Unit A (Vesicular Basalt)", "texture": "Ropey pahoehoe with gas vesicles", "clue": "Lies directly underneath Flow C, but cuts over Flow B." },
+          { "id": "B", "name": "Flow Unit B (Oxidized Red Regolith)", "texture": "Weathered rusty soil bench", "clue": "Baked by hot magma from Unit A; lies above bedrock Unit D." },
+          { "id": "C", "name": "Flow Unit C (Columnar Jointed Cap)", "texture": "Dark grey vertical cooling columns", "clue": "The top-most surface layer exposed to the open Mars sky." },
+          { "id": "D", "name": "Flow Unit D (Dense Olivine Base)", "texture": "Heavy crystalline volcanic basement", "clue": "Found at the bottom-most floor of the collapsed canyon." }
+        ]
+      },
+      "secondaryJobs": [
+        {
+          "id": "job_volcano_passive",
+          "title": "Passive Aerogel Thermal Insulation Barrier",
+          "description": "Wrap habitat bulkheads in silica aerogel blankets to prevent overnight thermal leakage.",
+          "cost": { "energy": 2, "meals": 0, "water": 0, "airPacks": 0 },
+          "outputKey": "thermalUpgrade",
+          "outputValue": "passive",
+          "readout": "Passive aerogel shields installed. Night thermal loss reduced by 40%."
+        },
+        {
+          "id": "job_volcano_active",
+          "title": "Active Specimen Workbench Heating Coil",
+          "description": "Install resistive warming coils along scientific datapad tables for rapid instrument startup.",
+          "cost": { "energy": 2, "meals": 0, "water": 0, "airPacks": 0 },
+          "outputKey": "thermalUpgrade",
+          "outputValue": "active",
+          "readout": "Active workbench heaters powered. Scientific instrumentation warmed for instant use."
+        }
+      ]
+    },
+    {
+      "id": "ice",
+      "name": "Sealed Ice Cliff",
+      "sectorCode": "SECTOR-04",
+      "coordinates": [210, 0, -180],
+      "color": "#00D2FF",
+      "landmark": "Glacial Core Drill Rig on Scarp Face",
+      "roverId": "rover-ice",
+      "roverName": "Cryo Prospector-4",
+      "roverTool": "Permafrost Ultrasonic Core Drill & Cryo-Sampler",
+      "pedagogicalQuestion": "How do we sample subsurface glacier ice, and why is raw ice different from treated drinking water?",
+      "coreLesson": "An ice core is a scientific sample of ancient climate. Safe drinking water requires its own purification steps and chemical tests.",
+      "focalPoints": [
+        {
+          "id": "I1",
+          "title": "Protective Debris Mantle",
+          "coordinates": [195, 2, -165],
+          "type": "cryo_mantle",
+          "summary": "Examine the 1-meter thick dust and gravel coat that shields buried ice from sublimating into space.",
+          "kidNote": "Without this blanket of red dust, Mars ice would turn straight into gas and blow away into space!",
+          "fieldNote": "Low atmospheric pressure (600 Pa) causes direct solid-to-gas sublimation unless shielded by lag regolith.",
+          "sourceId": "glacial_ice_midlat"
+        },
+        {
+          "id": "I2",
+          "title": "SHARAD Orbital Radar Profile",
+          "coordinates": [225, 0, -195],
+          "type": "radar_profile",
+          "summary": "Inspect orbital radar reflections revealing a 90% pure subsurface water ice sheet 80 meters thick.",
+          "kidNote": "Radar satellites send radio pulses deep underground to bounce off pure water ice.",
+          "fieldNote": "Shallow Radar (SHARAD) dielectric constant (~3.1) confirms pure massive water ice deposit.",
+          "sourceId": "sharad_radar"
+        },
+        {
+          "id": "I3",
+          "title": "Water Ice (H2O) vs Dry Ice (CO2)",
+          "coordinates": [210, 1, -170],
+          "type": "phase_chemistry",
+          "summary": "Measure sublimation temperature thresholds distinguishing seasonal carbon dioxide frost from water ice.",
+          "kidNote": "Dry ice is frozen carbon dioxide (-125°C). Water ice (-0°C) is what humans need to drink!",
+          "fieldNote": "CO2 frost sublimates rapidly during spring equinox; H2O ice remains locked in cryogenic permafrost.",
+          "sourceId": "dry_ice_mars"
+        }
+      ],
+      "optionalBranches": [
+        {
+          "id": "I_opt1",
+          "title": "Water Reclamation Pipeline Station",
+          "coordinates": [235, 1, -160],
+          "perkId": "perk_ice_band",
+          "perkTitle": "Drill Stability Tolerance",
+          "benefit": "Expands ultrasonic drill operating sweet spot from 30-70% to 20-80% tolerance."
+        },
+        {
+          "id": "I_opt2",
+          "title": "Nutrition & Food Rehydration Lab",
+          "coordinates": [190, 0, -200],
+          "perkId": "perk_ice_mnemonic",
+          "perkTitle": "Extraction Step Mnemonic",
+          "benefit": "Displays Advance -> Check -> Seal guidance overlay during core acquisition."
+        }
+      ],
+      "minigame": {
+        "id": "ice_core_drill",
+        "title": "Cryogenic Core Extraction",
+        "description": "Maintain core drill motor pressure within safe 30%–70% speed band, tag depth markers, and seal container.",
+        "targetStabilityMin": 30,
+        "targetStabilityMax": 70,
+        "upgradedStabilityMin": 20,
+        "upgradedStabilityMax": 80,
+        "steps": [
+          { "step": 1, "label": "Advance Drill Bit", "description": "Engage rotation and penetrate through 1m protective debris mantle." },
+          { "step": 2, "label": "Extract Cryo Core", "description": "Capture unfragmented 30cm banded glacial water ice sample." },
+          { "step": 3, "label": "Label & Seal Container", "description": "Apply cryogenic thermal seal and barcoded depth registry tag." }
+        ]
+      },
+      "secondaryJobs": [
+        {
+          "id": "job_ice_scan",
+          "title": "Subsurface Core Stratigraphy Analysis",
+          "description": "Feed extracted ice core through multi-spectral laser scanner to reconstruct 500,000-year climate record.",
+          "cost": { "energy": 2, "meals": 0, "water": 0, "airPacks": 0 },
+          "outputKey": "coreAnalysis",
+          "outputValue": "complete",
+          "readout": "Glacial ice core scanned. Prehistoric atmospheric climate layers cataloged."
+        },
+        {
+          "id": "job_ice_water",
+          "title": "ECLSS Greywater Filtration Run",
+          "description": "Process station greywater holding tank through catalytic oxidizer to yield +2 certified potable water.",
+          "cost": { "energy": 2, "meals": 0, "water": 0, "airPacks": 0 },
+          "outputKey": "waterCleaned",
+          "outputValue": true,
+          "waterBonus": 2,
+          "readout": "ECLSS filtration run complete. Clean reserve water stock increased (+2 Clean Water)."
+        }
+      ]
+    },
+    {
+      "id": "lake",
+      "name": "Ancient Lake Shore",
+      "sectorCode": "SECTOR-05",
+      "coordinates": [200, 0, 170],
+      "color": "#2A9D8F",
+      "landmark": "Telemetry Transceiver Arch on Dry Delta",
+      "roverId": "rover-lake",
+      "roverName": "Delta Scout-5",
+      "roverTool": "Robotic Arm with Microscopic Imager & Witness Tube",
+      "pedagogicalQuestion": "What scientific documentation does a geological clue require before scientists can study it on Earth?",
+      "coreLesson": "A useful clue deserves careful study. It does not prove that life once lived here without clean provenance and proof.",
+      "focalPoints": [
+        {
+          "id": "L1",
+          "title": "Delta Mudstone Cross-Bedding",
+          "coordinates": [185, 1, 155],
+          "type": "sedimentology",
+          "summary": "Inspect fine ripple layers deposited by slow-moving liquid water in an ancient Martian lake.",
+          "kidNote": "Smooth mud layers show that water once flowed gently here billions of years ago!",
+          "fieldNote": "Fine-grained smectite clay mudstones possess high potential for preserving ancient organic biosignatures.",
+          "sourceId": "jezero_perseverance"
+        },
+        {
+          "id": "L2",
+          "title": "Robotic Coring Arm & Turret",
+          "coordinates": [215, 0, 185],
+          "type": "robotics_telemetry",
+          "summary": "Test robotic arm degrees of freedom, rotary percussive drill, and dust-removal gas puffer.",
+          "kidNote": "The robot's arm works like a careful scientist with a magnifying glass and camera.",
+          "fieldNote": "5-DoF robotic arm positions SHERLOC and PIXL instruments with sub-millimeter precision.",
+          "sourceId": "perseverance_tools"
+        },
+        {
+          "id": "L3",
+          "title": "Witness Tube Contamination Check",
+          "coordinates": [205, 0, 170],
+          "type": "provenance_control",
+          "summary": "Audit hermetic witness tubes designed to catch Earth contaminants and ensure sample integrity.",
+          "kidNote": "Witness tubes are clean empty tubes that prove Earth dust didn't sneak into our Mars rocks!",
+          "fieldNote": "Witness blanks capture outgassing volatiles and rover contaminants to validate true Mars origin.",
+          "sourceId": "witness_tubes_nasa"
+        }
+      ],
+      "optionalBranches": [
+        {
+          "id": "L_opt1",
+          "title": "Ancient Riverbed Overlook",
+          "coordinates": [230, 2, 190],
+          "perkId": "perk_lake_filter",
+          "perkTitle": "Target High-Contrast Filter",
+          "benefit": "Outlines candidate rock targets with high-contrast target reticle."
+        },
+        {
+          "id": "L_opt2",
+          "title": "Sample Caching Protocols Lab",
+          "coordinates": [170, 0, 175],
+          "perkId": "perk_lake_check",
+          "perkTitle": "Context Verification Checklist",
+          "benefit": "Enables automatic verification checklist for Wide Angle, Micro-texture, and Coordinates."
+        }
+      ],
+      "minigame": {
+        "id": "lake_context_survey",
+        "title": "Context-Rich Target Documentation",
+        "description": "Survey 3 priority geological targets with Mast Camera Wide View, Arm Micro-Texture, and Spatial Coordinates.",
+        "targets": [
+          {
+            "id": "tgt-01",
+            "name": "Target Alpha: Laminated Delta Siltstone",
+            "targetType": "sedimentary_layer",
+            "requiredAngles": ["wide", "macro", "gps"],
+            "clue": "Laminated fine clays deposited where ancient river met standing lake waters."
+          },
+          {
+            "id": "tgt-02",
+            "name": "Target Beta: Carbonate Crust Margin",
+            "targetType": "chemical_precipitate",
+            "requiredAngles": ["wide", "macro", "gps"],
+            "clue": "Mineral precipitation edge formed as lake evaporated over eons."
+          },
+          {
+            "id": "tgt-03",
+            "name": "Target Gamma: Potential Biosignature Matrix",
+            "targetType": "organic_matrix",
+            "requiredAngles": ["wide", "macro", "gps"],
+            "clue": "Organic-bearing mudstone candidate requiring strict witness tube verification."
+          }
+        ]
+      },
+      "secondaryJobs": [
+        {
+          "id": "job_lake_summary",
+          "title": "Telemetry Summary & Rover Mechanical Inspection",
+          "description": "Transmit condensed telemetry burst to Earth, then perform mechanical arm and wheel health diagnostics.",
+          "cost": { "energy": 2, "meals": 0, "water": 0, "airPacks": 0 },
+          "outputKey": "roverInspection",
+          "outputValue": "complete",
+          "readout": "Short telemetry packet dispatched. Rover joints, wheels, and camera arm calibrated."
+        },
+        {
+          "id": "job_lake_full",
+          "title": "Full Science Telemetry Deep-Space Uplink",
+          "description": "Dedicate high-gain dish bandwidth to transmitting full raw multi-spectral data packets to NASA science teams.",
+          "cost": { "energy": 2, "meals": 0, "water": 0, "airPacks": 0 },
+          "outputKey": "transmit",
+          "outputValue": "full",
+          "readout": "Full 4K scientific imagery and spectral cubes transmitted directly to Earth Command."
+        }
+      ]
+    }
+  ],
+  "scientificSources": [
+    {
+      "id": "insight_impacts",
+      "mission": "NASA InSight Mars Lander",
+      "title": "NASA's InSight Hears Its First Meteoroid Impacts on Mars",
+      "url": "https://www.nasa.gov/missions/insight/nasas-insight-hears-its-first-meteoroid-impacts-on-mars/",
+      "credit": "NASA / JPL-Caltech / CNES / IPGP",
+      "keyFact": "InSight's seismometer detected distinct acoustic seismic waves from four space rocks crashing into Mars.",
+      "interpretationBoundary": "Seismic amplitudes correlate with ground transmission distance, not exclusively impactor diameter."
+    },
+    {
+      "id": "mro_impacts",
+      "mission": "Mars Reconnaissance Orbiter (HiRISE)",
+      "title": "Orbital Verification of Fresh Martian Impact Craters",
+      "url": "https://trek.nasa.gov/mars/",
+      "credit": "NASA / JPL-Caltech / University of Arizona",
+      "keyFact": "HiRISE satellite images verify ground craters matched from seismic coordinates down to sub-meter resolution.",
+      "interpretationBoundary": "Orbital imagery captures surface albedo shifts; subterranean disruption requires radar or seismic modeling."
+    },
+    {
+      "id": "mars_meteorites",
+      "mission": "Mars Exploration Program",
+      "title": "Identifying Meteorites on the Martian Surface",
+      "url": "https://science.nasa.gov/resource/listen-to-a-meteoroid-hitting-the-red-planet/",
+      "credit": "NASA Science",
+      "keyFact": "Meteorites discovered by rovers feature melted aerodynamic fusion crusts distinct from local oxidized volcanic rocks.",
+      "interpretationBoundary": "Visual color or magnetism alone cannot verify extraterrestrial origin without elemental spectroscopy."
+    },
+    {
+      "id": "dust_storms_nasa",
+      "mission": "NASA Science & Solar System Exploration",
+      "title": "The Fact and Fiction of Martian Dust Storms",
+      "url": "https://www.nasa.gov/solar-system/the-fact-and-fiction-of-martian-dust-storms/",
+      "credit": "NASA Science",
+      "keyFact": "Martian atmosphere is 1% of Earth's density. Even 60 mph winds carry little force, but fine dust blocks sunlight.",
+      "interpretationBoundary": "Martian storms cannot overturn buildings or heavy landers; their hazard is optical obscuration and solar starvation."
+    },
+    {
+      "id": "opportunity_dust",
+      "mission": "Mars Exploration Rover Opportunity",
+      "title": "Dust Accumulation and Cleaning Events on Solar Panels",
+      "url": "https://science.nasa.gov/mission/mer-opportunity/",
+      "credit": "NASA / JPL-Caltech",
+      "keyFact": "Over 14 years, Opportunity survived by monitoring solar array dust deposition and occasional wind cleaning events.",
+      "interpretationBoundary": "Wind cleaning is unpredictable and cannot replace engineered dust mitigation protocols."
+    },
+    {
+      "id": "mars_dust_scales",
+      "mission": "Mars Global Surveyor & MRO",
+      "title": "Global Dust Storm Dynamics on Mars",
+      "url": "https://ccmc.gsfc.nasa.gov/tools/DONKI/",
+      "credit": "NASA GSFC Space Weather Database (DONKI)",
+      "keyFact": "Regional dust storms can loft aerosol particles 50 km high, triggering planet-encircling thermal warming cycles.",
+      "interpretationBoundary": "Space weather solar flare events are distinct from lower tropospheric atmospheric dust transport."
+    },
+    {
+      "id": "olympus_flows",
+      "mission": "High Resolution Stereo Camera (Mars Express) & MRO",
+      "title": "Lava Flows and Caldera Collapse on Mars",
+      "url": "https://science.nasa.gov/resource/lava-flow-near-the-base-of-olympus-mons/",
+      "credit": "ESA / DLR / FU Berlin / NASA JPL",
+      "keyFact": "Sinuous basalt lava flows near Olympus Mons preserve distinct cooling margins demonstrating stratigraphic superposition.",
+      "interpretationBoundary": "Superposition provides relative sequence of events; numerical age dates require radiometric isotopic analysis."
+    },
+    {
+      "id": "lava_tubes_nasa",
+      "mission": "NASA Human Exploration & Operations",
+      "title": "Lava Tubes as Potential Human Habitats on the Moon and Mars",
+      "url": "https://visualization.osdr.nasa.gov/radlab/gui/data-api/",
+      "credit": "NASA RadLab / OSDR",
+      "keyFact": "Subsurface lava tube roofs block galactic cosmic rays (GCR) and solar particle events (SPE), offering natural shielding.",
+      "interpretationBoundary": "Natural lava tubes require structural integrity inspection for micrometeorite breach vulnerabilities."
+    },
+    {
+      "id": "mars_volcanism",
+      "mission": "Mars Science Laboratory Curiosity",
+      "title": "Igneous Petrology and Volcanic Rocks of Mars",
+      "url": "https://trek.nasa.gov/mars/",
+      "credit": "NASA / JPL-Caltech / MSSS",
+      "keyFact": "Vesicular basalt samples document low-viscosity effusive volcanism with escaping gas bubbles in ancient Martian history.",
+      "interpretationBoundary": "Rock texture identifies eruptive style, not the duration of the entire volcanic volcanic province."
+    },
+    {
+      "id": "glacial_ice_midlat",
+      "mission": "Mars Reconnaissance Orbiter (SHARAD)",
+      "title": "Glacial Ice Deposits in Mid-Latitudes of Mars",
+      "url": "https://science.nasa.gov/resource/glacial-ice-deposits-in-mid-latitudes-of-mars/",
+      "credit": "NASA / JPL-Caltech / ASI / Univ. of Rome",
+      "keyFact": "Radar sounding reveals massive glaciers protected under 1 to 2 meters of rocky debris mantle across mid-latitudes.",
+      "interpretationBoundary": "Subsurface ice cannot be scooped like fresh snow; it is frozen into cryogenic rocky permafrost concrete."
+    },
+    {
+      "id": "sharad_radar",
+      "mission": "MRO Shallow Radar (SHARAD)",
+      "title": "Mapping Dielectric Properties of Subsurface Ice",
+      "url": "https://science.nasa.gov/resource/glacial-ice-deposits-in-mid-latitudes-of-mars/",
+      "credit": "NASA / ASI",
+      "keyFact": "Radio radar pulses penetrate hundreds of meters through rock, reflecting sharply at pure water ice interfaces.",
+      "interpretationBoundary": "Radar profiles map dielectric contrasts, which must be calibrated with core drilling for physical confirmation."
+    },
+    {
+      "id": "dry_ice_mars",
+      "mission": "Mars Odyssey THEMIS & MRO",
+      "title": "Dry Ice Sublimation Dynamics on the Martian Poles and Slopes",
+      "url": "https://science.nasa.gov/resource/dry-ice-on-mars/",
+      "credit": "NASA / JPL-Caltech / Arizona State University",
+      "keyFact": "Carbon dioxide freezes directly from air at -125°C, forming seasonal dry ice frost that sublimates in spring.",
+      "interpretationBoundary": "CO2 dry ice is toxic and unusable for human hydration; it must not be confused with perennial H2O water ice."
+    },
+    {
+      "id": "jezero_perseverance",
+      "mission": "Mars 2020 Perseverance Rover",
+      "title": "Astrobiology and Delta Sedimentology at Jezero Crater",
+      "url": "https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples/",
+      "credit": "NASA / JPL-Caltech",
+      "keyFact": "Ancient river delta siltstones in Jezero crater formed 3.5 billion years ago under sustained standing liquid water.",
+      "interpretationBoundary": "Fluvial sediment layers prove past liquid water, but do not automatically prove past microscopic life."
+    },
+    {
+      "id": "perseverance_tools",
+      "mission": "Perseverance Rover Sampling & Caching System",
+      "title": "Robotic Coring and Contamination Control Architecture",
+      "url": "https://science.nasa.gov/mission/mars-2020-perseverance/",
+      "credit": "NASA / JPL-Caltech",
+      "keyFact": "The 2-meter robotic arm uses coring bits, gas dust removal tools, and micro-imagers to certify sample provenance.",
+      "interpretationBoundary": "Robotic instruments provide preliminary triage; final biosignature confirmation requires Earth laboratory mass spectrometers."
+    },
+    {
+      "id": "witness_tubes_nasa",
+      "mission": "Mars Sample Return Architecture",
+      "title": "Witness Tubes for Contamination Tracking in Mars Samples",
+      "url": "https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples/",
+      "credit": "NASA / JPL-Caltech",
+      "keyFact": "Witness tubes contain pristine materials opened on Mars to document any chemical contamination brought from Earth.",
+      "interpretationBoundary": "Witness tubes monitor Earth contamination; they are blanks, not actual Mars geological rock samples."
+    },
+    {
+      "id": "iss_water_recovery",
+      "mission": "International Space Station ECLSS",
+      "title": "NASA Achieves 98% Water Recovery Milestone on International Space Station",
+      "url": "https://www.nasa.gov/missions/station/iss-research/nasa-achieves-water-recovery-milestone-on-international-space-station/",
+      "credit": "NASA Marshall Space Flight Center",
+      "keyFact": "Advanced distillation and catalytic oxidizers recover 98% of astronaut sweat and urine as ultrapure drinking water.",
+      "interpretationBoundary": "ISS zero-gravity centrifugal recovery systems require redesign for 38% Martian surface gravity."
+    },
+    {
+      "id": "csa_junior_astronaut",
+      "mission": "Canadian Space Agency Youth STEM",
+      "title": "Junior Astronaut Training Program & Nutrition Toolkits",
+      "url": "https://www.asc-csa.gc.ca/eng/youth-educators/resources-stem-and-youth-organizations.asp",
+      "credit": "Canadian Space Agency (CSA-ASC)",
+      "keyFact": "STEM training modules teach cadets how nutrition, exercise, and mental teamwork sustain crew health on long space voyages.",
+      "interpretationBoundary": "Educational food models illustrate dietary variety; closed-loop bio-regenerative life support is an ongoing engineering challenge."
+    }
+  ]
+}

@@ -96,6 +96,7 @@ export interface OutpostStoreState {
   isSkyViewActive: boolean;
   cameraYaw: number;
   isMouseDriving: boolean;
+  setIsDrivingRover: (driving: boolean) => void;
   toggleDrivingRover: () => void;
   toggleRoverHeadlightMode: () => void;
   setRoverPos: (pos: [number, number, number]) => void;
@@ -321,23 +322,18 @@ export const useOutpostStore = create<OutpostStoreState>((set, get) => ({
       roverHeadlightMode: state.roverHeadlightMode === 'low' ? 'high' : 'low'
     }));
   },
+  setIsDrivingRover: (driving) => set({ isDrivingRover: driving }),
   toggleDrivingRover: () => {
-    const { isDrivingRover, playerPos, roverPos } = get();
+    const { isDrivingRover, roverPos } = get();
     if (!isDrivingRover) {
-      // Proximity check (< 2.5m) to board
-      const dist = Math.hypot(playerPos[0] - roverPos[0], playerPos[2] - roverPos[2]);
-      if (dist > 2.5) {
-        soundEngine.playClick(400);
-        return;
-      }
       soundEngine.playClick(1400);
       set({ isDrivingRover: true });
     } else {
-      // Side dismount: spawn player beside the driver door (1.4m away)
+      // Side dismount: spawn player safely beside the rover chassis (1.5m away)
       soundEngine.playClick(1100);
       const dismountPos: [number, number, number] = [
-        roverPos[0] - 1.4,
-        -0.32,
+        roverPos[0] - 1.5,
+        -0.4,
         roverPos[2]
       ];
       set({

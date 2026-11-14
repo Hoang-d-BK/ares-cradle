@@ -113,7 +113,7 @@ export const useStoryStore = create<StoryStoreState>()(
 
       activeWaypointAnchorId: 'anchor-solar',
 
-      isBriefingOpen: true,
+      isBriefingOpen: false,
       isLabStationOpen: false,
       isChapterSelectOpen: false,
       isScienceCardOpen: false,
