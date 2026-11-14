@@ -10,8 +10,8 @@ export const FIELDCAMP_RAMP_WALKUP = Object.freeze({ from: [0, 6.31] as const, t
 /** Local fiducial for parent interaction placement; sign faces +Z. */
 export const FIELDCAMP_CONSOLE_ANCHOR = Object.freeze({ position: [0, 0, 8] as const, facing: 0 });
 
-const box = (position: [number, number, number], size: [number, number, number], material: THREE.Material, name?: string) => (
-  <mesh name={name} position={position} material={material} castShadow receiveShadow><boxGeometry args={size} /></mesh>
+const box = (position: [number, number, number], size: [number, number, number], material: THREE.Material, name?: string, key?: number) => (
+  <mesh key={key} name={name} position={position} material={material} castShadow receiveShadow><boxGeometry args={size} /></mesh>
 );
 const cylinder = (position: [number, number, number], radius: number, height: number, material: THREE.Material, rotation: [number, number, number] = [0, 0, 0]) => (
   <mesh position={position} rotation={rotation} material={material} castShadow receiveShadow><cylinderGeometry args={[radius, radius, height, 8]} /></mesh>
@@ -58,7 +58,7 @@ function OperationModule({ region, operation }: { region: RegionId; operation: s
         {[-0.38, 0, 0.38].map((x) => operation === 'impact-protected'
           ? <group key={x}>{box([x, 0.76, 0.3], [0.27, 1.18, 0.13], m.shellShade)}{box([x, 0.76, 0.38], [0.19, 1.06, 0.04], m.dark)}</group>
           : <group key={x}>{box([x, 0.48, 0.3], [0.25, 0.08, 0.18], m.shellShade)}{cylinder([x, 0.72, 0.31], 0.07, 0.34, m.foil, [Math.PI/2,0,0])}</group>)}
-        {[0.25, 0.95, 1.4].map((y) => box([0, y, 0.02], [1.05, 0.045, 0.52], m.shellShade))}
+        {[0.25, 0.95, 1.4].map((y) => box([0, y, 0.02], [1.05, 0.045, 0.52], m.shellShade, undefined, y))}
       </group>;
     case 'dust':
       return <group name="dust-solar-and-water-operations" position={[4.8, 0, 0.15]} rotation={[0, -0.25, 0]}>
@@ -66,7 +66,7 @@ function OperationModule({ region, operation }: { region: RegionId; operation: s
           {[-0.56, 0.56].map((x) => <group key={x} position={[x, 0, 0]}>
             {box([0, 0, 0], [0.94, 0.055, 0.62], m.frame)}
             {box([0, 0.035, 0], [0.83, 0.018, 0.49], m.glass, 'solar-cell-panel')}
-            {[-0.23, 0, 0.23].map((z) => box([0, 0.049, z], [0.82, 0.008, 0.012], m.seam))}
+            {[-0.23, 0, 0.23].map((z) => box([0, 0.049, z], [0.82, 0.008, 0.012], m.seam, undefined, z))}
           </group>)}
           {[-0.7, 0.7].map((x) => <mesh key={x} position={[x, -0.47, 0]} material={m.frame}><cylinderGeometry args={[0.025, 0.035, 0.92, 6]} /></mesh>)}
         </group>
@@ -93,14 +93,14 @@ function OperationModule({ region, operation }: { region: RegionId; operation: s
         {operation === 'ice-water-treatment'
           ? <group name="ice-recovered-water-treatment">{[-0.22,0.22].map((x) => <group key={x}>{cylinder([x,0.72,0.27],0.14,0.85,m.glass)}{cylinder([x,1.18,0.27],0.08,0.08,m.frame)}</group>)}{box([0,0.2,0.05],[0.72,0.16,0.3],m.dark)}</group>
           : <group name="labelled-core-rack">{[-0.25,0,0.25].map((x) => <group key={x}>{cylinder([x,0.78,0.28],0.075,0.98,m.foil)}{box([x,1.32,0.28],[0.16,0.08,0.04],m.shell)}</group>)}</group>}
-        {[0.25,0.46,1.38].map((y) => box([0,y,0.02],[0.82,0.04,0.36],m.shellShade))}
+        {[0.25,0.46,1.38].map((y) => box([0,y,0.02],[0.82,0.04,0.36],m.shellShade,undefined,y))}
       </group>;
     case 'lake':
       return <group name="lake-transmission-and-inspection-bay" position={[-4.8, 0, 1.15]}>
         {box([0,0.72,0],[0.94,1.44,0.48],m.shellShade)}
         {operation === 'lake-full-transmit'
-          ? <group name="full-science-transmitter">{box([0,0.78,0.27],[0.68,0.9,0.08],m.dark)}{[-0.2,0,0.2].map((x) => box([x,0.78,0.32],[0.035,0.72,0.025],m.amber))}{cylinder([0,1.42,0.1],0.3,0.12,m.frame)}</group>
-          : <group name="short-transmission-rover-check">{box([0,0.86,0.27],[0.64,0.42,0.08],m.glass)}{[-0.2,0,0.2].map((x) => box([x,0.43,0.3],[0.12,0.18,0.04],m.foil))}</group>}
+          ? <group name="full-science-transmitter">{box([0,0.78,0.27],[0.68,0.9,0.08],m.dark)}{[-0.2,0,0.2].map((x) => box([x,0.78,0.32],[0.035,0.72,0.025],m.amber,undefined,x))}{cylinder([0,1.42,0.1],0.3,0.12,m.frame)}</group>
+          : <group name="short-transmission-rover-check">{box([0,0.86,0.27],[0.64,0.42,0.08],m.glass)}{[-0.2,0,0.2].map((x) => box([x,0.43,0.3],[0.12,0.18,0.04],m.foil,undefined,x))}</group>}
         {box([0,0.12,0],[1.08,0.18,0.58],m.frame)}
       </group>;
   }

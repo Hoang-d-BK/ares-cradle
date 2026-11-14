@@ -644,7 +644,7 @@ function MissionWorldScene({ state, dispatch, onInteract, paused, input, interac
       <color attach="background" args={['#080e16']} />
       <fog attach="fog" args={['#080e16', 340, 680]} />
       <ambientLight intensity={0.72} color="#b5c6d4" />
-      <directionalLight castShadow color="#d5e5ff" intensity={1.8} position={[65, 110, -45]} shadow-mapSize={[2048, 2048]} shadow-camera-left={-320} shadow-camera-right={320} shadow-camera-top={320} shadow-camera-bottom={-320} />
+      <directionalLight castShadow={state.settings.quality === 'high'} color="#d5e5ff" intensity={1.8} position={[65, 110, -45]} shadow-mapSize={state.settings.quality === 'high' ? [2048, 2048] : undefined} shadow-camera-left={-320} shadow-camera-right={320} shadow-camera-top={320} shadow-camera-bottom={-320} />
       <Terrain />
       <RouteLines />
       <InstancedRockField />
@@ -678,10 +678,11 @@ function MissionWorldScene({ state, dispatch, onInteract, paused, input, interac
 }
 
 export function MissionWorld(props: MissionWorldProps) {
+  const highQuality = props.state.settings.quality === 'high';
   return (
     <Canvas
-      shadows
-      dpr={[1, 1.5]}
+      shadows={highQuality}
+      dpr={highQuality ? [1, 1.5] : 1}
       camera={{ position: [0, 115, 155], fov: 54, near: 0.1, far: 900 }}
       gl={{ antialias: true, powerPreference: 'high-performance' }}
     >
