@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 2,
+  "campaignId": "five-frontiers",
+  "contentVersion": "2.0.0",
+  "rulesVersion": "2.0.0",
+  "packHash": "ares-cradle-pack-v2",
+  "language": "en",
+  "balance": {
+    "worldSize": [600, 600],
+    "baseStock": { "energy": 12, "meals": 4, "water": 5, "air": 4 },
+    "essentialCost": { "energy": 2, "meals": 1, "water": 1, "air": 1 },
+    "optionalOperationEnergy": 2,
+    "goFloor": { "energy": 8, "meals": 3, "water": 3, "air": 3 },
+    "requiredReports": 5,
+    "requiredBaseChecks": ["airheat", "shelter", "comms"]
+  },
+  "regions": [
+    {
+      "id": "impact",
+      "name": "Impact Ridge",
+      "subtitle": "Craters, ejecta, and signal clues",
+      "question": "Which observations connect a crater event to the ground and samples nearby?",
+      "center": [-200, -170],
+      "color": "#FF6B35",
+      "tool": "mast camera and signal comparator",
+      "observations": [
+        { "id": "impact-h1", "title": "Crater rim and ejecta", "clue": "Wide and close views show the rim, slope, and material around it.", "position": [-186, -154], "tool": "mast camera" },
+        { "id": "impact-h2", "title": "Before and after orbit images", "clue": "Two dated images show a change that can be compared with the signal record.", "position": [-216, -160], "tool": "image comparator" },
+        { "id": "impact-h3", "title": "Candidate and local rock", "clue": "Shape and measurements are clues, but appearance alone cannot identify origin.", "position": [-204, -188], "tool": "sample lens" }
+      ],
+      "branches": [
+        { "id": "impact-b1", "title": "Rim overlook", "clue": "Pin a wide view beside a close view to keep the landform context.", "position": [-180, -182] },
+        { "id": "impact-b2", "title": "Sample care station", "clue": "Keep location and time beside the joined signal profile.", "position": [-223, -190] }
+      ],
+      "operations": [
+        { "id": "impact-protected", "title": "Protected sample store", "benefit": "Protected sample layout for later analysis.", "deferred": "Accessible analysis rack deferred." },
+        { "id": "impact-accessible", "title": "Accessible analysis rack", "benefit": "Accessible sample layout for comparison during the shift.", "deferred": "Protected sample store deferred." }
+      ],
+      "sourceIds": ["nasa-insight-impacts", "nasa-mars-rock-samples"]
+    },
+    {
+      "id": "dust",
+      "name": "Wind Basin",
+      "subtitle": "Dust traces and equipment care",
+      "question": "What do dust traces reveal, and how can dust change equipment work?",
+      "center": [0, 0],
+      "color": "#D89B46",
+      "tool": "camera and dust-path model",
+      "observations": [
+        { "id": "dust-d1", "title": "Sand around a blocker", "clue": "Compare the sheltered and exposed sides of one rock.", "position": [15, 10], "tool": "field camera" },
+        { "id": "dust-d2", "title": "Clean and dusty equipment", "clue": "A sensor window and a solar panel show different surface conditions.", "position": [-14, 12], "tool": "inspection camera" },
+        { "id": "dust-d3", "title": "Dust at two scales", "clue": "Local tracks and a broad image give different views of the same environment.", "position": [0, -18], "tool": "scale viewer" }
+      ],
+      "branches": [
+        { "id": "dust-b1", "title": "Dune overlook", "clue": "Mark the model inlet and outlet before running the dust path.", "position": [25, -8] },
+        { "id": "dust-b2", "title": "Weather note", "clue": "Compare a dust storm model with space-weather notes without mixing them.", "position": [-26, -10] }
+      ],
+      "operations": [
+        { "id": "dust-clean-panels", "title": "Clean solar panels", "benefit": "Panels are clean and the post-shift record adds 2 EU.", "deferred": "Recovered-water treatment deferred." },
+        { "id": "dust-water-treatment", "title": "Treat recovered water", "benefit": "Two recovered portions become two clean-water units after checks.", "deferred": "Solar-panel cleaning deferred." }
+      ],
+      "sourceIds": ["nasa-martian-dust", "nasa-iss-water-recovery"]
+    },
+    {
+      "id": "volcano",
+      "name": "Blackstone Steps",
+      "subtitle": "Cooled flows and layer order",
+      "question": "What can overlapping cooled flows tell us about relative formation order?",
+      "center": [-210, 180],
+      "color": "#D94F4F",
+      "tool": "low camera and layer table",
+      "observations": [
+        { "id": "volcano-v1", "title": "Overlapping flow edge", "clue": "Two angles show one cooled flow covering another.", "position": [-194, 194], "tool": "low camera" },
+        { "id": "volcano-v2", "title": "Cooled flow channel", "clue": "A terrain view and a map sketch share the same channel shape.", "position": [-228, 190], "tool": "terrain lamp" },
+        { "id": "volcano-v3", "title": "Local material comparison", "clue": "A local rock can be compared with a reference without assigning an exact age.", "position": [-210, 160], "tool": "sample viewer" }
+      ],
+      "branches": [
+        { "id": "volcano-b1", "title": "Flow-channel overlook", "clue": "Highlight one covering edge to make the relation easier to read.", "position": [-188, 168] },
+        { "id": "volcano-b2", "title": "Shelter cross-section", "clue": "Open a cross-section that distinguishes insulation from shielding.", "position": [-232, 172] }
+      ],
+      "operations": [
+        { "id": "volcano-passive", "title": "Passive insulation", "benefit": "Insulation panels help the work bay retain heat in the model.", "deferred": "Supplemental heater deferred." },
+        { "id": "volcano-active", "title": "Supplemental heater", "benefit": "A heater warms the sample bench quickly during the shift.", "deferred": "Passive insulation deferred." }
+      ],
+      "sourceIds": ["nasa-lava-flow"]
+    },
+    {
+      "id": "ice",
+      "name": "Enclosed Ice Wall",
+      "subtitle": "Cores, labels, and clean water",
+      "question": "How can a core keep its context, and why is ice not automatically drinking water?",
+      "center": [210, -180],
+      "color": "#63C7D8",
+      "tool": "core camera and drill",
+      "observations": [
+        { "id": "ice-i1", "title": "Layered cover", "clue": "Surface cover and a cross-section show a layered material record.", "position": [224, -164], "tool": "core camera" },
+        { "id": "ice-i2", "title": "Terrain and radar", "clue": "The terrain profile matches a simplified radar section.", "position": [190, -176], "tool": "radar viewer" },
+        { "id": "ice-i3", "title": "Water ice and carbon-dioxide ice", "clue": "Evidence, not color alone, distinguishes the two kinds of ice.", "position": [214, -202], "tool": "sample tester" }
+      ],
+      "branches": [
+        { "id": "ice-b1", "title": "Recovery-water station", "clue": "Keep the Advance, Check, and Seal steps visible beside the water line.", "position": [232, -194] },
+        { "id": "ice-b2", "title": "Food preparation note", "clue": "Show why treated water and a labeled core follow different paths.", "position": [188, -202] }
+      ],
+      "operations": [
+        { "id": "ice-core-analysis", "title": "Analyze the core", "benefit": "Add a scanned layer and cross-section record to the core file.", "deferred": "Recovered-water treatment deferred." },
+        { "id": "ice-water-treatment", "title": "Treat recovered water", "benefit": "Two recovered portions become two clean-water units after checks.", "deferred": "Core analysis deferred." }
+      ],
+      "sourceIds": ["nasa-glacial-ice", "nasa-dry-ice", "nasa-iss-water-recovery"]
+    },
+    {
+      "id": "lake",
+      "name": "Old Lake Shore",
+      "subtitle": "Context-rich rover records",
+      "question": "What belongs in an observation record before a clue can be studied further?",
+      "center": [200, 170],
+      "color": "#4D9EC7",
+      "tool": "camera and rover arm",
+      "observations": [
+        { "id": "lake-l1", "title": "Layered rock", "clue": "Wide and close views show a useful geological relationship.", "position": [216, 186], "tool": "rover camera" },
+        { "id": "lake-l2", "title": "Rover tool check", "clue": "Camera, arm, wheels, and safe position are checked at the field target.", "position": [184, 180], "tool": "rover arm" },
+        { "id": "lake-l3", "title": "Sample record", "clue": "A location and witness-tube note preserve context around a sample.", "position": [202, 154], "tool": "record console" }
+      ],
+      "branches": [
+        { "id": "lake-b1", "title": "Dry-channel overlook", "clue": "Use the channel direction to plan the next wide image.", "position": [224, 156] },
+        { "id": "lake-b2", "title": "Context checklist", "clue": "Keep wide image, close image, and position together in the record.", "position": [176, 164] }
+      ],
+      "operations": [
+        { "id": "lake-summary-inspection", "title": "Short transmission and rover check", "benefit": "Send a checked summary and complete the rover inspection record.", "deferred": "Full science transmission deferred." },
+        { "id": "lake-full-transmit", "title": "Full science transmission", "benefit": "Send the complete image and context package for later review.", "deferred": "Short transmission and rover inspection deferred." }
+      ],
+      "sourceIds": ["nasa-potential-biosignature", "nasa-mars-rock-samples", "nasa-space-communications"]
+    }
+  ],
+  "sources": [
+    { "id": "nasa-insight-impacts", "title": "NASA InSight hears meteoroid impacts", "url": "https://www.nasa.gov/missions/insight/nasas-insight-hears-its-first-meteoroid-impacts-on-mars/", "note": "Impact signals and images are evidence for comparison, not proof from sound alone." },
+    { "id": "nasa-martian-dust", "title": "NASA: Fact and fiction of Martian dust storms", "url": "https://www.nasa.gov/solar-system/the-fact-and-fiction-of-martian-dust-storms/", "note": "Dust can affect light and equipment without behaving like an Earth hurricane." },
+    { "id": "nasa-lava-flow", "title": "NASA Science: Lava flow near Olympus Mons", "url": "https://science.nasa.gov/resource/lava-flow-near-the-base-of-olympus-mons/", "note": "Layer relationships support relative order, not an exact age." },
+    { "id": "nasa-glacial-ice", "title": "NASA Science: Glacial ice deposits", "url": "https://science.nasa.gov/resource/glacial-ice-deposits-in-mid-latitudes-of-mars/", "note": "Subsurface ice evidence is distinct from treated drinking water." },
+    { "id": "nasa-dry-ice", "title": "NASA Science: Dry ice on Mars", "url": "https://science.nasa.gov/resource/dry-ice-on-mars/", "note": "Water ice and carbon-dioxide ice require evidence-based distinction." },
+    { "id": "nasa-iss-water-recovery", "title": "NASA: Water recovery on the ISS", "url": "https://www.nasa.gov/missions/station/iss-research/nasa-achieves-water-recovery-milestone-on-international-space-station/", "note": "Recovered water needs treatment and checks before it is clean water." },
+    { "id": "nasa-potential-biosignature", "title": "NASA: Potential biosignature report", "url": "https://www.nasa.gov/news-release/nasa-says-mars-rover-discovered-potential-biosignature-last-year/", "note": "A potential biosignature is a clue to study, not confirmed life." },
+    { "id": "nasa-mars-rock-samples", "title": "NASA Science: Mars rock samples", "url": "https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples/", "note": "Context, sample records, and witness tubes help protect scientific interpretation." },
+    { "id": "nasa-space-communications", "title": "NASA Goddard: Space communications", "url": "https://www.nasa.gov/centers-and-facilities/goddard/space-communications-7-things-you-need-to-know/", "note": "Communication has distance and delay; this campaign simplifies it for play." }
+  ],
+  "researchGoals": [
+    { "id": "geologic-history", "title": "Geologic history", "summary": "Compare impact evidence, flow order, and sample care." },
+    { "id": "water-and-operations", "title": "Water and long-term operations", "summary": "Compare ice, treated water, dust, and power choices." },
+    { "id": "ancient-environment", "title": "Ancient environment", "summary": "Compare lake context, ice cores, and limits on conclusions." }
+  ],
+  "dialogue": {
+    "intro": ["Touchdown confirmed. Take a look before you choose your first job.", "Five stations. Where do we begin?", "A place to explore—and a place to come back to."],
+    "support": "Support restores only the exact missing need. Your evidence stays safe.",
+    "hold": "HOLD names the missing base condition. Fix it, then send the proposal again.",
+    "go": "GO confirms the selected base can receive Leo and two Ares-1 crew for the first shift.",
+    "arrival": "Ares-1 has arrived. Leo can continue free exploration and practice."
+  }
+}
