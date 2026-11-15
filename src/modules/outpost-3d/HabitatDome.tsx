@@ -1,8 +1,10 @@
-import React, { useRef } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useOutpostStore } from '@/modules/store/useOutpostStore';
 import { soundEngine } from '@/modules/audio/soundEngine';
+import { STATIC_WORLD_COLLIDERS } from '@/modules/character/physicsEngine';
+import { createHabitatFoundationGeometry } from './habitatFoundationGeometry';
 
 /**
  * NASA Mars Habitat Camp (Ares Cradle v3.0 Expanded 3.85m Base)
@@ -23,6 +25,23 @@ export const HabitatDome: React.FC = () => {
   const pointLightRef = useRef<THREE.PointLight>(null);
   const dockPadRef = useRef<THREE.Mesh>(null);
   const hadDockedAlert = useRef(false);
+  const wallOpenings = STATIC_WORLD_COLLIDERS.find((collider) => collider.id === 'habitat-dome-wall');
+  const foundationGeometry = useMemo(() => createHabitatFoundationGeometry({
+    bottomY: -0.035,
+    topY: 0.515,
+    outerBottomRadius: 4.12,
+    outerTopRadius: 3.95,
+    innerBottomRadius: 3.60,
+    innerTopRadius: 3.60,
+  }, wallOpenings?.type === 'ring' ? wallOpenings.openings ?? [] : []), [wallOpenings]);
+  const collarGeometry = useMemo(() => createHabitatFoundationGeometry({
+    bottomY: 0.47,
+    topY: 0.61,
+    outerBottomRadius: 3.98,
+    outerTopRadius: 3.88,
+    innerBottomRadius: 3.60,
+    innerTopRadius: 3.60,
+  }, wallOpenings?.type === 'ring' ? wallOpenings.openings ?? [] : []), [wallOpenings]);
 
   const emergencySaver = useOutpostStore((state) => state.emergencyPowerSaver);
   const oxygen = useOutpostStore((state) => state.oxygen);
@@ -128,8 +147,7 @@ export const HabitatDome: React.FC = () => {
           1. 3D-PRINTED BIO-REGOLITH FOUNDATION WALLS (3.85m Radius)
           ======================================================== */}
       {/* Heavy Regolith Extrusion Ring */}
-      <mesh position={[0, 0.24, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[3.95, 4.12, 0.55, 32]} />
+      <mesh name="habitat-foundation-wall" geometry={foundationGeometry} castShadow receiveShadow>
         <meshStandardMaterial
           color="#9A3412"
           roughness={0.9}
@@ -139,8 +157,7 @@ export const HabitatDome: React.FC = () => {
       </mesh>
 
       {/* Structural Compression Collar Ring with Hazard Striping */}
-      <mesh position={[0, 0.54, 0]} castShadow>
-        <cylinderGeometry args={[3.88, 3.98, 0.14, 32]} />
+      <mesh name="habitat-foundation-collar" geometry={collarGeometry} castShadow>
         <meshStandardMaterial color="#1E293B" metalness={0.85} roughness={0.25} />
       </mesh>
 

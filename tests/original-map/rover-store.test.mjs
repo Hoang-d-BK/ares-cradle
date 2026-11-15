@@ -17,6 +17,7 @@ const compile = (path) => {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 }
   }).outputText;
   const localRequire = (id) => {
+    if (id === 'react') return { useSyncExternalStore: (_subscribe, getSnapshot) => getSnapshot() };
     if (id === 'zustand') return { create: (initialize) => {
       let state;
       const listeners = new Set();
@@ -31,11 +32,16 @@ const compile = (path) => {
       state = initialize(set, get);
       return { getState: get, setState: set, subscribe: (listener) => { listeners.add(listener); return () => listeners.delete(listener); } };
     } };
+    if (id === '@/modules/session/gameSession') {
+      return { getGameplayStarted: () => true };
+    }
     if (id === '@/modules/character/physicsEngine') return compile(resolve(root, 'src/modules/character/physicsEngine.ts'));
     if (id === '@/modules/outpost-3d/worldRegions' || id === '../outpost-3d/worldRegions' || id === './worldRegions') return compile(resolve(root, 'src/modules/outpost-3d/worldRegions.ts'));
     if (id === './expeditionProgress') return compile(resolve(root, 'src/modules/store/expeditionProgress.ts'));
     if (id === './explorationProgress') return compile(resolve(root, 'src/modules/store/explorationProgress.ts'));
     if (id === '../outpost-3d/scienceCatalog') return compile(resolve(root, 'src/modules/outpost-3d/scienceCatalog.ts'));
+    if (id === '../outpost-3d/scienceInteraction') return compile(resolve(root, 'src/modules/outpost-3d/scienceInteraction.ts'));
+    if (id === './naturalSiteDefinitions') return compile(resolve(root, 'src/modules/outpost-3d/naturalSiteDefinitions.ts'));
     if (id === './worldRegions') return compile(resolve(root, 'src/modules/outpost-3d/worldRegions.ts'));
     if (id === '../../game/mission/activities/rules') return compile(resolve(root, 'src/game/mission/activities/rules.ts'));
     if (id === '@/modules/simulation-engine/formulas') return {};

@@ -125,6 +125,7 @@ const compile = (path) => {
     if (id.endsWith('/RealRoverCraft') || id === '../../game/art/realism/RealRoverCraft') return { RealRoverCraft: fixtureCraft };
     if (id === '../../modules/store/useOutpostStore' || id === '../store/useOutpostStore') return { useOutpostStore,
       PLAYABLE_ROVER_SPEC: { radius: 1.55, scale: 0.7, wheelbase: 1.7, trackWidth: 1.6, groundOffset: 0 } };
+    if (id === '@/modules/session/gameSession') return { getGameplayStarted: () => true };
     if (id === '../store/useStoryStore') return { useStoryStore: { getState: () => legacyStoryState } };
     if (id.startsWith('.')) {
       let child = resolve(dirname(path), id);

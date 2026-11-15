@@ -2,30 +2,35 @@ import React, { useRef, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useOutpostStore } from '@/modules/store/useOutpostStore';
+import { getGameplayStarted } from '@/modules/session/gameSession';
+import { buildWorldColliders } from './physicsEngine';
+import { sampleWorldGround } from '../outpost-3d/worldRegions';
+import {
+  cameraLookFromPosition,
+  clampCameraPitch,
+  clampCameraPitchToFrame,
+  findCameraPosition,
+  MIN_CAMERA_SEPARATION,
+  MIN_HABITAT_CAMERA_SEPARATION,
+  MIN_ROVER_CAMERA_SEPARATION,
+  resolveCameraBoom,
+  updateCameraLook,
+  wrapCameraYaw,
+} from './thirdPersonCamera';
 
-const LOOK_SENSITIVITY = 0.0022;
-const LOOK_SMOOTHING = 20;
-const MAX_PITCH = 1.45;
-const MAX_ROVER_LOOK_OFFSET = 1.2;
+const LOOK_SMOOTHING = 14;
+const HUMAN_DISTANCE = 6;
+const ROVER_DISTANCE = 7.2;
+const HUMAN_PIVOT_HEIGHT = 0.2;
+const ROVER_PIVOT_HEIGHT = 0.35;
+const DEFAULT_ELEVATION_PITCH = -0.2;
 
-export const wrapCameraYaw = (yaw: number) =>
-  ((yaw + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
-
-export const clampCameraPitch = (pitch: number) =>
-  THREE.MathUtils.clamp(pitch, -MAX_PITCH, MAX_PITCH);
-
-export const updateCameraLook = (yaw: number, pitch: number, movementX: number, movementY: number) => ({
-  yaw: wrapCameraYaw(yaw - movementX * LOOK_SENSITIVITY),
-  pitch: clampCameraPitch(pitch - movementY * LOOK_SENSITIVITY),
-});
-
-const dampAngle = (current: number, target: number, amount: number) =>
-  wrapCameraYaw(current + wrapCameraYaw(target - current) * amount);
+type DragState = { pointerId: number; x: number; y: number };
 
 const modalIsOpen = () =>
   typeof document !== 'undefined' && !!document.querySelector('[role="dialog"]');
 
-/** First-person camera with native pointer lock and an independent rover look offset. */
+/** Third-person chase/orbit camera shared by the astronaut and remote rover. */
 export const CameraRig: React.FC = () => {
   const { camera, gl } = useThree();
   const setCameraLook = useOutpostStore((state) => state.setCameraLook);
@@ -34,186 +39,195 @@ export const CameraRig: React.FC = () => {
   const setPointerLocked = useOutpostStore((state) => state.setPointerLocked);
   const toggleSkyView = useOutpostStore((state) => state.toggleSkyView);
 
+  const initialPitch = Math.abs(cameraPitch) < 0.001 ? DEFAULT_ELEVATION_PITCH : cameraPitch;
   const targetYaw = useRef(cameraYaw);
-  const targetPitch = useRef(cameraPitch);
+  const targetPitch = useRef(initialPitch);
   const actualYaw = useRef(cameraYaw);
-  const actualPitch = useRef(cameraPitch);
-  const humanLook = useRef({ yaw: cameraYaw, pitch: cameraPitch });
-  const roverLookOffset = useRef(0);
-  const remotePitch = useRef(0);
-  const touchDrag = useRef<{ pointerId: number; x: number; y: number } | null>(null);
+  const actualPitch = useRef(initialPitch);
+  const humanLook = useRef({ yaw: cameraYaw, pitch: initialPitch });
+  const remoteYawOffset = useRef(0);
+  const actualPosition = useRef(new THREE.Vector3());
+  const cameraInitialized = useRef(false);
+  const drag = useRef<DragState | null>(null);
+  const releaseDragRef = useRef<() => void>(() => {});
   const wasRemote = useRef(useOutpostStore.getState().isDrivingRover);
 
   useEffect(() => {
+    const releaseDrag = () => {
+      const active = drag.current;
+      drag.current = null;
+      if (active && gl.domElement.hasPointerCapture?.(active.pointerId)) {
+        try { gl.domElement.releasePointerCapture(active.pointerId); } catch { /* Capture can already be lost. */ }
+      }
+    };
+    releaseDragRef.current = releaseDrag;
+
     const handleKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
       if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
       if (event.code === 'Escape') {
-        if (document.pointerLockElement === gl.domElement) document.exitPointerLock();
+        releaseDrag();
         setPointerLocked(false);
         return;
       }
-      if (event.code === 'KeyV' && !modalIsOpen()) toggleSkyView();
+      if (event.code === 'KeyV' && !modalIsOpen() && getGameplayStarted()) toggleSkyView();
     };
-
-    const originalCanvasTitle = gl.domElement.title;
-    const handlePointerLockFailure = () => {
-      setPointerLocked(false);
-      gl.domElement.title = 'Mouse capture unavailable. Click the world again to retry.';
-    };
-    const releasePointerLock = () => {
-      touchDrag.current = null;
-      if (document.pointerLockElement === gl.domElement) document.exitPointerLock();
-      setPointerLocked(false);
-    };
-    const handlePointerLockChange = () => {
-      const locked = document.pointerLockElement === gl.domElement;
-      setPointerLocked(locked);
-      if (locked) gl.domElement.title = originalCanvasTitle;
-    };
-    const handlePointerLockError = () => handlePointerLockFailure();
-    const handleBlur = () => releasePointerLock();
-    const handleVisibilityChange = () => {
-      if (document.hidden) releasePointerLock();
-    };
-    const handleCanvasClick = (event: MouseEvent) => {
-      if (!event.isTrusted || event.target !== gl.domElement || modalIsOpen()) return;
-      if ('pointerType' in event && event.pointerType === 'touch') return;
-      if (document.pointerLockElement === gl.domElement) return;
-      try {
-        const request = gl.domElement.requestPointerLock();
-        if (request && typeof request.then === 'function') void request.catch(handlePointerLockFailure);
-      } catch {
-        handlePointerLockFailure();
-      }
-    };
-    const handleMouseMove = (event: MouseEvent) => {
-      if (document.pointerLockElement !== gl.domElement || modalIsOpen()) return;
-      const store = useOutpostStore.getState();
-      if (store.isDrivingRover) {
-        roverLookOffset.current = THREE.MathUtils.clamp(
-          roverLookOffset.current - event.movementX * LOOK_SENSITIVITY,
-          -MAX_ROVER_LOOK_OFFSET,
-          MAX_ROVER_LOOK_OFFSET
-        );
-        remotePitch.current = clampCameraPitch(remotePitch.current - event.movementY * LOOK_SENSITIVITY);
-      } else {
-        const nextLook = updateCameraLook(targetYaw.current, targetPitch.current, event.movementX, event.movementY);
-        targetYaw.current = nextLook.yaw;
-        targetPitch.current = nextLook.pitch;
-      }
-    };
-    const handleTouchPointerDown = (event: PointerEvent) => {
-      if (event.pointerType !== 'touch' || modalIsOpen()) return;
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!getGameplayStarted() || modalIsOpen() || document.hidden) return;
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
       event.preventDefault();
-      gl.domElement.setPointerCapture?.(event.pointerId);
-      touchDrag.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
+      try { gl.domElement.setPointerCapture?.(event.pointerId); } catch { /* Continue with native canvas drag. */ }
+      drag.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
     };
-    const handleTouchPointerMove = (event: PointerEvent) => {
-      const drag = touchDrag.current;
-      if (!drag || drag.pointerId !== event.pointerId) return;
+    const handlePointerMove = (event: PointerEvent) => {
+      const active = drag.current;
+      if (!active || active.pointerId !== event.pointerId) return;
       if (modalIsOpen() || document.hidden) {
-        touchDrag.current = null;
+        releaseDrag();
         return;
       }
-      const movementX = event.clientX - drag.x;
-      const movementY = event.clientY - drag.y;
-      drag.x = event.clientX;
-      drag.y = event.clientY;
+      const movementX = event.clientX - active.x;
+      const movementY = event.clientY - active.y;
+      const look = updateCameraLook(targetYaw.current, targetPitch.current, movementX, movementY);
+      active.x = event.clientX;
+      active.y = event.clientY;
       if (useOutpostStore.getState().isDrivingRover) {
-        roverLookOffset.current = THREE.MathUtils.clamp(
-          roverLookOffset.current - movementX * LOOK_SENSITIVITY,
-          -MAX_ROVER_LOOK_OFFSET,
-          MAX_ROVER_LOOK_OFFSET
-        );
-        remotePitch.current = clampCameraPitch(remotePitch.current - movementY * LOOK_SENSITIVITY);
-      } else {
-        const nextLook = updateCameraLook(targetYaw.current, targetPitch.current, movementX, movementY);
-        targetYaw.current = nextLook.yaw;
-        targetPitch.current = nextLook.pitch;
+        remoteYawOffset.current = wrapCameraYaw(remoteYawOffset.current - movementX * 0.0022);
       }
+      targetYaw.current = look.yaw;
+      targetPitch.current = look.pitch;
     };
-    const handleTouchPointerEnd = (event: PointerEvent) => {
-      if (touchDrag.current?.pointerId === event.pointerId) touchDrag.current = null;
+    const handlePointerEnd = (event: PointerEvent) => {
+      if (drag.current?.pointerId === event.pointerId) releaseDrag();
     };
+    const releaseForBlur = () => {
+      releaseDrag();
+      setPointerLocked(false);
+    };
+    const handleVisibilityChange = () => { if (document.hidden) releaseForBlur(); };
 
-    gl.domElement.addEventListener('click', handleCanvasClick);
-    gl.domElement.addEventListener('pointerdown', handleTouchPointerDown);
-    gl.domElement.addEventListener('pointermove', handleTouchPointerMove);
-    gl.domElement.addEventListener('pointerup', handleTouchPointerEnd);
-    gl.domElement.addEventListener('pointercancel', handleTouchPointerEnd);
-    document.addEventListener('pointerlockchange', handlePointerLockChange);
-    document.addEventListener('pointerlockerror', handlePointerLockError);
-    document.addEventListener('mousemove', handleMouseMove);
+    gl.domElement.addEventListener('pointerdown', handlePointerDown);
+    gl.domElement.addEventListener('pointermove', handlePointerMove);
+    gl.domElement.addEventListener('pointerup', handlePointerEnd);
+    gl.domElement.addEventListener('pointercancel', handlePointerEnd);
+    gl.domElement.addEventListener('lostpointercapture', handlePointerEnd);
     window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('blur', handleBlur);
+    window.addEventListener('blur', releaseForBlur);
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    handlePointerLockChange();
+    setPointerLocked(false);
     return () => {
-      gl.domElement.removeEventListener('click', handleCanvasClick);
-      gl.domElement.removeEventListener('pointerdown', handleTouchPointerDown);
-      gl.domElement.removeEventListener('pointermove', handleTouchPointerMove);
-      gl.domElement.removeEventListener('pointerup', handleTouchPointerEnd);
-      gl.domElement.removeEventListener('pointercancel', handleTouchPointerEnd);
-      document.removeEventListener('pointerlockchange', handlePointerLockChange);
-      document.removeEventListener('pointerlockerror', handlePointerLockError);
-      document.removeEventListener('mousemove', handleMouseMove);
+      releaseDrag();
+      releaseDragRef.current = () => {};
+      gl.domElement.removeEventListener('pointerdown', handlePointerDown);
+      gl.domElement.removeEventListener('pointermove', handlePointerMove);
+      gl.domElement.removeEventListener('pointerup', handlePointerEnd);
+      gl.domElement.removeEventListener('pointercancel', handlePointerEnd);
+      gl.domElement.removeEventListener('lostpointercapture', handlePointerEnd);
       window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('blur', handleBlur);
+      window.removeEventListener('blur', releaseForBlur);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      gl.domElement.title = originalCanvasTitle;
-      releasePointerLock();
+      setPointerLocked(false);
     };
   }, [gl.domElement, setPointerLocked, toggleSkyView]);
 
   useFrame((_, delta) => {
     const store = useOutpostStore.getState();
     const remote = store.isDrivingRover;
-    const lockedToCanvas = document.pointerLockElement === gl.domElement;
     if (modalIsOpen() || document.hidden || remote !== wasRemote.current) {
-      touchDrag.current = null;
-      if (lockedToCanvas) document.exitPointerLock();
+      releaseDragRef.current();
       if (store.isPointerLocked) setPointerLocked(false);
     }
 
     if (remote !== wasRemote.current) {
       if (remote) {
         humanLook.current = { yaw: targetYaw.current, pitch: targetPitch.current };
-        roverLookOffset.current = 0;
-        remotePitch.current = 0;
-        actualYaw.current = wrapCameraYaw(store.roverHeading + Math.PI);
-        actualPitch.current = 0;
+        remoteYawOffset.current = 0;
+        targetYaw.current = wrapCameraYaw(store.roverHeading + Math.PI);
+        targetPitch.current = DEFAULT_ELEVATION_PITCH;
       } else {
         targetYaw.current = humanLook.current.yaw;
         targetPitch.current = humanLook.current.pitch;
+        actualYaw.current = humanLook.current.yaw;
+        actualPitch.current = humanLook.current.pitch;
       }
       wasRemote.current = remote;
     }
 
-    const baseYaw = remote ? store.roverHeading + Math.PI + roverLookOffset.current : targetYaw.current;
-    const desiredYaw = wrapCameraYaw(baseYaw);
-    const desiredPitch = remote ? remotePitch.current : targetPitch.current;
+    if (remote) targetYaw.current = wrapCameraYaw(store.roverHeading + Math.PI + remoteYawOffset.current);
+    targetPitch.current = clampCameraPitch(targetPitch.current);
+
     const safeDelta = Math.min(Math.max(delta, 0), 0.05);
     const smoothing = 1 - Math.exp(-LOOK_SMOOTHING * safeDelta);
-    actualYaw.current = dampAngle(actualYaw.current, desiredYaw, smoothing);
-    actualPitch.current = THREE.MathUtils.lerp(actualPitch.current, desiredPitch, smoothing);
+    actualYaw.current = wrapCameraYaw(actualYaw.current + wrapCameraYaw(targetYaw.current - actualYaw.current) * smoothing);
+    actualPitch.current = THREE.MathUtils.lerp(actualPitch.current, targetPitch.current, smoothing);
     actualPitch.current = clampCameraPitch(actualPitch.current);
 
-    const position = remote ? store.roverPos : store.playerPos;
-    const roverCos = Math.cos(store.roverHeading);
-    const roverSin = Math.sin(store.roverHeading);
-    camera.position.set(
-      position[0] + (remote ? -0.273 * roverCos + 0.55 * roverSin : 0),
-      position[1] + (remote ? 1.48 : 1.45),
-      position[2] + (remote ? 0.273 * roverSin + 0.55 * roverCos : 0)
+    const actor = remote ? store.roverPos : store.playerPos;
+    const pivot = {
+      x: actor[0],
+      y: actor[1] + (remote ? ROVER_PIVOT_HEIGHT : HUMAN_PIVOT_HEIGHT),
+      z: actor[2],
+    };
+    const colliders = buildWorldColliders(store.roverPos, remote);
+    const insideHabitat = !remote && !!store.isInsideHabitat &&
+      Math.hypot(actor[0], actor[2]) < 3.55;
+    const distance = remote ? ROVER_DISTANCE : insideHabitat ? 2.8 : HUMAN_DISTANCE;
+    const minimumSeparation = remote ? MIN_ROVER_CAMERA_SEPARATION
+      : insideHabitat ? MIN_HABITAT_CAMERA_SEPARATION : MIN_CAMERA_SEPARATION;
+    const candidateVisible = (candidate: { x: number; y: number; z: number }) =>
+      !insideHabitat || (Math.hypot(candidate.x, candidate.z) < 3.55 &&
+        Math.hypot(candidate.x - pivot.x, candidate.y - pivot.y, candidate.z - pivot.z) > 1e-4);
+    const safeTarget = findCameraPosition(
+      pivot,
+      actualYaw.current,
+      actualPitch.current,
+      distance,
+      minimumSeparation,
+      sampleWorldGround,
+      colliders,
+      candidateVisible,
+      insideHabitat ? 1.0 : undefined,
     );
-    camera.rotation.order = 'YXZ';
-    camera.rotation.set(actualPitch.current, actualYaw.current, 0, 'YXZ');
-    setCameraLook(actualYaw.current, actualPitch.current);
-
-    if (!remote) {
-      humanLook.current = { yaw: targetYaw.current, pitch: targetPitch.current };
+    const obstructionShortened = Math.hypot(
+      safeTarget.x - actualPosition.current.x,
+      safeTarget.y - actualPosition.current.y,
+      safeTarget.z - actualPosition.current.z
+    ) > 1.5;
+    if (!cameraInitialized.current || obstructionShortened) {
+      actualPosition.current.set(safeTarget.x, safeTarget.y, safeTarget.z);
+      cameraInitialized.current = true;
+    } else {
+      actualPosition.current.lerp(new THREE.Vector3(safeTarget.x, safeTarget.y, safeTarget.z), smoothing);
+      const dampedSafe = resolveCameraBoom(pivot, actualPosition.current, sampleWorldGround, colliders);
+      actualPosition.current.set(dampedSafe.x, dampedSafe.y, dampedSafe.z);
     }
+
+    // Camera damping can pass a remote target through the world: validate the final point and
+    // its last-metre segment, then snap to a clear candidate if damping left it too close.
+    const finalSafe = resolveCameraBoom(pivot, actualPosition.current, sampleWorldGround, colliders);
+    actualPosition.current.set(finalSafe.x, finalSafe.y, finalSafe.z);
+    const finalSeparation = actualPosition.current.distanceTo(new THREE.Vector3(pivot.x, pivot.y, pivot.z));
+    if (finalSeparation < minimumSeparation) {
+      actualPosition.current.set(safeTarget.x, safeTarget.y, safeTarget.z);
+    }
+
+    camera.position.copy(actualPosition.current);
+    const desiredViewPitch = clampCameraPitchToFrame(
+      camera.position,
+      pivot,
+      actualPitch.current,
+      camera instanceof THREE.PerspectiveCamera ? camera.fov : 45,
+      remote,
+    );
+    const boomLook = cameraLookFromPosition(actualPosition.current, pivot, actualYaw.current);
+    camera.rotation.order = 'YXZ';
+    camera.rotation.set(desiredViewPitch, boomLook.yaw, 0, 'YXZ');
+    const displayedDirection = camera.getWorldDirection(new THREE.Vector3());
+    const displayedPitch = Math.atan2(displayedDirection.y, Math.hypot(displayedDirection.x, displayedDirection.z));
+    actualPitch.current = displayedPitch;
+    setCameraLook(boomLook.yaw, displayedPitch);
+
+    if (!remote) humanLook.current = { yaw: targetYaw.current, pitch: targetPitch.current };
   });
 
   return null;

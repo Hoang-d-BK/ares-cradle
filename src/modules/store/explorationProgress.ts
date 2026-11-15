@@ -1,5 +1,6 @@
 import { getScientificElement, SCIENTIFIC_ELEMENTS } from '../outpost-3d/scienceCatalog';
-import { sampleWorldGround, WORLD_REGIONS, type RegionId } from '../outpost-3d/worldRegions';
+import { validateScientificInspection } from '../outpost-3d/scienceInteraction';
+import { getRegionByPosition, WORLD_REGIONS, type RegionId } from '../outpost-3d/worldRegions';
 
 export const EXPLORATION_STORAGE_KEY = 'ares-cradle-exploration-v1';
 export const EXPLORATION_SCHEMA_VERSION = 1 as const;
@@ -112,19 +113,18 @@ export function collectScientificElement(
   context: ExplorationContext,
 ): ExplorationResult {
   const element = getScientificElement(elementId);
-  if (!element) return { state, changed: false, error: 'unknown-element' };
   if (!validContext(context)) return { state, changed: false, error: 'invalid-context' };
-  if (state.collected.includes(elementId)) return { state, changed: false };
-  if (!context.isGrounded) return { state, changed: false, error: 'not-grounded' };
-  if (context.isRemote && context.remoteRegionId !== element.regionId) {
+  if (element && !context.isRemote && getRegionByPosition(context.position[0], context.position[2]).id !== element.regionId) {
     return { state, changed: false, error: 'wrong-region' };
   }
-  if (!context.isRemote && context.remoteRegionId !== null) return { state, changed: false, error: 'invalid-context' };
-  const [x, y, z] = context.position;
-  if (Math.hypot(x - element.position.x, z - element.position.z) > 4.5) {
-    return { state, changed: false, error: 'too-far-from-element' };
-  }
-  if (Math.abs(y - sampleWorldGround(x, z)) > 2.5) return { state, changed: false, error: 'not-grounded' };
+  const inspectionError = validateScientificInspection(element, context.position, {
+    isRemote: context.isRemote,
+    remoteRegionId: context.remoteRegionId,
+    grounded: context.isGrounded,
+  });
+  if (inspectionError) return { state, changed: false, error: inspectionError };
+  // Repeated field inspections still require live proximity; Codex history is opened separately.
+  if (state.collected.includes(elementId)) return { state, changed: false };
 
   if (state.revision >= 1_000_000_000) return { state, changed: false, error: 'revision-limit' };
   const collected = [...state.collected, elementId];

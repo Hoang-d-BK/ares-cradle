@@ -67,6 +67,7 @@ const compile = (path) => {
   const localRequire = (id) => {
     if (id === 'react') {
       const reactHooks = {
+        useSyncExternalStore(_subscribe, getSnapshot) { return getSnapshot(); },
         useRef(initial) {
           const index = hookIndex++;
           return hooks[index] ?? (hooks[index] = { current: initial });
@@ -84,6 +85,7 @@ const compile = (path) => {
     if (id === '@react-three/fiber') return { useFrame(callback) { frame = callback; } };
     if (id === 'three') return THREE;
     if (id === '@/modules/store/useOutpostStore') return { useOutpostStore };
+    if (id === '@/modules/session/gameSession') return compile(resolve(root, 'src/modules/session/gameSession.ts'));
     if (id === '@/modules/audio/soundEngine') return { soundEngine: new Proxy({}, { get: () => () => {} }) };
     if (id === './physicsEngine') {
       const physics = compile(resolve(dirname(path), 'physicsEngine.ts'));
@@ -104,6 +106,7 @@ const compile = (path) => {
   new Function('require', 'module', 'exports', output)(localRequire, module, module.exports);
   return module.exports;
 };
+compile(resolve(root, 'src/modules/session/gameSession.ts')).startGameplay();
 const AstronautPlayer = compile(resolve(root, 'src/modules/character/AstronautPlayer.tsx')).AstronautPlayer;
 const render = () => {
   hookIndex = 0;
@@ -139,6 +142,19 @@ const mount = () => {
 const key = (code) => ({ code, repeat: false, target: null, preventDefault() {} });
 const press = (code) => win.dispatch('keydown', key(code));
 const release = (code) => win.dispatch('keyup', key(code));
+
+test('the astronaut remains visible while remote rover control is active or on foot', () => {
+  const app = mount();
+  const onFoot = app.rerender();
+  assert.equal(onFoot.rootObject.visible, true);
+  store.isDrivingRover = true;
+  app.tick();
+  assert.equal(onFoot.rootObject.visible, true);
+  store.isDrivingRover = false;
+  app.tick();
+  assert.equal(onFoot.rootObject.visible, true);
+  app.close();
+});
 
 test('driving Space and touch jump requests are consumed before rover exit', () => {
   const app = mount();

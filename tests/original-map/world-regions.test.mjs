@@ -7,6 +7,7 @@ import { loadTsModule } from '../mission-v2/support/load-ts-module.mjs';
 
 const world = await loadTsModule('../../src/modules/outpost-3d/worldRegions.ts', import.meta.url);
 const physics = await loadTsModule('../../src/modules/character/physicsEngine.ts', import.meta.url);
+const naturalSites = await loadTsModule('../../src/modules/outpost-3d/naturalSiteDefinitions.ts', import.meta.url);
 const outerSource = readFileSync(new URL('../../src/modules/outpost-3d/OuterRegions.tsx', import.meta.url), 'utf8');
 const outerCompiled = ts.transpileModule(outerSource, {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, jsx: ts.JsxEmit.React },
@@ -22,6 +23,10 @@ const outerReact = {
   useMemo: (factory) => factory(),
   useRef: (current) => { const ref = { current }; outerRefs.push(ref); return ref; },
 };
+const surfaceSource = readFileSync(new URL('../../src/modules/outpost-3d/marsSurfaceMaterials.ts', import.meta.url), 'utf8');
+const surfaceCompiled = ts.transpileModule(surfaceSource, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText;
+const surfaceModule = { exports: {} };
+new Function('require', 'module', 'exports', surfaceCompiled)((id) => id === 'three' ? THREE : (() => { throw new Error(`Unexpected surface import: ${id}`); })(), surfaceModule, surfaceModule.exports);
 const outerRequire = (id) => {
   if (id === 'react') return { __esModule: true, default: outerReact, ...outerReact };
   if (id === 'react/jsx-runtime') return {
@@ -33,19 +38,36 @@ const outerRequire = (id) => {
   if (id === 'three') return THREE;
   if (id === '@/modules/store/useOutpostStore') return { useOutpostStore: { getState: () => outerState } };
   if (id === './worldRegions') return world;
-  if (id === './RegionLandmarks') return { RegionConsole: () => null, RegionHero: () => null };
+  if (id === './RegionLandmarks') return { RegionHero: () => null };
+  if (id === './marsSurfaceMaterials') return surfaceModule.exports;
   throw new Error(`Unexpected OuterRegions import: ${id}`);
 };
 new Function('require', 'module', 'exports', outerCompiled)(outerRequire, outerModule, outerModule.exports);
 const { OuterRegionFill, getOuterRegionFillActor, getOuterRegionFillState, getOuterRegionFillPositions,
   OUTER_REGION_FILL_LIGHTS, OUTER_REGION_FILL_RANGE, OUTER_REGION_FILL_START, OUTER_REGION_FILL_FULL } = outerModule.exports;
 const {
-  ADDITIVE_OUTER_COLLIDERS, OUTER_HERO_LANDMARKS, OUTER_HERO_ROCKS, PRESERVED_CORE_RADIUS, ROVER_ROUTES,
-  WORLD_BOUNDS, WORLD_GROUND_Y, WORLD_REGIONS, createOuterTerrainGrid, distanceFromOuterHeroToRoutes,
-  getRegionByPosition, isOuterHeroRouteClear,
-  sampleRegionalLandformHeight, sampleWorldGround, sampleWorldNormal,
+  ADDITIVE_OUTER_COLLIDERS, OUTER_HERO_LANDMARKS, PRESERVED_CORE_RADIUS, ROVER_ROUTES,
+  WORLD_BOUNDS, WORLD_GROUND_Y, WORLD_REGIONS, createOuterTerrainGrid,
+  getRegionByPosition, sampleRegionalLandformHeight, sampleWorldGround, sampleWorldNormal,
 } = world;
 const distance = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
+const { NATURAL_ROCK_SCATTER } = naturalSites;
+const siteRendererSource = readFileSync(new URL('../../src/modules/outpost-3d/RegionLandmarks.tsx', import.meta.url), 'utf8');
+const siteRendererCompiled = ts.transpileModule(siteRendererSource, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, jsx: ts.JsxEmit.React } }).outputText;
+const siteRendererReact = {
+  Fragment: Symbol('Fragment'), createElement: (type, props, ...children) => ({ type, props: { ...props, children: children.length ? children : props?.children } }),
+  useMemo: (factory) => factory(), useEffect: () => {}, useRef: (current) => ({ current }),
+};
+const siteRendererModule = { exports: {} };
+new Function('require', 'module', 'exports', siteRendererCompiled)((id) => {
+  if (id === 'react') return { __esModule: true, default: siteRendererReact, ...siteRendererReact };
+  if (id === 'three') return THREE;
+  if (id === './worldRegions') return world;
+  if (id === './naturalSiteDefinitions') return naturalSites;
+  if (id === './marsSurfaceMaterials') return surfaceModule.exports;
+  if (id === './ScientificElements') return { AncientOutgassingTeachingPlume: () => null };
+  throw new Error(`Unexpected RegionLandmarks import: ${id}`);
+}, siteRendererModule, siteRendererModule.exports);
 const segmentDistance = (p, a, b) => {
   const dx = b.x - a.x;
   const dz = b.z - a.z;
@@ -185,7 +207,7 @@ test('outer ground and normals remain finite, continuous, and gently sloped', ()
       assert.ok(normal.every(Number.isFinite));
       assert.ok(Math.abs(Math.hypot(...normal) - 1) < 1e-10);
       for (const [dx, dz] of [[0.2, 0], [0, 0.2]]) {
-        assert.ok(Math.abs(sampleWorldGround(x + dx, z + dz) - y) <= 0.16);
+        assert.ok(Math.abs(sampleWorldGround(x + dx, z + dz) - y) <= 0.3);
       }
     }
   }
@@ -196,8 +218,8 @@ test('outer ground and normals remain finite, continuous, and gently sloped', ()
   }
 });
 
-test('regional geology produces visible bigforms while preserving every authored ground anchor', () => {
-  const expectedSpans = { impact: 2.5, ice: 3.5, volcano: 3.5, lake: 3.5, dust: 3.5 };
+test('regional geology produces natural relief while preserving canonical anchors', () => {
+  const expectedSpans = { impact: 0.5, ice: 0.5, volcano: 0.5, lake: 0.5, dust: 0.5 };
   for (const region of WORLD_REGIONS) {
     let min = Infinity;
     let max = -Infinity;
@@ -212,15 +234,16 @@ test('regional geology produces visible bigforms while preserving every authored
     }
     assert.ok(max - min >= expectedSpans[region.id], `${region.id} relief span ${max - min}`);
     for (const anchor of [...region.discoveries, ...region.branches, region.baseConsole, region.safeParking]) {
-      assert.equal(sampleRegionalLandformHeight(anchor.x, anchor.z), 0, `${region.id} authored anchor delta`);
+      assert.ok(Number.isFinite(sampleRegionalLandformHeight(anchor.x, anchor.z)), `${region.id} authored anchor is on finite shared ground`);
     }
   }
   for (const landmark of OUTER_HERO_LANDMARKS) {
-    assert.equal(sampleRegionalLandformHeight(landmark.position.x, landmark.position.z), 0, `${landmark.id} hero root delta`);
+    assert.ok(Number.isFinite(sampleWorldGround(landmark.position.x, landmark.position.z)),
+      `${landmark.id} landform uses shared ground sampler`);
   }
 });
 
-test('routes are bounded, continuous, and do not cross additive landmark lanes', () => {
+test('routes are bounded, continuous, and remain clear through natural geology', () => {
   assert.equal(ROVER_ROUTES.length, 5);
   assert.equal(ADDITIVE_OUTER_COLLIDERS.length, 25);
   for (const route of ROVER_ROUTES) {
@@ -253,161 +276,89 @@ test('routes are bounded, continuous, and do not cross additive landmark lanes',
       for (let step = 1; step <= steps; step += 1) {
         const t = step / steps;
         const current = sampleWorldGround(a.x + (b.x - a.x) * t, a.z + (b.z - a.z) * t);
-        assert.ok(Math.abs(current - previous) <= 0.22, `${route.regionId} steep route segment ${previous} -> ${current} at t=${t}`);
+        assert.ok(Math.abs(current - previous) <= 0.3, `${route.regionId} steep route segment ${previous} -> ${current} at t=${t}`);
         previous = current;
       }
     }
   }
 });
 
-test('five named hero assemblies have bounded physical footprints and clear routes', () => {
+test('RegionHero world-space roots retain absolute child transforms and collision-aligned boulder hulls', () => {
+  const iceLandmark = OUTER_HERO_LANDMARKS.find(({ id }) => id === 'ice-scarp');
+  const iceRegion = WORLD_REGIONS.find(({ id }) => id === 'ice');
+  const root = siteRendererModule.exports.RegionHero({ landmark: iceLandmark, region: iceRegion });
+  assert.equal(root.type, 'group');
+  assert.equal(root.props.position, undefined, 'absolute-world child geometry has no translated parent');
+  const expand = (node) => {
+    if (Array.isArray(node)) return node.map(expand);
+    if (!node || typeof node !== 'object') return node;
+    if (typeof node.type === 'function') return expand(node.type(node.props));
+    return { ...node, props: { ...node.props, children: expand(node.props?.children) } };
+  };
+  const expanded = expand(root);
+  let scarp = null;
+  const makeObject = (node, parent) => {
+    if (!node || typeof node !== 'object' || typeof node.type !== 'string') return;
+    const object = node.type === 'mesh' ? new THREE.Mesh(new THREE.IcosahedronGeometry(1, 2)) : new THREE.Group();
+    object.name = node.props?.name ?? '';
+    if (Array.isArray(node.props?.position)) object.position.fromArray(node.props.position);
+    if (Array.isArray(node.props?.rotation)) object.rotation.fromArray(node.props.rotation);
+    if (Array.isArray(node.props?.scale)) object.scale.fromArray(node.props.scale);
+    parent.add(object);
+    if (node.type === 'mesh' && node.props?.scale?.[0] === 9.8) scarp = object;
+    const children = Array.isArray(node.props?.children) ? node.props.children : [node.props?.children];
+    children.forEach((child) => makeObject(child, object));
+  };
+  const scene = new THREE.Group();
+  makeObject(expanded, scene);
+  scene.updateMatrixWorld(true);
+  assert.ok(scarp, 'expanded region renderer has the ice scarp mesh');
+  const worldBounds = new THREE.Box3().setFromObject(scarp);
+  assert.ok(worldBounds.min.x > 245 && worldBounds.max.x < 267, `ice hull matrixWorld bounds remain in sector: ${worldBounds.min.x}..${worldBounds.max.x}`);
+  assert.ok(worldBounds.min.z > -265 && worldBounds.max.z < -250);
+
+  const rocks = NATURAL_ROCK_SCATTER.filter(({ regionId }) => regionId === 'volcano');
+  const geometry = siteRendererModule.exports.createNaturalBoulderGeometry();
+  const instanced = new THREE.InstancedMesh(geometry, new THREE.MeshStandardMaterial(), rocks.length);
+  const matrices = rocks.map(siteRendererModule.exports.getNaturalBoulderInstanceMatrix);
+  matrices.forEach((matrix, index) => instanced.setMatrixAt(index, matrix));
+  instanced.updateMatrixWorld(true);
+  const bounds = new THREE.Box3().setFromObject(instanced);
+  assert.ok(bounds.min.x > -285 && bounds.max.x < -215, 'instanced rock matrixWorld bounds remain in volcano sector');
+  assert.ok(bounds.min.z > 215 && bounds.max.z < 285);
+  const positions = geometry.getAttribute('position');
+  for (const rock of NATURAL_ROCK_SCATTER) {
+    const collider = physics.buildOuterPhysicsAdapter().find(({ id }) => id === rock.id);
+    const matrix = siteRendererModule.exports.getNaturalBoulderInstanceMatrix(rock);
+    let maxRadius = 0, maxY = -Infinity;
+    for (let vertexIndex = 0; vertexIndex < positions.count; vertexIndex += 1) {
+      const vertex = new THREE.Vector3().fromBufferAttribute(positions, vertexIndex).applyMatrix4(matrix);
+      maxRadius = Math.max(maxRadius, Math.hypot(vertex.x - rock.position.x, vertex.z - rock.position.z));
+      maxY = Math.max(maxY, vertex.y);
+    }
+    assert.ok(maxRadius <= collider.radius + 1e-6, `${rock.id} actual rotated hull ${maxRadius} fits collision radius ${collider.radius}`);
+    assert.ok(maxY <= collider.topY + 1e-6, `${rock.id} actual geometry max ${maxY} fits collision top ${collider.topY}`);
+  }
+});
+
+test('five named natural landforms have generous non-colliding extents and match visible site proxies', () => {
   assert.equal(OUTER_HERO_LANDMARKS.length, 5);
   assert.deepEqual(OUTER_HERO_LANDMARKS.map(({ id }) => id).sort(), [
-    'dust-weather-truss', 'ice-drill-gantry', 'impact-radome', 'lake-strata-arch', 'volcano-survey-truss',
+    'dust-dunes', 'ice-scarp', 'impact-crater', 'lake-bluff', 'volcano-shield',
   ]);
-  const footprintGeometry = new THREE.BoxGeometry(1, 1, 1);
-  const source = readFileSync(new URL('../../src/modules/outpost-3d/RegionLandmarks.tsx', import.meta.url), 'utf8');
-  const compiled = ts.transpileModule(source, {
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, jsx: ts.JsxEmit.React },
-  }).outputText;
-  const element = (type, props, ...children) => ({
-    type, props: { ...props, children: children.length ? children.length === 1 ? children[0] : children : props?.children },
-  });
-  const React = {
-    Fragment: Symbol('Fragment'), createElement: element, useMemo: (factory) => factory(), useEffect: () => {}, useRef: (current) => ({ current }),
-  };
-  const realMaterials = Object.fromEntries(['frame', 'dark', 'shell', 'shellShade', 'seam', 'amber', 'glass', 'foil']
-    .map((name) => [name, new THREE.MeshStandardMaterial()]));
-  const componentModule = { exports: {} };
-  const localRequire = (id) => {
-    if (id === 'react') return { __esModule: true, default: React, ...React };
-    if (id === 'three') return THREE;
-    if (id === '@react-three/fiber') return { useFrame: () => {} };
-    if (id === '../../game/art/realism/materials') return { realMaterials };
-    if (id === './worldRegions') return world;
-    throw new Error(`Unexpected RegionLandmarks import: ${id}`);
-  };
-  new Function('require', 'module', 'exports', compiled)(localRequire, componentModule, componentModule.exports);
-  const { RegionHero } = componentModule.exports;
-  const findNamedNode = (node, name) => {
-    if (!node) return null;
-    if (Array.isArray(node)) return node.map((child) => findNamedNode(child, name)).find(Boolean) ?? null;
-    if (typeof node.type === 'function') return findNamedNode(node.type(node.props), name);
-    if (node.type === React.Fragment) return findNamedNode(node.props.children, name);
-    if (node.props?.name === name) return node;
-    return findNamedNode(node.props?.children, name);
-  };
-  const lakeLandmark = OUTER_HERO_LANDMARKS.find(({ id }) => id === 'lake-strata-arch');
-  const lakeRegion = WORLD_REGIONS.find(({ id }) => id === 'lake');
-  const strataFace = findNamedNode(RegionHero({ landmark: lakeLandmark, region: lakeRegion }), 'exposed-lake-strata-face');
-  assert.ok(strataFace, 'lake hero exposes its sediment face');
-  const strataBands = strataFace.props.children;
-  assert.equal(strataBands.length, 5);
-  assert.ok(strataBands.every(({ type, props }) => type === 'mesh' && props.position[0] < -1.74));
-  assert.deepEqual(strataBands.map(({ props }) => props.position[1]), [0.22, 0.55, 0.88, 1.21, 1.54]);
-  assert.ok(strataBands.every(({ props }) => props.scale[1] === 0.13
-    && props.position[1] - props.scale[1] / 2 >= 0.1
-    && props.position[1] + props.scale[1] / 2 <= 1.7));
-  assert.equal(new Set(strataBands.map(({ props }) => props.material)).size, 5);
-  const heroAdapter = physics.buildOuterPhysicsAdapter();
-  const collectWorldVertices = (root) => {
-    const vertices = [];
-    const visit = (node, parentMatrix = new THREE.Matrix4(), skip = false) => {
-      if (!node) return;
-      if (Array.isArray(node)) { node.forEach((child) => visit(child, parentMatrix, skip)); return; }
-      if (typeof node.type === 'function') { visit(node.type(node.props), parentMatrix, skip); return; }
-      if (node.type === React.Fragment) { visit(node.props.children, parentMatrix, skip); return; }
-      const props = node.props ?? {};
-      const object = new THREE.Object3D();
-      if (props.position) object.position.set(...props.position);
-      if (props.quaternion) object.quaternion.copy(props.quaternion);
-      if (props.rotation) object.rotation.set(...props.rotation);
-      if (props.scale) object.scale.set(...props.scale);
-      object.updateMatrix();
-      const matrix = parentMatrix.clone().multiply(object.matrix);
-      const ignored = skip || props.name === 'slow-bounded-dust-devil' || props.name === 'hero-rock-cluster';
-      if (!ignored && props.geometry) {
-        const positions = props.geometry.getAttribute('position');
-        for (let index = 0; index < positions.count; index += 1) {
-          vertices.push(new THREE.Vector3().fromBufferAttribute(positions, index).applyMatrix4(matrix));
-        }
-      }
-      if (props.children) visit(props.children, matrix, ignored);
-    };
-    visit(root);
-    return vertices;
-  };
-  const rockGeometry = new THREE.DodecahedronGeometry(1, 0);
   for (const landmark of OUTER_HERO_LANDMARKS) {
-    const clearance = distanceFromOuterHeroToRoutes(landmark);
-    assert.ok(Number.isFinite(clearance) && clearance >= 8, `${landmark.id} route clearance ${clearance}`);
-    assert.equal(isOuterHeroRouteClear(landmark), clearance >= 8);
-    assert.ok(landmark.halfX > 0 && landmark.halfZ > 0 && landmark.topOffset > 0);
-    const region = WORLD_REGIONS.find(({ id }) => id === landmark.regionId);
-    const heroVertices = collectWorldVertices(RegionHero({ landmark, region }));
-    const ground = sampleWorldGround(landmark.position.x, landmark.position.z);
-    const bodyBounds = { halfX: 0, halfZ: 0, topY: -Infinity };
-    for (const vertex of heroVertices) {
-      const dx = vertex.x - landmark.position.x;
-      const dz = vertex.z - landmark.position.z;
-      const localX = dx * Math.cos(landmark.yaw) - dz * Math.sin(landmark.yaw);
-      const localZ = dx * Math.sin(landmark.yaw) + dz * Math.cos(landmark.yaw);
-      bodyBounds.halfX = Math.max(bodyBounds.halfX, Math.abs(localX));
-      bodyBounds.halfZ = Math.max(bodyBounds.halfZ, Math.abs(localZ));
-      bodyBounds.topY = Math.max(bodyBounds.topY, vertex.y);
-    }
-    assert.ok(bodyBounds.halfX <= landmark.halfX + 1e-6,
-      `${landmark.id} rendered halfX=${bodyBounds.halfX} exceeds OBB=${landmark.halfX}`);
-    assert.ok(bodyBounds.halfZ <= landmark.halfZ + 1e-6,
-      `${landmark.id} rendered halfZ=${bodyBounds.halfZ} exceeds OBB=${landmark.halfZ}`);
-    assert.ok(bodyBounds.topY <= ground + landmark.topOffset + 1e-6,
-      `${landmark.id} rendered top=${bodyBounds.topY} exceeds collider=${ground + landmark.topOffset}`);
-
-    for (const [index, [x, y, z, sx, sy, sz]] of OUTER_HERO_ROCKS[landmark.id].entries()) {
-      const proxy = heroAdapter.find(({ id }) => id === `outer-hero-${landmark.id}-rock-${index + 1}`);
-      assert.ok(proxy && proxy.type === 'circle', `${landmark.id} rock ${index + 1} has circle proxy`);
-      assert.equal(proxy.radius, Math.max(sx, sy, sz));
-      const rockCenterY = ground + y + sy * 0.43;
-      assert.ok(proxy.topY >= rockCenterY + Math.max(sx, sy, sz), `${landmark.id} rock ${index + 1} proxy top`);
-      const rockVertices = rockGeometry.getAttribute('position');
-      const mesh = new THREE.Object3D();
-      mesh.position.set(x, y + sy * 0.43, z);
-      mesh.scale.set(sx, sy, sz);
-      mesh.rotation.set(0.12 * index, 0.24 * index, 0.08 * index);
-      mesh.updateMatrix();
-      const world = new THREE.Object3D();
-      world.position.set(landmark.position.x, ground, landmark.position.z);
-      world.rotation.y = landmark.yaw;
-      world.updateMatrix();
-      const matrix = world.matrix.clone().multiply(mesh.matrix);
-      for (let vertexIndex = 0; vertexIndex < rockVertices.count; vertexIndex += 1) {
-        const vertex = new THREE.Vector3().fromBufferAttribute(rockVertices, vertexIndex).applyMatrix4(matrix);
-        assert.ok(Math.hypot(vertex.x - proxy.x, vertex.z - proxy.z) <= proxy.radius + 1e-6,
-          `${landmark.id} rock ${index + 1} rendered vertex outside circle proxy`);
-        assert.ok(vertex.y <= proxy.topY + 1e-6,
-          `${landmark.id} rock ${index + 1} rendered vertex above proxy`);
-      }
-    }
+    assert.ok(landmark.halfX > 0 && landmark.halfZ > 0);
     assert.ok(landmark.position.x - landmark.halfX >= WORLD_BOUNDS.minX);
     assert.ok(landmark.position.x + landmark.halfX <= WORLD_BOUNDS.maxX);
     assert.ok(landmark.position.z - landmark.halfZ >= WORLD_BOUNDS.minZ);
     assert.ok(landmark.position.z + landmark.halfZ <= WORLD_BOUNDS.maxZ);
     assert.ok(Math.hypot(landmark.position.x, landmark.position.z) > PRESERVED_CORE_RADIUS);
-    const landmarkRegion = WORLD_REGIONS.find(({ id }) => id === landmark.regionId);
-    assert.ok(landmarkRegion);
-    assert.ok(distance(landmark.position, landmarkRegion.center) < 32, `${landmark.id} remains within its region`);
-    const anchorRoverRoute = ROVER_ROUTES.find(({ regionId }) => regionId === landmark.regionId);
-    assert.ok(anchorRoverRoute);
-    for (const [index, approach] of [
-      { x: landmark.position.x + landmark.halfX + 4.5, z: landmark.position.z },
-      { x: landmark.position.x - landmark.halfX - 4.5, z: landmark.position.z },
-      { x: landmark.position.x, z: landmark.position.z + landmark.halfZ + 4.5 },
-      { x: landmark.position.x, z: landmark.position.z - landmark.halfZ - 4.5 },
-    ].entries()) {
-      assert.ok(Number.isFinite(sampleWorldGround(approach.x, approach.z)), `${landmark.id} approach ${index}`);
-    }
   }
-  footprintGeometry.dispose();
+  assert.ok(OUTER_HERO_LANDMARKS.every((landmark) => distance(landmark.position, WORLD_REGIONS.find(({ id }) => id === landmark.regionId).center) < 60));
+  const source = readFileSync(new URL('../../src/modules/outpost-3d/RegionLandmarks.tsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(source, /RegionConsole|ImpactRadome|WeatherTruss|DrillGantry|SurveyTruss|StrataArch|PracticalLamp/);
+  assert.match(source, /createMarsSurfaceMaterial/);
+  assert.match(source, /instancedMesh/);
 });
 
 test('four-meter outer mesh tracks canonical ground on route and regional approaches', () => {

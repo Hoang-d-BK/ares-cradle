@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { addAfterEffect, Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { 
@@ -26,6 +26,8 @@ import SpaceSkybox from './SpaceSkybox';
 import AstronautPlayer from '@/modules/character/AstronautPlayer';
 import CameraRig from '@/modules/character/CameraRig';
 import PhysicsDebugHitboxes from './PhysicsDebugHitboxes';
+import { EMPTY_STARTUP_MILESTONES, hasMountedMarsTerrain, isStaticScienceCatalogValid, observeSceneReadiness, type SceneReadiness, type StartupMilestones } from './sceneReadiness';
+import { SCIENTIFIC_ELEMENTS } from './scienceCatalog';
 
 /**
  * High-performance frame driver connecting R3F render loop with the domain simulation tick.
@@ -112,8 +114,74 @@ function DynamicCameraController({ isDebug }: { isDebug: boolean }) {
  * Integrates CC0 Low-Poly Astronaut, Mars Rover, Energy Crystals, NASA InSight Hologram,
  * and GPU Post-Processing Shader Pipeline.
  */
-export const MarsCanvas: React.FC = () => {
+export interface MarsCanvasProps {
+  onSceneReadinessChange?: (readiness: SceneReadiness) => void;
+  onStartupMilestonesChange?: (milestones: StartupMilestones) => void;
+}
+
+
+interface CanvasErrorBoundaryProps {
+  children: React.ReactNode;
+  onError: () => void;
+}
+
+class CanvasErrorBoundary extends React.Component<CanvasErrorBoundaryProps, { failed: boolean }> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch(error: unknown) {
+    console.error('The Mars 3D view could not start.', error);
+    this.props.onError();
+  }
+
+  render() {
+    if (this.state.failed) {
+      return <div role="status" className="absolute inset-0 grid place-content-center bg-[#0B0E14] p-6 text-center text-lg text-[#f1ddca]">
+        <p>The 3D view is unavailable. You can still read the field guide and start exploring.</p>
+      </div>;
+    }
+    return this.props.children;
+  }
+}
+
+function StartupMilestoneReporter({ onReport }: { onReport: (scene: THREE.Scene, gl: THREE.WebGLRenderer) => void }) {
+  const { scene, gl } = useThree();
+  useFrame(() => onReport(scene, gl));
+  return null;
+}
+
+export const MarsCanvas: React.FC<MarsCanvasProps> = ({ onSceneReadinessChange, onStartupMilestonesChange }) => {
   const graphicsQuality = useOutpostStore((state) => state.graphicsQuality);
+  const readinessCleanupRef = React.useRef<(() => void) | null>(null);
+  const readinessRendererRef = React.useRef<THREE.WebGLRenderer | null>(null);
+  const readinessCallbackRef = React.useRef(onSceneReadinessChange);
+  const startupCallbackRef = React.useRef(onStartupMilestonesChange);
+  const startupMilestonesRef = React.useRef<StartupMilestones>(EMPTY_STARTUP_MILESTONES);
+  readinessCallbackRef.current = onSceneReadinessChange;
+  startupCallbackRef.current = onStartupMilestonesChange;
+  const bindRendererReadiness = React.useCallback((renderer: THREE.WebGLRenderer) => {
+    readinessCleanupRef.current?.();
+    readinessRendererRef.current = renderer;
+    readinessCleanupRef.current = observeSceneReadiness(
+      renderer.domElement,
+      () => renderer.info.render.frame,
+      addAfterEffect,
+      (readiness) => {
+        if (readinessRendererRef.current === renderer) readinessCallbackRef.current?.(readiness);
+      },
+      () => Object.values(startupMilestonesRef.current).every(Boolean),
+    );
+  }, []);
+  React.useEffect(() => {
+    if (readinessRendererRef.current) bindRendererReadiness(readinessRendererRef.current);
+    return () => {
+      readinessCleanupRef.current?.();
+      readinessCleanupRef.current = null;
+    };
+  }, [bindRendererReadiness]);
 
   // Query flag check for ?debug=true
   const isDebug = useMemo(() => {
@@ -123,6 +191,24 @@ export const MarsCanvas: React.FC = () => {
 
   const canvasDpr: number | [number, number] =
     graphicsQuality === 'low' ? 1 : graphicsQuality === 'medium' ? [1, 1.5] : [1, 2];
+
+  const reportStartupMilestones = React.useCallback((scene: THREE.Scene, renderer: THREE.WebGLRenderer) => {
+    const next: StartupMilestones = {
+      renderer: Boolean(renderer.domElement && renderer.getContext()),
+      'first-frame': renderer.info.render.frame > 0,
+      terrain: hasMountedMarsTerrain(scene),
+      'science-catalog': isStaticScienceCatalogValid(SCIENTIFIC_ELEMENTS),
+    };
+    const updated = { ...startupMilestonesRef.current };
+    let changed = false;
+    for (const id of Object.keys(next) as Array<keyof StartupMilestones>) {
+      if (next[id] && !updated[id]) { updated[id] = true; changed = true; }
+    }
+    if (changed) {
+      startupMilestonesRef.current = updated;
+      startupCallbackRef.current?.(updated);
+    }
+  }, []);
 
   return (
     <div
@@ -145,7 +231,9 @@ export const MarsCanvas: React.FC = () => {
         }}
       />
 
+      <CanvasErrorBoundary onError={() => onSceneReadinessChange?.('limited')}>
       <Canvas
+        fallback={<span role="status">The 3D view is unavailable.</span>}
         camera={{ position: [0, 6.5, 13], fov: 45 }}
         dpr={canvasDpr}
         shadows={graphicsQuality !== 'low'}
@@ -155,6 +243,8 @@ export const MarsCanvas: React.FC = () => {
           powerPreference: 'high-performance'
         }}
         onCreated={({ gl, scene }) => {
+          bindRendererReadiness(gl);
+          reportStartupMilestones(scene, gl);
           // Keep browser gestures on the canvas so touch drags can drive the camera.
           gl.domElement.style.touchAction = 'none';
           gl.domElement.style.overscrollBehavior = 'none';
@@ -164,6 +254,8 @@ export const MarsCanvas: React.FC = () => {
           scene.fog = new THREE.FogExp2('#0B0E14', 0.035);
         }}
       >
+        <StartupMilestoneReporter onReport={reportStartupMilestones} />
+
         {/* Real-time simulation tick processor */}
         <SimulationLoopDriver />
 
@@ -229,6 +321,7 @@ export const MarsCanvas: React.FC = () => {
           />
         )}
       </Canvas>
+      </CanvasErrorBoundary>
       <ScientificInteractionPrompt />
     </div>
   );

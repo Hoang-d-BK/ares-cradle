@@ -5,7 +5,9 @@ import { loadTsModule } from '../mission-v2/support/load-ts-module.mjs';
 const physics = await loadTsModule('../../src/modules/character/physicsEngine.ts', import.meta.url);
 const world = await loadTsModule('../../src/modules/outpost-3d/worldRegions.ts', import.meta.url);
 const { PHYSICS_CONSTANTS, STATIC_WORLD_COLLIDERS, buildWorldColliders, canRoverOccupy, stepPlayerPhysics } = physics;
-const { ADDITIVE_OUTER_COLLIDERS, OUTER_HERO_LANDMARKS, OUTER_HERO_ROCKS, ROVER_ROUTES, WORLD_BOUNDS, WORLD_GROUND_Y, WORLD_REGIONS, isOuterHeroRouteClear, sampleRegionalLandformHeight, sampleWorldGround } = world;
+const { ROVER_ROUTES, WORLD_BOUNDS, WORLD_GROUND_Y, WORLD_REGIONS, sampleWorldGround } = world;
+const sites = await loadTsModule('../../src/modules/outpost-3d/naturalSiteDefinitions.ts', import.meta.url);
+const { NATURAL_ROCK_SCATTER } = sites;
 const initial = (x, z, y = sampleWorldGround(x, z)) => ({
   x, y, z, vy: 0, isGrounded: true, isBlocked: false, blockedByLabel: null,
   blockedObstacleJumpable: false, standingOnLabel: null,
@@ -13,104 +15,51 @@ const initial = (x, z, y = sampleWorldGround(x, z)) => ({
 const step = (state, moveX = 0, moveZ = 0, jumpJustPressed = false, dt = 0.05) =>
   stepPlayerPhysics(state, { moveX, moveZ, jumpJustPressed, dt });
 
-test('keeps original collider definitions and appends the matching outer colliders', () => {
-  assert.equal(ADDITIVE_OUTER_COLLIDERS.length, 25);
-  assert.equal(STATIC_WORLD_COLLIDERS.length, 81);
+test('keeps the first 29 original colliders and replaces outer tech blockers with natural rock footprints', () => {
   assert.equal(STATIC_WORLD_COLLIDERS[0].id, 'habitat-dome-wall');
   assert.equal(STATIC_WORLD_COLLIDERS[28].id, 'mesa-west');
-  for (const [index, outer] of ADDITIVE_OUTER_COLLIDERS.entries()) {
-    const collider = STATIC_WORLD_COLLIDERS[29 + index];
-    assert.equal(collider.id, outer.id);
-    assert.equal(collider.type, 'circle');
-    assert.equal(collider.x, outer.x);
-    assert.equal(collider.z, outer.z);
-    assert.equal(collider.radius, outer.radius);
-    assert.equal(collider.topY, sampleWorldGround(outer.x, outer.z) + 3.4);
-    assert.equal(collider.jumpable, false);
-  }
-  assert.equal(STATIC_WORLD_COLLIDERS[28].id, 'mesa-west');
-  assert.equal(STATIC_WORLD_COLLIDERS[54].id, 'legacy-mars-rover-exhibit');
+  const originalRover = STATIC_WORLD_COLLIDERS.find(({ id }) => id === 'legacy-mars-rover-exhibit');
+  assert.ok(originalRover);
+  assert.deepEqual([originalRover.x, originalRover.z, originalRover.radius], [3.8, -2.2, 0.95]);
   for (const collider of STATIC_WORLD_COLLIDERS) {
-    if (collider.id.startsWith('outer-hero-') || ADDITIVE_OUTER_COLLIDERS.some(({ id }) => collider.id === id)) {
-      assert.equal(sampleRegionalLandformHeight(collider.x, collider.z), 0,
-        `${collider.id} physical anchor retains its authored ground`);
-    }
+    assert.ok(!/base-console|radome|gantry|truss|strata-arch|discovery-|branch-/.test(collider.id), collider.id);
   }
-  assert.equal(STATIC_WORLD_COLLIDERS[54].x, 3.8);
-  assert.equal(STATIC_WORLD_COLLIDERS[54].z, -2.2);
-  assert.equal(STATIC_WORLD_COLLIDERS[54].radius, 0.95);
-  const heroColliders = STATIC_WORLD_COLLIDERS.filter(({ id }) => id.startsWith('outer-hero-') && !id.includes('-rock-'));
-  const renderedHeroIds = OUTER_HERO_LANDMARKS.map(({ id }) => `outer-hero-${id}`).sort();
-  assert.deepEqual(heroColliders.map(({ id }) => id).sort(), renderedHeroIds,
-    'physics includes every rendered hero despite route-clearance filtering');
-  assert.equal(heroColliders.length, 5);
-  const heroRockColliders = STATIC_WORLD_COLLIDERS.filter(({ id }) => id.includes('-rock-'));
-  assert.equal(heroRockColliders.length, 16, 'every rendered rock has its own routeable physical proxy');
-  for (const landmark of OUTER_HERO_LANDMARKS) {
-    const collider = heroColliders.find(({ id }) => id === `outer-hero-${landmark.id}`);
-    assert.ok(collider);
-    assert.deepEqual([collider.x, collider.z, collider.halfX, collider.halfZ, collider.rotationY],
-      [landmark.position.x, landmark.position.z, landmark.halfX, landmark.halfZ, -landmark.yaw]);
-    assert.equal(collider.topY, sampleWorldGround(landmark.position.x, landmark.position.z) + landmark.topOffset);
-    const rockColliders = STATIC_WORLD_COLLIDERS.filter(({ id }) => id.startsWith(`outer-hero-${landmark.id}-rock-`));
-    assert.equal(rockColliders.length, OUTER_HERO_ROCKS[landmark.id].length);
-    for (const [index, [x, y, z, sx, sy, sz]] of OUTER_HERO_ROCKS[landmark.id].entries()) {
-      const rock = rockColliders.find(({ id }) => id.endsWith(`rock-${index + 1}`));
-      const cos = Math.cos(landmark.yaw);
-      const sin = Math.sin(landmark.yaw);
-      const radius = Math.max(sx, sy, sz);
-      assert.equal(rock.type, 'circle');
-      assert.deepEqual([rock.x, rock.z, rock.radius], [
-        landmark.position.x + cos * x + sin * z,
-        landmark.position.z - sin * x + cos * z,
-        radius,
-      ]);
-      assert.ok(rock.topY >= sampleWorldGround(landmark.position.x, landmark.position.z) + y + sy * 0.43 + radius);
-    }
-
-    const localX = landmark.halfX + PHYSICS_CONSTANTS.ROVER_RADIUS + 0.12;
-    const outsideX = landmark.position.x + localX * Math.cos(landmark.yaw);
-    const outsideZ = landmark.position.z - localX * Math.sin(landmark.yaw);
-    const outside = initial(outsideX, outsideZ);
-    const approach = stepPlayerPhysics(outside, { moveX: 0, moveZ: 0, jumpJustPressed: false, dt: 0.05 }, [collider], PHYSICS_CONSTANTS.ROVER_RADIUS);
-    assert.equal(approach.isBlocked, false, `${landmark.id} approach just outside rendered footprint`);
-  }
-  for (const region of WORLD_REGIONS) {
-    const console = STATIC_WORLD_COLLIDERS.find(({ id }) => id === `${region.id}-base-console`);
-    assert.ok(console);
-    assert.equal(console.type, 'box');
-    assert.deepEqual([console.halfX, console.halfZ], [0.96, 0.96]);
-    assert.equal(console.topY, sampleWorldGround(region.baseConsole.x, region.baseConsole.z) + 1.72);
-    assert.equal(canRoverOccupy(region.safeParking.x, region.safeParking.z, 1.55), true,
-      `${region.id} safe parking remains clear for the rover`);
+  const natural = physics.buildOuterPhysicsAdapter();
+  assert.equal(natural.length,
+    NATURAL_ROCK_SCATTER.length + sites.NATURAL_LANDMARK_SUPPORTS.length + physics.buildCanonicalScienceColliders().length +
+    natural.filter(({ id }) => /^(lava-tube-mouth-rock|ancient-vent-rock)-/.test(id)).length);
+  for (const rock of NATURAL_ROCK_SCATTER) {
+    const collider = natural.find(({ id }) => id === rock.id);
+    assert.ok(collider, `${rock.id} has a collider matching its rendered proxy`);
+    assert.deepEqual([collider.x, collider.z], [rock.position.x, rock.position.z]);
+    assert.ok(collider.radius === rock.radius * 0.9, `${rock.id} collision footprint matches the bounded rendered hull allowance`);
+    assert.ok(collider.topY >= sampleWorldGround(rock.position.x, rock.position.z) + rock.height * 0.68);
+    assert.ok(collider.topY <= sampleWorldGround(rock.position.x, rock.position.z) + rock.height * 0.82);
   }
 });
 
-test('blocks the legacy rover exhibit, hero footprints, and console bodies', () => {
+test('natural boulders remain locally collidable without forming region-scale walls', () => {
   const rover = STATIC_WORLD_COLLIDERS.find(({ id }) => id === 'legacy-mars-rover-exhibit');
-  assert.ok(rover);
   assert.equal(canRoverOccupy(rover.x, rover.z), false);
   assert.equal(canRoverOccupy(rover.x + rover.radius + PHYSICS_CONSTANTS.ROVER_RADIUS + 0.5, rover.z + 4), true);
-
-  const console = STATIC_WORLD_COLLIDERS.find(({ id }) => id === 'impact-base-console');
-  assert.ok(console);
-  assert.equal(canRoverOccupy(console.x, console.z), false);
-
-  const hero = STATIC_WORLD_COLLIDERS.find(({ id }) => id === 'outer-hero-impact-radome');
-  assert.ok(hero);
-  assert.equal(canRoverOccupy(hero.x, hero.z), false);
-
-  const localX = hero.halfX + PHYSICS_CONSTANTS.ROVER_RADIUS + 0.01;
-  const angle = hero.rotationY ?? 0;
-  const outsideX = hero.x + localX * Math.cos(angle);
-  const outsideZ = hero.z + localX * Math.sin(angle);
-  const outside = {
-    x: outsideX, y: sampleWorldGround(outsideX, outsideZ), z: outsideZ,
-    vy: 0, isGrounded: true, isBlocked: false,
-    blockedByLabel: null, blockedObstacleJumpable: false, standingOnLabel: null,
-  };
-  const freeStep = stepPlayerPhysics(outside, { moveX: 0, moveZ: 0, jumpJustPressed: false, dt: 0.05 }, [hero], PHYSICS_CONSTANTS.ROVER_RADIUS);
-  assert.equal(freeStep.isBlocked, false, 'rover stays clear just outside the measured hero footprint');
+  for (const rock of NATURAL_ROCK_SCATTER) {
+    assert.equal(canRoverOccupy(rock.position.x, rock.position.z), false, `${rock.id} blocks its visible stone`);
+    assert.equal(canRoverOccupy(rock.position.x + rock.radius + 3, rock.position.z), true, `${rock.id} has nearby clear approach`);
+  }
+  const scarp = sites.NATURAL_LANDMARK_SUPPORTS[0];
+  const scarpCollider = physics.buildOuterPhysicsAdapter().find(({ id }) => id === scarp.id);
+  assert.equal(canRoverOccupy(scarp.position.x, scarp.position.z), false, 'visible ice scarp has a natural footprint collider');
+  const probeOutsideScarp = { x: scarp.position.x + scarp.halfX + 4, z: scarp.position.z };
+  assert.equal(canRoverOccupy(probeOutsideScarp.x, probeOutsideScarp.z), true, 'ice scarp leaves a local walkable approach');
+  let player = initial(scarp.position.x - scarp.halfX - 1, scarp.position.z);
+  const destination = scarp.position.x;
+  for (let index = 0; index < 40; index += 1) player = step(player, 4.2, 0, false, 0.05);
+  assert.ok(player.x <= destination - PHYSICS_CONSTANTS.PLAYER_RADIUS + 0.02, `player cannot pass through scarp mesh: ${player.x}`);
+  assert.ok(scarpCollider.topY > sampleWorldGround(scarp.position.x, scarp.position.z) + 1.9);
+  for (const region of WORLD_REGIONS) {
+    assert.equal(canRoverOccupy(region.safeParking.x, region.safeParking.z, 1.55), true,
+      `${region.id} safe parking remains clear for the rover`);
+  }
 });
 
 test('parked rover collider encloses authored playable model height and footprint', () => {
@@ -189,9 +138,9 @@ test('outer science anchors retain a rover-accessible approach inside 4.5m', () 
       assert.ok(approach, `${region.id} discovery ${index + 1} has no clear rover approach within 4.5m`);
     }
   }
-  const feature = ADDITIVE_OUTER_COLLIDERS.find(({ id }) => id === 'ice.discovery-1');
+  const feature = NATURAL_ROCK_SCATTER.find(({ regionId }) => regionId === 'ice');
   assert.ok(feature);
-  assert.equal(canRoverOccupy(feature.x, feature.z), false);
+  assert.equal(canRoverOccupy(feature.position.x, feature.position.z), false);
   assert.equal(canRoverOccupy(301, 0), false);
 });
 

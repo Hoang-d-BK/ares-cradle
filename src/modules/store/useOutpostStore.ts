@@ -11,6 +11,7 @@ import { soundEngine } from '@/modules/audio/soundEngine';
 import { MarsWeatherTelemetry, fetchMarsWeather } from '@/modules/story-engine/services/marsWeatherService';
 import { useStoryStore } from './useStoryStore';
 import { getRegionByPosition, sampleWorldGround, WORLD_BOUNDS, WORLD_REGIONS, type RegionId } from '@/modules/outpost-3d/worldRegions';
+import { getGameplayStarted } from '@/modules/session/gameSession';
 import {
   createInitialExplorationProgress,
   EXPLORATION_STORAGE_KEY,
@@ -367,20 +368,21 @@ export const useOutpostStore = create<OutpostStoreState>((set, get) => {
   explorationWarning: initialExploration.warning,
   explorationPersistenceBlocked: initialExploration.persistenceBlocked,
   inspectScientificElement: (id) => {
+    if (!getGameplayStarted()) return false;
     const state = get();
-    const position = state.isDrivingRover && state.remoteRegionId
-      ? state.roverPos
-      : state.playerPos;
+    const modalOpen = state.isBackpackOpen || state.isManualOpen || state.isDatapadOpen || state.isClassroomOpen ||
+      state.isBrownoutQuizOpen || state.isCelebrationOpen || state.isVictory || state.isGameOver || state.activeScienceEntryId !== null ||
+      (typeof document !== 'undefined' && Boolean(document.querySelector('[role="dialog"]')));
+    if (modalOpen) return false;
+    const position = state.isDrivingRover ? state.roverPos : state.playerPos;
     const context = {
       position,
       isRemote: state.isDrivingRover,
       remoteRegionId: state.remoteRegionId,
       isGrounded: state.isDrivingRover || state.isPlayerGrounded
     };
+    const result = collectScientificElement(state.exploration, id, context);
     const alreadyCollected = state.exploration.collected.includes(id);
-    const result = alreadyCollected
-      ? { state: state.exploration, changed: false }
-      : collectScientificElement(state.exploration, id, context);
     if (result.error) {
       set({ explorationNotice: result.error });
       return false;
@@ -404,7 +406,7 @@ export const useOutpostStore = create<OutpostStoreState>((set, get) => {
     if (get().exploration.collected.includes(id) && typeof document !== 'undefined' && document.pointerLockElement && typeof document.exitPointerLock === 'function') document.exitPointerLock();
   },
   consumeSurvivalItem: (itemId) => {
-    if (!['air_canister', 'space_apple', 'backup_battery'].includes(itemId)) return false;
+    if (!getGameplayStarted() || !['air_canister', 'space_apple', 'backup_battery'].includes(itemId)) return false;
     const state = get();
     if ((state.inventory[itemId] ?? 0) < 1 || (state.exploration.supplies[itemId as keyof typeof state.exploration.supplies] ?? 0) < 1) {
       set({ explorationNotice: 'No supplies of this type remain.' });
@@ -855,6 +857,7 @@ export const useOutpostStore = create<OutpostStoreState>((set, get) => {
     }));
   },
   toggleDrivingRover: () => {
+    if (!getGameplayStarted()) return;
     const state = get();
     if (!state.isDrivingRover) {
       if (state.exploration.survival.energyEU <= 0) {
@@ -1118,6 +1121,7 @@ export const useOutpostStore = create<OutpostStoreState>((set, get) => {
   },
 
   tick: (deltaSeconds = 0.1) => {
+    if (!getGameplayStarted()) return;
     const state = get();
     if (!state.isSimulating || state.isGameOver || state.isVictory) return;
     const paused = state.isBackpackOpen || state.isDatapadOpen || state.isClassroomOpen || state.isBrownoutQuizOpen ||

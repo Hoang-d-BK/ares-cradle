@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useOutpostStore } from '@/modules/store/useOutpostStore';
+import { getGameplayStarted } from '@/modules/session/gameSession';
 import { soundEngine } from '@/modules/audio/soundEngine';
 import {
   PHYSICS_CONSTANTS,
@@ -130,6 +131,12 @@ export const AstronautPlayer: React.FC = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const liveStoreState = useOutpostStore.getState();
+      if (!getGameplayStarted()) {
+        keysPressed.current = {};
+        jumpQueued.current = false;
+        lastHandledJumpCount.current = liveStoreState.jumpRequestCount;
+        return;
+      }
       if (liveStoreState.isDrivingRover) {
         keysPressed.current = {};
         jumpQueued.current = false;
@@ -201,6 +208,17 @@ export const AstronautPlayer: React.FC = () => {
   useFrame((state, delta) => {
     if (!groupRef.current) return;
 
+    if (!getGameplayStarted()) {
+      keysPressed.current = {};
+      jumpQueued.current = false;
+      lastHandledJumpCount.current = useOutpostStore.getState().jumpRequestCount;
+      physicsRef.current.vx = 0;
+      physicsRef.current.vy = 0;
+      physicsRef.current.vz = 0;
+      groupRef.current.visible = true;
+      return;
+    }
+
     if (isDrivingRover) {
       keysPressed.current = {};
       jumpQueued.current = false;
@@ -208,7 +226,7 @@ export const AstronautPlayer: React.FC = () => {
       groupRef.current.visible = true;
       return;
     }
-    groupRef.current.visible = false;
+    groupRef.current.visible = true;
 
     const safeDelta = Math.min(delta, PHYSICS_CONSTANTS.MAX_DT);
 

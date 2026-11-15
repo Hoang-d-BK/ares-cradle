@@ -11,8 +11,13 @@ import ExplorationHUD from './ExplorationHUD';
 import QuickControlsManual from './QuickControlsManual';
 import ExplorationMap from './ExplorationMap';
 import ScienceCodex from './ScienceCodex';
+import type { SceneReadiness } from '@/modules/outpost-3d/sceneReadiness';
 
-export const MissionControlOverlay: React.FC = () => {
+export interface MissionControlOverlayProps {
+  sceneReadiness?: SceneReadiness;
+}
+
+export const MissionControlOverlay: React.FC<MissionControlOverlayProps> = ({ sceneReadiness = 'idle' }) => {
   const [isShowcaseOpen, setIsShowcaseOpen] = useState(false);
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [isCodexOpen, setIsCodexOpen] = useState(false);
@@ -47,6 +52,7 @@ export const MissionControlOverlay: React.FC = () => {
   const roverPos = useOutpostStore((state) => state.roverPos);
   const remoteRegionId = useOutpostStore((state) => state.remoteRegionId);
   const isDrivingRover = useOutpostStore((state) => state.isDrivingRover);
+  const cameraYaw = useOutpostStore((state) => state.cameraYaw);
   const activeWaypointRegionId = useOutpostStore((state) => state.activeWaypointRegionId);
   const setWaypointRegion = useOutpostStore((state) => state.setWaypointRegion);
   const openBackpack = useOutpostStore((state) => state.openBackpack);
@@ -56,7 +62,6 @@ export const MissionControlOverlay: React.FC = () => {
   const togglePhysicsDebug = useOutpostStore((state) => state.togglePhysicsDebug);
   const hudColorTheme = useOutpostStore((state) => state.hudColorTheme);
   const cycleHudColorTheme = useOutpostStore((state) => state.cycleHudColorTheme);
-  const isPointerLocked = useOutpostStore((state) => state.isPointerLocked);
   const manualOpen = useOutpostStore((state) => state.isManualOpen);
 
   useEffect(() => { document.documentElement.setAttribute('data-hud-theme', hudColorTheme); }, [hudColorTheme]);
@@ -105,7 +110,7 @@ export const MissionControlOverlay: React.FC = () => {
       <ExplorationHUD
         task={task}
         taskProgress={taskProgress}
-        regionName={region?.name ?? 'Ares Cradle'}
+        regionName={region?.name ?? 'ELON MARS'}
         distance={distance}
         air={exploration.survival.air}
         meals={exploration.survival.meals}
@@ -119,15 +124,12 @@ export const MissionControlOverlay: React.FC = () => {
         notice={notice}
         onDismissNotice={() => { if (explorationNotice) dismissExplorationNotice(); }}
       />
-      {!isManualOpen && !isPointerLocked && !isTouchOrMobile && !(typeof document !== 'undefined' && document.querySelector('[role="dialog"]')) && (
-        <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 rounded bg-[#151a1d]/75 px-2 py-1 text-xs text-[#f1ddca]" aria-live="polite">Click the world to look around</div>
-      )}
       {!isManualOpen && <MinimapRadar />}
       {isTouchOrMobile && !isDrivingRover && !isManualOpen && <div className="pointer-events-auto absolute bottom-16 right-3"><VirtualJoystick /></div>}
       {isPhysicsDebugVisible && <div data-testid="physics-hitbox-legend" className="pointer-events-auto absolute left-3 top-16 rounded-md border border-cyan-100/20 bg-[#131719]/90 px-2 py-1 text-xs text-cyan-100">Physics debug · [{playerPos.map((value) => value.toFixed(1)).join(', ')}]</div>}
 
-      <QuickControlsManual isOpen={isManualOpen} onStart={startExploring} onClose={() => setManualOpen(false)} />
-      <ExplorationMap isOpen={isMapOpen} playerPos={currentPosition} activeRegionId={actualRegion} activeWaypointRegionId={activeWaypointRegionId} onSetWaypoint={setWaypointRegion} onClose={() => setIsMapOpen(false)} />
+      <QuickControlsManual isOpen={isManualOpen} onStart={startExploring} onClose={() => setManualOpen(false)} sceneReadiness={sceneReadiness} />
+      <ExplorationMap isOpen={isMapOpen} playerPos={currentPosition} cameraYaw={cameraYaw} activeRegionId={actualRegion} activeWaypointRegionId={activeWaypointRegionId} onSetWaypoint={setWaypointRegion} onClose={() => setIsMapOpen(false)} />
       <ScienceCodex
         isOpen={isCodexOpen}
         entries={SCIENTIFIC_ELEMENTS}

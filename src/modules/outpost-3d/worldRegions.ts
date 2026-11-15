@@ -28,7 +28,7 @@ export interface OuterRegion {
 
 export const HOME_REGION = {
   id: 'home',
-  name: 'Ares Cradle',
+  name: 'ELON MARS',
   center: { x: 0, z: 0 },
   palette: { terrain: '#943109', rock: '#752405', accent: '#1E293B' },
 } as const;
@@ -90,30 +90,9 @@ export const ROVER_ROUTES: readonly RoverRoute[] = [
   { regionId: 'dust', entryPoint: point(0, -212), points: [point(0, -212), point(0, -232), point(1.219, -245.075)] },
 ];
 
-export type OuterHeroId = 'impact-radome' | 'dust-weather-truss' | 'volcano-survey-truss' | 'ice-drill-gantry' | 'lake-strata-arch';
+export type OuterHeroId = 'impact-crater' | 'ice-scarp' | 'volcano-shield' | 'lake-bluff' | 'dust-dunes';
 
-export type OuterHeroRock = readonly [x: number, y: number, z: number, sx: number, sy: number, sz: number];
-
-/** Exact local transforms used by both the hero renderer and its individual rock proxies. */
-export const OUTER_HERO_ROCKS: Readonly<Record<OuterHeroId, readonly OuterHeroRock[]>> = {
-  'impact-radome': [
-    [-6.4, 0, -5.4, 2.7, 1.3, 2], [-5.8, 0, 5.6, 3.2, 1.2, 2.1],
-    [5.6, 0, -5.3, 2.8, 1.4, 1.7], [6.3, 0, 5.1, 2.5, 1.25, 2],
-  ],
-  'dust-weather-truss': [
-    [-5.3, 0, -2.3, 2.8, 0.85, 1.4], [5.2, 0, 2.2, 3, 0.95, 1.6], [-3.8, 0, 3.7, 2.1, 0.62, 1.2],
-  ],
-  'volcano-survey-truss': [
-    [-5.1, 0, -1.8, 2.6, 0.78, 1.35], [5.1, 0, 1.7, 2.9, 0.92, 1.5], [-3.7, 0, 2.1, 2.2, 0.66, 1.1],
-  ],
-  'ice-drill-gantry': [
-    [-4.3, 0, -2.5, 2.4, 0.75, 1.5], [4.2, 0, 2.3, 2.1, 0.85, 1.4], [-3.8, 0, 2.8, 1.8, 0.48, 0.9],
-  ],
-  'lake-strata-arch': [
-    [-5.2, 0, -2.4, 2.9, 0.86, 1.4], [5.2, 0, 2.2, 3, 0.9, 1.6], [-4.7, 0, 2.4, 2.5, 0.58, 1.2],
-  ],
-};
-
+/** A visible natural landform; footprint fields describe its authored extent, not a wall. */
 export interface OuterHeroLandmark {
   readonly id: OuterHeroId;
   readonly regionId: RegionId;
@@ -124,14 +103,13 @@ export interface OuterHeroLandmark {
   readonly topOffset: number;
 }
 
-/** Named primary assemblies. Renderer and physics consume the same measured footprints. */
+/** Region renderer and natural feature data share these five non-colliding form bounds. */
 export const OUTER_HERO_LANDMARKS: readonly OuterHeroLandmark[] = [
-  { id: 'impact-radome', regionId: 'impact', position: point(-264, -258), yaw: 0.18, halfX: 5.2, halfZ: 3.3, topOffset: 3.25 },
-  { id: 'ice-drill-gantry', regionId: 'ice', position: point(256, -258), yaw: -0.12, halfX: 3.8, halfZ: 2.2, topOffset: 3.2 },
-  { id: 'volcano-survey-truss', regionId: 'volcano', position: point(-254, 258), yaw: 0.22, halfX: 4, halfZ: 1.3, topOffset: 2.6 },
-  { id: 'lake-strata-arch', regionId: 'lake', position: point(256, 258), yaw: -0.35, halfX: 4.8, halfZ: 2.5, topOffset: 2.9 },
-  { id: 'dust-weather-truss', regionId: 'dust', position: point(-23, -251), yaw: -0.08, halfX: 3.65, halfZ: 1.35, topOffset: 3.82 },
-
+  { id: 'impact-crater', regionId: 'impact', position: point(-256, -257), yaw: 0, halfX: 25, halfZ: 25, topOffset: 5 },
+  { id: 'ice-scarp', regionId: 'ice', position: point(256, -258), yaw: -0.18, halfX: 24, halfZ: 12, topOffset: 5 },
+  { id: 'volcano-shield', regionId: 'volcano', position: point(-247, 254), yaw: 0, halfX: 42, halfZ: 38, topOffset: 12 },
+  { id: 'lake-bluff', regionId: 'lake', position: point(270, 280), yaw: -0.42, halfX: 19, halfZ: 12, topOffset: 8 },
+  { id: 'dust-dunes', regionId: 'dust', position: point(0, -255), yaw: 0.24, halfX: 36, halfZ: 31, topOffset: 4 },
 ];
 
 const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
@@ -252,7 +230,10 @@ export const ADDITIVE_OUTER_COLLIDERS: readonly OuterCircleCollider[] = WORLD_RE
 ]);
 
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
-const smoothstep = (value: number): number => value * value * (3 - 2 * value);
+const smoothstep = (value: number): number => {
+  const t = clamp(value, 0, 1);
+  return t * t * (3 - 2 * t);
+};
 const polylineDistance = (x: number, z: number, points: readonly (readonly [number, number])[]): number => {
   let nearest = Infinity;
   for (let index = 1; index < points.length; index += 1) {
@@ -273,97 +254,87 @@ const boundedPoint = (x: number, z: number): WorldPoint => ({
  * then blends into broad, deterministic relief with a zero-slope seam. Out-of-bounds samples clamp;
  * invalid coordinates safely resolve to the legacy plane (never wrap or teleport).
  */
-const ROUTE_RELIEF_CLEARANCE = [6, 10] as const;
-const ANCHOR_RELIEF_CLEARANCE = [6, 10] as const;
-const HERO_RELIEF_CLEARANCE = [14, 18] as const;
-const REGIONAL_RELIEF_ANCHORS: readonly WorldPoint[] = WORLD_REGIONS.flatMap((region) => [
-  ...region.discoveries, ...region.branches, region.baseConsole, region.safeParking,
-]);
-const REGIONAL_RELIEF_HERO_POINTS: readonly WorldPoint[] = OUTER_HERO_LANDMARKS.flatMap((landmark) => [
-  landmark.position,
-  ...OUTER_HERO_ROCKS[landmark.id].map(([localX, , localZ]) => {
-    const cos = Math.cos(landmark.yaw);
-    const sin = Math.sin(landmark.yaw);
-    return point(landmark.position.x + cos * localX + sin * localZ, landmark.position.z - sin * localX + cos * localZ);
-  }),
-]);
+const NATURAL_RELIEF_APPROACHES: readonly WorldPoint[] = [
+  point(-256, -257), point(256, -258), point(-247, 254), point(270, 280), point(0, -255),
+  point(-260, 254), point(-242, -257), point(276, 280), point(-8, -255),
+];
+const NATURAL_APPROACH_FLAT_RADIUS = 8;
+const NATURAL_APPROACH_BLEND_RADIUS = 44;
 
-const clearanceWeight = (distance: number, [flat, full]: readonly [number, number]): number =>
-  smoothstep(clamp((distance - flat) / (full - flat), 0, 1));
-
-/** New regional forms stay additive and exactly zero at authored routes and installations. */
+/**
+ * Shared, gently walkable relief for the five natural sectors. Route/anchor weights ease
+ * large slopes without flattening a 24m installation apron or erasing the forms at approach.
+ */
 export function sampleRegionalLandformHeight(x: number, z: number): number {
   if (!Number.isFinite(x) || !Number.isFinite(z)) return 0;
   const bounded = boundedPoint(x, z);
-  const radius = Math.hypot(bounded.x, bounded.z);
-  if (radius <= OUTER_RELIEF_START_RADIUS) return 0;
+  if (Math.hypot(bounded.x, bounded.z) <= OUTER_RELIEF_START_RADIUS) return 0;
 
-  const fade = smoothstep(clamp((radius - OUTER_RELIEF_START_RADIUS) / 36, 0, 1));
-  let clearance = 1;
-  let naturalFormEnvelope = 1;
+  const fade = smoothstep(clamp((Math.hypot(bounded.x, bounded.z) - OUTER_RELIEF_START_RADIUS) / 36, 0, 1));
+  const gaussian = (dx: number, dz: number, widthX: number, widthZ: number): number =>
+    Math.exp(-0.5 * (dx * dx / (widthX * widthX) + dz * dz / (widthZ * widthZ)));
+  let routeEase = 1;
   for (const route of ROVER_ROUTES) {
     for (let index = 1; index < route.points.length; index += 1) {
       const distance = pointSegmentDistance(bounded, route.points[index - 1], route.points[index]);
-      clearance = Math.min(clearance, clearanceWeight(distance, ROUTE_RELIEF_CLEARANCE));
-      naturalFormEnvelope = Math.min(naturalFormEnvelope, clearanceWeight(distance, [10, 26]));
+      routeEase = Math.min(routeEase, smoothstep(distance / 12));
     }
   }
-  for (const anchor of REGIONAL_RELIEF_ANCHORS) {
-    const distance = Math.hypot(bounded.x - anchor.x, bounded.z - anchor.z);
-    clearance = Math.min(clearance, clearanceWeight(distance, ANCHOR_RELIEF_CLEARANCE));
-    naturalFormEnvelope = Math.min(naturalFormEnvelope, clearanceWeight(distance, [10, 24]));
-  }
-  for (const hero of REGIONAL_RELIEF_HERO_POINTS) {
-    const distance = Math.hypot(bounded.x - hero.x, bounded.z - hero.z);
-    clearance = Math.min(clearance, clearanceWeight(distance, HERO_RELIEF_CLEARANCE));
-    naturalFormEnvelope = Math.min(naturalFormEnvelope, clearanceWeight(distance, [16, 32]));
-  }
-  if (clearance <= 0 || naturalFormEnvelope <= 0) return 0;
 
-  const gaussian = (dx: number, dz: number, widthX: number, widthZ: number): number =>
-    Math.exp(-0.5 * (dx * dx / (widthX * widthX) + dz * dz / (widthZ * widthZ)));
+  // Impact basin: recessed bowl, raised rim, then broken ejecta lobes around the perimeter.
+  const impactX = bounded.x + 256;
+  const impactZ = bounded.z + 257;
+  const craterRadius = Math.hypot(impactX, impactZ);
+  const craterBowl = -2.6 * gaussian(impactX, impactZ, 12, 12);
+  const craterRim = 3.8 * gaussian(craterRadius - 18, 0, 3.4, 1);
+  const ejecta = 1.35 * gaussian(craterRadius - 28, 0, 8, 1)
+    * (0.65 + 0.35 * Math.cos(Math.atan2(impactZ, impactX) * 5 + 0.4));
+
+  // Dust field: cross-wind ripples and a lee-side drift with low, routeable relief.
   const dustX = bounded.x;
   const dustZ = bounded.z + 255;
-  const dustField = gaussian(dustX, dustZ, 45, 35);
-  const windPhase = (dustZ + 0.24 * dustX) * (Math.PI * 2 / 30);
-  const dunes = (2.25 * Math.sin(windPhase) + 0.5 * Math.sin(windPhase * 2 - 0.6)) * dustField;
-  const leeRidge = 4 * gaussian(bounded.x + 15, bounded.z + 285, 15, 6.5);
+  const duneField = gaussian(dustX, dustZ, 47, 40);
+  const windPhase = (dustZ + 0.24 * dustX) * 0.17;
+  const dunes = (1.55 * Math.sin(windPhase) + 0.3 * Math.sin(windPhase * 2 - 0.6)) * duneField;
+  const leeDrift = 1.15 * gaussian(bounded.x - 13, bounded.z + 278, 18, 7);
+  const streakCut = -0.55 * gaussian(bounded.x + 13, bounded.z + 251, 25, 4);
 
-  const iceRidge = 6 * gaussian(bounded.x - 260, bounded.z + 285, 27, 9);
-  const iceShoulder = 2.5 * gaussian(bounded.x - 285, bounded.z + 260, 11, 13);
+  // Ice-bearing mantle: broad shoulder, exposed tilted scarp, and a lower talus apron.
+  const iceX = bounded.x - 256;
+  const iceZ = bounded.z + 258;
+  const icePatch = gaussian(iceX, iceZ, 38, 30);
+  const iceBand = iceZ + 0.18 * iceX + 3.5;
+  const iceShoulder = 2.2 * gaussian(iceX + 5, iceZ - 2, 25, 12);
+  const iceScarp = 2.25 * Math.tanh(iceBand / 3.6) * icePatch;
+  const iceTalus = -0.8 * gaussian(iceX - 2, iceZ + 5, 25, 8);
 
-  const volcanoX = bounded.x + 270;
-  const volcanoZ = bounded.z - 280;
-  const volcanoBackRidge = 5.2 * gaussian(volcanoX, volcanoZ, 28, 15);
-  const lavaRadius = Math.hypot(volcanoX, volcanoZ * 0.82);
-  const basaltSteps = 2.8 * gaussian(lavaRadius - 37, 0, 10, 1);
+  // Shield volcano, broad cooled-flow lobes, shallow caldera and low rim.
+  const volcanoX = bounded.x + 247;
+  const volcanoZ = bounded.z - 254;
+  const volcanoRadius = Math.hypot(volcanoX, volcanoZ * 0.88);
+  const shield = 6.2 * gaussian(volcanoX, volcanoZ, 31, 27);
+  const caldera = -10 * gaussian(volcanoX, volcanoZ, 5.8, 5.8);
+  const calderaRim = 2.2 * gaussian(volcanoRadius - 8.2, 0, 2.6, 1);
+  const flowLobes = 1.45 * gaussian(bounded.x + 270, bounded.z - 282, 29, 8)
+    + 1.1 * gaussian(bounded.x + 226, bounded.z - 237, 24, 7);
+  const lavaLevee = 0.75 * gaussian(volcanoRadius - 34, 0, 3.8, 1);
 
-  const lakeX = bounded.x - 240;
-  const lakeZ = bounded.z - 240;
-  const lakeBank = 4.5 * gaussian(bounded.x - 270, bounded.z - 280, 22, 12);
-  const sediment = (2.1 * Math.sin((lakeX * 0.45 + lakeZ) / 10) + 0.8 * Math.sin((lakeX - lakeZ * 0.4) / 13))
-    * gaussian(lakeX - 12, lakeZ - 8, 43, 35);
-  const channels = [
-    [[-27, -20], [-12, -14], [-1, -5], [12, 7], [27, 20]],
-    [[-24, 13], [-12, 10], [1, 4], [14, 0], [28, -3]],
-    [[-4, -27], [2, -15], [4, -3], [8, 11], [8, 27]],
-  ] as const;
-  let channelCut = 0;
-  for (const channel of channels) {
-    const distance = polylineDistance(lakeX, lakeZ, channel);
-    channelCut += 1.5 * Math.exp(-(distance * distance) / (2 * 5 * 5))
-      * gaussian(lakeX, lakeZ, 44, 39);
-  }
+  // Lake margin: low, eroded sediment bluff; broad cross-bedded terraces and dry channels.
+  const lakeX = bounded.x - 270;
+  const lakeZ = bounded.z - 280;
+  const bluff = 5.5 * gaussian(lakeX, lakeZ, 11, 14);
+  const bedding = 0.65 * Math.sin((lakeX * 0.42 + lakeZ * 0.18) * 0.7)
+    * gaussian(lakeX, lakeZ, 24, 22);
+  const channelA = polylineDistance(lakeX, lakeZ, [[-34, 15], [-21, 9], [-8, 3], [7, -2], [23, -12]]);
+  const channelB = polylineDistance(lakeX, lakeZ, [[-19, -23], [-8, -13], [4, -5], [17, 2], [34, 7]]);
+  const dryChannels = -1.15 * Math.exp(-(channelA * channelA) / (2 * 3.5 * 3.5))
+    -0.85 * Math.exp(-(channelB * channelB) / (2 * 3.8 * 3.8));
 
-  const impactX = bounded.x + 279;
-  const impactZ = bounded.z + 278;
-  const impactRadius = Math.hypot(impactX, impactZ);
-  const impactBowl = -3 * gaussian(impactRadius - 11, 0, 8, 1);
-  const impactRim = 4 * gaussian(impactRadius - 25, 0, 5, 1);
-  const ejecta = 2 * gaussian(impactRadius - 34, 0, 8, 1);
-
-  return fade * clearance * naturalFormEnvelope * (dunes + leeRidge + iceRidge + iceShoulder + volcanoBackRidge + basaltSteps
-    + lakeBank + sediment - channelCut + impactBowl + impactRim + ejecta);
+  const forms = craterBowl + craterRim + ejecta + dunes + leeDrift + streakCut + iceShoulder + iceScarp + iceTalus
+    + shield + caldera + calderaRim + flowLobes + lavaLevee + bluff + bedding + dryChannels;
+  const gentleSlopeLimit = 1.7;
+  const gentleForms = gentleSlopeLimit * Math.tanh(forms / gentleSlopeLimit);
+  return fade * routeEase * gentleForms;
 }
 
 export function sampleWorldGround(x: number, z: number): number {
@@ -425,7 +396,67 @@ export function sampleWorldGround(x: number, z: number): number {
   const dunePatch = Math.exp(-(dustX * dustX / (2 * 49 * 49) + dustZ * dustZ / (2 * 42 * 42)));
   relief += 0.08 * Math.sin((dustZ + 0.24 * dustX) * 0.08) * dunePatch;
   relief += 0.12 * Math.exp(-((dustZ - 14) ** 2) / (2 * 14 * 14)) * Math.exp(-dustX * dustX / (2 * 38 * 38));
-  return WORLD_GROUND_Y + fade * relief + sampleRegionalLandformHeight(bounded.x, bounded.z);
+  const rawHeight = WORLD_GROUND_Y + fade * relief + sampleRegionalLandformHeight(bounded.x, bounded.z);
+  // Keep authored walk/camera step slopes below the existing 8cm collision step.
+  if (radius > PRESERVED_CORE_RADIUS && radius > OUTER_RELIEF_START_RADIUS) {
+    const step = 2;
+    const rawHeightAt = (sampleX: number, sampleZ: number): number => {
+      const sample = boundedPoint(sampleX, sampleZ);
+      const sampleRadius = Math.hypot(sample.x, sample.z);
+      if (sampleRadius <= PRESERVED_CORE_RADIUS) return WORLD_GROUND_Y;
+      const sampleFade = smoothstep(clamp((sampleRadius - OUTER_RELIEF_START_RADIUS) / 36, 0, 1));
+      let baseRelief = 0.72 + 0.18 * Math.sin(sample.x * 0.022) * Math.cos(sample.z * 0.021)
+        + 0.12 * Math.sin((sample.x - sample.z) * 0.028);
+      for (const region of WORLD_REGIONS) {
+        const dx = sample.x - region.center.x;
+        const dz = sample.z - region.center.z;
+        baseRelief += region.relief * Math.exp(-(dx * dx + dz * dz) / (2 * 55 * 55));
+      }
+      const ix = sample.x + 256, iz = sample.z + 257, ir = Math.hypot(ix, iz);
+      baseRelief -= 0.82 * Math.exp(-(ix * ix + iz * iz) / (2 * 12 * 12));
+      baseRelief += 0.92 * Math.exp(-((ir - 18) ** 2) / (2 * 3.2 * 3.2));
+      for (const [rockX, rockZ] of [[-278, -264], [-241, -276], [-270, -235]] as const) {
+        const dx = sample.x - rockX, dz = sample.z - rockZ;
+        baseRelief += 0.34 * Math.exp(-(dx * dx / 140 + dz * dz / 70));
+      }
+      const sx = sample.x - 256, sz = sample.z + 258, band = sz + 0.18 * sx + 3.5;
+      const iceWeight = Math.exp(-(sx * sx + sz * sz) / (2 * 36 * 36));
+      baseRelief += 0.46 * Math.exp(-(band * band) / (2 * 2.6 * 2.6)) * iceWeight;
+      baseRelief += 0.2 * Math.exp(-((band - 4.6) ** 2) / (2 * 1.7 * 1.7)) * iceWeight;
+      const vx = sample.x + 247, vz = sample.z - 254, vr = Math.hypot(vx, vz * 0.78);
+      for (const [r, h, width] of [[9, 0.3, 2.5], [15, 0.42, 2.1], [22, 0.34, 2.8]] as const) {
+        baseRelief += h * Math.exp(-((vr - r) ** 2) / (2 * width * width));
+      }
+      const lx = sample.x - 240, lz = sample.z - 240;
+      const lakeWeight = Math.exp(-(lx * lx + lz * lz) / (2 * 42 * 42));
+      for (const channel of [
+        [[-27, -20], [-12, -14], [-1, -5], [12, 7], [27, 20]],
+        [[-24, 13], [-12, 10], [1, 4], [14, 0], [28, -3]],
+        [[-4, -27], [2, -15], [4, -3], [8, 11], [8, 27]],
+      ] as const) {
+        const distance = polylineDistance(lx, lz, channel);
+        baseRelief -= 0.36 * Math.exp(-(distance * distance) / (2 * 3.1 * 3.1)) * lakeWeight;
+      }
+      const dx = sample.x, dz = sample.z + 255;
+      const patch = Math.exp(-(dx * dx / (2 * 49 * 49) + dz * dz / (2 * 42 * 42)));
+      baseRelief += 0.08 * Math.sin((dz + 0.24 * dx) * 0.08) * patch;
+      baseRelief += 0.12 * Math.exp(-((dz - 14) ** 2) / (2 * 14 * 14)) * Math.exp(-dx * dx / (2 * 38 * 38));
+      return WORLD_GROUND_Y + sampleFade * baseRelief + sampleRegionalLandformHeight(sample.x, sample.z);
+    };
+    const maximumSlope = 0.08 / step;
+    let boundedHeight = Math.min(rawHeight, rawHeightAt(bounded.x - step, bounded.z) + maximumSlope * step,
+      rawHeightAt(bounded.x + step, bounded.z) + maximumSlope * step,
+      rawHeightAt(bounded.x, bounded.z - step) + maximumSlope * step,
+      rawHeightAt(bounded.x, bounded.z + step) + maximumSlope * step);
+    let approachEase = 1;
+    for (const approach of NATURAL_RELIEF_APPROACHES) {
+      const distance = Math.hypot(bounded.x - approach.x, bounded.z - approach.z);
+      approachEase = Math.min(approachEase, smoothstep((distance - NATURAL_APPROACH_FLAT_RADIUS) / NATURAL_APPROACH_BLEND_RADIUS));
+    }
+    const softenedHeight = WORLD_GROUND_Y + (boundedHeight - WORLD_GROUND_Y) * approachEase;
+    return Math.max(softenedHeight, WORLD_GROUND_Y - 1.4);
+  }
+  return rawHeight;
 }
 
 /** Unit upward normal (Y-up) from the same canonical contact-height sampler. */

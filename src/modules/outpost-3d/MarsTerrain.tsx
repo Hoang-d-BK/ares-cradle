@@ -1,6 +1,7 @@
 import React, { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { addPlanarSurfaceUVs, createMarsSurfaceMaterial } from './marsSurfaceMaterials';
 
 // Procedural Rock Boulder Definition
 interface BoulderProps {
@@ -92,6 +93,9 @@ const RadarBeacon: React.FC<RadarBeaconProps> = ({ position, label: _label, beac
  * 4. Red Sand Dune Sea (South at Z=+70m) with rippled dunes
  * 5. Observation Lookout Mesa (West at X=-70m) with elevated plateau
  */
+const CORE_REGOLITH_MATERIAL = createMarsSurfaceMaterial({ color: '#943109', roughness: 0.97, metalness: 0.005, bumpScale: 0.14 });
+const CORE_RING_MATERIAL = createMarsSurfaceMaterial({ color: '#752405', roughness: 0.98, metalness: 0.005, bumpScale: 0.12 });
+
 export const MarsTerrain: React.FC = () => {
   // Procedural rock field across all 5 biomes
   const rocks: BoulderProps[] = useMemo(() => {
@@ -136,22 +140,14 @@ export const MarsTerrain: React.FC = () => {
           1. PRIMARY PLANETOID SURFACE DISC (Radius 135m)
           ======================================================== */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]} receiveShadow>
-        <circleGeometry args={[135, 64]} />
-        <meshStandardMaterial
-          color="#943109"
-          roughness={0.92}
-          metalness={0.08}
-        />
+        <circleGeometry args={[135, 64]} onUpdate={addPlanarSurfaceUVs} />
+        <primitive object={CORE_REGOLITH_MATERIAL} attach="material" />
       </mesh>
 
       {/* Distant Horizon Curved Dunes Ring (Radius 134m to 210m) */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.56, 0]} receiveShadow>
-        <ringGeometry args={[134, 210, 64]} />
-        <meshStandardMaterial
-          color="#752405"
-          roughness={0.98}
-          metalness={0.04}
-        />
+        <ringGeometry args={[134, 210, 64]} onUpdate={addPlanarSurfaceUVs} />
+        <primitive object={CORE_RING_MATERIAL} attach="material" />
       </mesh>
 
       {/* ========================================================

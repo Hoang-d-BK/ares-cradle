@@ -6,6 +6,7 @@ import { getSuspensionAngles, getWheelRotation } from '../../game/art/realism/ro
 import { canRoverOccupy } from '../character/physicsEngine';
 import { initialRoverState, stepRoverDynamics, type RoverState } from '../character/roverDynamics';
 import { useOutpostStore, PLAYABLE_ROVER_SPEC } from '../store/useOutpostStore';
+import { getGameplayStarted } from '@/modules/session/gameSession';
 import { sampleWorldGround, WORLD_BOUNDS, WORLD_REGIONS, type RegionId } from './worldRegions';
 
 const RADIUS = PLAYABLE_ROVER_SPEC.radius;
@@ -85,8 +86,12 @@ export function PlayableWatchRover() {
     const onFocus = () => { focused.current = true; };
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target;
-      if (target instanceof Element && target.closest('input,textarea,select,button,[role="dialog"]')) return;
+      if (target instanceof Element && target.closest('input,textarea,select,[role="dialog"]')) return;
       const store = useOutpostStore.getState();
+      if (!getGameplayStarted()) {
+        keys.current = {};
+        return;
+      }
       if (event.code === 'KeyR' && !event.repeat && !modalBlocksDriving()) {
         store.toggleDrivingRover();
         return;
@@ -160,6 +165,15 @@ export function PlayableWatchRover() {
 
   useFrame((_, delta) => {
     const store = useOutpostStore.getState();
+    if (!getGameplayStarted()) {
+      keys.current = {};
+      if (dynamics.current) {
+        dynamics.current.longitudinalVelocity = 0;
+        dynamics.current.lateralVelocity = 0;
+        dynamics.current.steeringAngle = 0;
+      }
+      return;
+    }
     const remoteRegionId = (store.remoteRegionId ?? null) as RegionId | null;
     if (remoteRegionId !== previousRemoteRegion.current) {
       previousRemoteRegion.current = remoteRegionId;

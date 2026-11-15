@@ -7,6 +7,8 @@ const catalog = await loadTsModule('../../src/modules/outpost-3d/scienceCatalog.
 const progress = await loadTsModule('../../src/modules/store/explorationProgress.ts', import.meta.url);
 const { WORLD_REGIONS, sampleWorldGround } = world;
 const { SCIENTIFIC_ELEMENTS, getScientificElement } = catalog;
+const naturalSites = await loadTsModule('../../src/modules/outpost-3d/naturalSiteDefinitions.ts', import.meta.url);
+const { NATURAL_INSPECTION_PROXIES } = naturalSites;
 const {
   EXPLORATION_SAVE_LIMIT_BYTES, EXPLORATION_STORAGE_KEY, SURVIVAL_CAPACITY, SURVIVAL_DRAIN_PER_SECOND,
   SURVIVAL_SUPPLY_PACKAGE, collectScientificElement, consumeExplorationItem, createInitialExplorationProgress,
@@ -19,6 +21,10 @@ const atElement = (element, overrides = {}) => ({
   isGrounded: true,
   ...overrides,
 });
+const atProxy = (element, proxy, edgeDistance = 0) => {
+  const x = proxy.position.x + proxy.radius + edgeDistance;
+  return { ...atElement(element), position: [x, sampleWorldGround(x, proxy.position.z), proxy.position.z] };
+};
 const collect = (state, element, context = atElement(element)) => collectScientificElement(state, element.id, context);
 
 test('starts an isolated exploration save with explicit rates and no actor state', () => {
@@ -90,21 +96,29 @@ test('NASA catalog citations use official hosts, canonical sources, and reviewed
     ['impact.science-2', 'https://science.nasa.gov/photojournal/fluidized-crater-ejecta/', 'NASA/JPL/Arizona State University'],
     ['impact.science-3', 'https://science.nasa.gov/photojournal/fluidized-crater-ejecta/', 'NASA/JPL/Arizona State University'],
     ['ice.science-1', 'https://science.nasa.gov/photojournal/swim-map-shows-subsurface-water-ice-on-mars/', 'NASA/JPL-Caltech/Planetary Science Institute'],
-    ['ice.science-2', 'https://science.nasa.gov/photojournal/swim-map-shows-subsurface-water-ice-on-mars/', 'NASA/JPL-Caltech/Planetary Science Institute'],
+    ['ice.science-2', 'https://science.nasa.gov/resource/glacial-ice-deposits-in-mid-latitudes-of-mars/', 'NASA/JPL-Caltech/ASI/University of Rome/Southwest Research Institute'],
     ['lake.science-1', 'https://science.nasa.gov/blog/studying-the-jezero-delta-from-a-distance/', 'NASA/JPL-Caltech/ASU/MSSS'],
     ['lake.science-2', 'https://science.nasa.gov/blog/studying-the-jezero-delta-from-a-distance/', 'NASA/JPL-Caltech/ASU/MSSS'],
-    ['lake.science-3', 'https://science.nasa.gov/photojournal/perseverances-three-forks-sample-depot-map/', 'NASA/JPL-Caltech/University of Arizona'],
+    ['lake.science-3', 'https://science.nasa.gov/blog/studying-the-jezero-delta-from-a-distance/', 'NASA/JPL-Caltech/ASU/MSSS'],
     ['dust.science-1', 'https://science.nasa.gov/resource/curiosity-observes-whirlwinds-carrying-martian-dust/', 'NASA/JPL-Caltech/TAMU'],
   ];
   for (const [id, sourceUrl, credit] of reviewedSources) {
     assert.equal(byId.get(id).sourceUrl, sourceUrl, `${id} uses canonical NASA URL`);
     assert.equal(byId.get(id).credit, credit, `${id} has reviewed source credit`);
   }
-  assert.equal(byId.get('volcano.science-1').title, 'Volcanic flow rock');
-  assert.match(byId.get('volcano.science-1').explanation, /does not confirm its composition/i);
-  assert.match(byId.get('volcano.science-2').explanation, /younger plain truncating older flow/i);
+  assert.equal(byId.get('volcano.science-1').kind, 'basalt');
+  assert.match(byId.get('volcano.science-1').explanation, /not a mineral measurement/i);
+  assert.equal(byId.get('volcano.science-2').kind, 'lava-channel');
+  assert.equal(byId.get('volcano.science-2').sourceUrl, 'https://science.nasa.gov/resource/hirise-spots-the-mouth-of-a-martian-lava-tube/');
+  assert.match(byId.get('volcano.science-2').scienceBoundary, /fictional/i);
+  assert.equal(byId.get('volcano.science-3').kind, 'volcanic-vent');
+  assert.equal(byId.get('volcano.science-3').sourceUrl, 'https://www.nasa.gov/solar-system/nasa-confirms-thousands-of-massive-ancient-volcanic-eruptions-on-mars/');
+  assert.match(byId.get('volcano.science-3').explanation, /4 billion years ago/i);
+  assert.match(byId.get('volcano.science-3').scienceBoundary, /No active eruption/i);
+  assert.equal(byId.get('ice.science-2').kind, 'ice-layer');
+  assert.equal(byId.get('lake.science-3').kind, 'mineral-outcrop');
   assert.match(byId.get('lake.science-1').explanation, /not evidence that life existed/i);
-  assert.match(byId.get('lake.science-3').explanation, /2022–23/);
+  assert.ok(['science.nasa.gov', 'www.nasa.gov'].includes(new URL(byId.get('volcano.science-3').sourceUrl).hostname));
 });
 
 test('the third unique discovery in each region atomically awards one capped package', () => {
@@ -150,15 +164,16 @@ test('the third unique discovery in each region atomically awards one capped pac
 test('collection validates exact proximity, grounded height, remote region, and finite actual context', () => {
   const element = SCIENTIFIC_ELEMENTS[0];
   const state = createInitialExplorationProgress();
-  const boundary = atElement(element, { position: [element.position.x + 4.5, sampleWorldGround(element.position.x + 4.5, element.position.z), element.position.z] });
+  const proxy = NATURAL_INSPECTION_PROXIES.find(({ scienceId, radius }) => scienceId === element.id && radius < 3);
+  const boundary = atProxy(element, proxy, 4.5);
   assert.equal(collect(state, element, boundary).changed, true);
   const invalid = [
-    [atElement(element, { position: [element.position.x + 4.50001, sampleWorldGround(element.position.x + 4.50001, element.position.z), element.position.z] }), 'too-far-from-element'],
+    [atProxy(element, proxy, 4.50001), 'too-far-from-element'],
     [atElement(element, { position: [element.position.x, sampleWorldGround(element.position.x, element.position.z) + 2.5001, element.position.z] }), 'not-grounded'],
     [atElement(element, { isGrounded: false }), 'not-grounded'],
     [atElement(element, { position: [Number.NaN, -0.4, element.position.z] }), 'invalid-context'],
     [atElement(element, { isRemote: true, remoteRegionId: 'ice' }), 'wrong-region'],
-    [atElement(element, { isRemote: true, remoteRegionId: null }), 'wrong-region'],
+    [atElement(element, { isRemote: true, remoteRegionId: null }), 'invalid-context'],
     [atElement(element, { remoteRegionId: 'impact' }), 'invalid-context'],
   ];
   for (const [context, error] of invalid) {

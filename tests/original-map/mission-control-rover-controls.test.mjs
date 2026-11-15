@@ -39,7 +39,7 @@ const loadOverlay = () => {
   };
   const module = { exports: {} };
   new Function('require', 'module', 'exports', compiled)(localRequire, module, module.exports);
-  return module.exports.MissionControlOverlay();
+  return module.exports.MissionControlOverlay({});
 };
 const descendants = (node, visit) => {
   if (node == null || typeof node !== 'object') return;

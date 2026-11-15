@@ -148,12 +148,14 @@ test('exploration dialog keeps one focus lifecycle while callbacks and player po
   }
 });
 
-test('waypoint map only changes selected navigation target and displays canonical locations', async () => {
+test('waypoint map uses sampled terrain, natural landmarks and north-up navigation without teleporting', async () => {
   const world = await minimapDeps().then((loaded) => loaded.loadTsModule('../../src/modules/outpost-3d/worldRegions.ts', import.meta.url));
   const mapModule = compile('src/modules/mission-control/ExplorationMap.tsx', (id) => {
     if (id === './useExplorationDialog') return { useExplorationDialog() {} };
-    if (id === 'lucide-react') return { X: 'X' };
+    if (id === 'lucide-react') return { X: 'X', Mountain: 'Mountain', Waves: 'Waves', Wind: 'Wind', Snowflake: 'Snowflake', House: 'House' };
     if (id === '@/modules/outpost-3d/worldRegions') return world;
+    if (id === '@/modules/outpost-3d/naturalSiteDefinitions') return { PRIMARY_NATURAL_LANDMARKS: world.WORLD_REGIONS.map((region) => ({ regionId: region.id, scienceId: `${region.id}.science-1`, position: region.center, radius: 20, label: `${region.name} feature` })) };
+    if (id === './newTerrainMapLayer') return { default: (props) => ({ type: 'terrain-map', props: { 'data-testid': 'sampled-terrain-map-layer', viewBox: `${props.center.x - props.range} ${-props.center.z - props.range} ${props.range * 2} ${props.range * 2}` } }) };
     throw new Error(`Unexpected map import ${id}`);
   });
   const picked = [];
@@ -167,10 +169,12 @@ test('waypoint map only changes selected navigation target and displays canonica
   const nodes = flatten(resolveMapElement(mapTree));
   const iceMarkers = nodes.filter((node) => node.type === 'button' && node.props?.['aria-label']?.startsWith('Sheltered Ice Shelf'));
   assert.ok(iceMarkers.length >= 1);
+  const terrainLayer = nodes.find((node) => node.props?.['data-testid'] === 'sampled-terrain-map-layer');
+  assert.equal(terrainLayer.props.viewBox, '-300 -300 600 600');
   const waypointButtons = nodes.filter((node) => node.type === 'button' && node.props?.['aria-pressed'] !== undefined);
   const dust = waypointButtons.find((node) => node.props['aria-pressed'] === true);
   assert.ok(dust, 'one region is selected as the navigation waypoint');
-  const listChoice = nodes.find((node) => node.type === 'button' && node.props?.onClick && JSON.stringify(node.props.children).includes('Sheltered Ice Shelf'));
+  const listChoice = nodes.find((node) => node.type === 'button' && node.props?.onClick && JSON.stringify(node.props.children).includes('Sheltered Ice Shelf') && node.props?.['aria-pressed'] !== undefined);
   listChoice?.props.onClick();
   assert.deepEqual(picked, ['ice']);
   const props = readFileSync(resolve(root, 'src/modules/mission-control/ExplorationMap.tsx'), 'utf8');
@@ -196,5 +200,7 @@ test('minimap keeps north-up and rotates only a smooth player pointer across wra
   assert.match(source, /exploration\.completedRegions/);
   assert.doesNotMatch(source, /useStoryStore|expeditionProgress/);
   assert.doesNotMatch(source, /angle - cameraYaw/);
+  assert.match(source, /NewTerrainMapLayer/);
+  assert.match(source, /PRIMARY_NATURAL_LANDMARKS/);
   assert.equal(world.WORLD_REGIONS.length, 5);
 });

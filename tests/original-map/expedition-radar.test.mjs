@@ -9,6 +9,7 @@ import { loadTsModule } from '../../tests/mission-v2/support/load-ts-module.mjs'
 const require = createRequire(import.meta.url);
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const world = await loadTsModule('../../src/modules/outpost-3d/worldRegions.ts', import.meta.url);
+const naturalSites = await loadTsModule('../../src/modules/outpost-3d/naturalSiteDefinitions.ts', import.meta.url);
 let outpost;
 let hookValues = [];
 let hookIndex = 0;
@@ -34,6 +35,8 @@ const radarModule = compile(resolve(root, 'src/modules/story-engine/components/M
   if (id === '@/modules/store/useOutpostStore') return { useOutpostStore: (select) => select(outpost) };
   if (id === '@/modules/audio/soundEngine') return { soundEngine: { playClick() {} } };
   if (id === '@/modules/outpost-3d/worldRegions') return world;
+  if (id === '@/modules/outpost-3d/naturalSiteDefinitions') return naturalSites;
+  if (id === '@/modules/mission-control/newTerrainMapLayer') return { default: (props) => ({ type: 'terrain-map-layer', props: { 'data-testid': 'sampled-terrain-map-layer', viewBox: `${-props.center.x - props.range} ${-props.center.z - props.range} ${props.range * 2} ${props.range * 2}` } }) };
   throw new Error(`Unexpected radar import: ${id}`);
 });
 const reset = (patch = {}) => {
@@ -69,6 +72,8 @@ test('new radar always shows all five canonical regions and starts at 450m', () 
   assert.equal(markers.length, 5);
   assert.ok(markers.some((node) => title(node).includes('waypoint')));
   assert.ok(nodes.some((node) => text(node.props.children) === '450M'));
+  assert.ok(nodes.some((node) => node.props?.['data-testid'] === 'sampled-terrain-map-layer'));
+  assert.equal(nodes.filter((node) => node.props?.['data-testid']?.startsWith('minimap-landmark-')).length, naturalSites.PRIMARY_NATURAL_LANDMARKS.length);
   assert.doesNotMatch(require('node:fs').readFileSync(resolve(root, 'src/modules/story-engine/components/MinimapRadar.tsx'), 'utf8'), /useStoryStore|expeditionProgress|anchors/);
   for (const node of markers) assert.ok(Math.hypot(...translate(node)) <= 50.01);
 });
@@ -92,6 +97,19 @@ test('radar zoom cycles through all fixed scales and only marks completedRegions
   nodes = visible(render()); assert.ok(nodes.some((node) => text(node.props.children) === '25M'));
 });
 
+test('terrain layer preserves the full 450m radar projection range', () => {
+  const terrain = compile(resolve(root, 'src/modules/mission-control/newTerrainMapLayer.tsx'), (id) => {
+    if (id === 'react') return { ...React, __esModule: true, default: React };
+    if (id === '@/modules/outpost-3d/naturalSiteDefinitions') return naturalSites;
+    if (id === '@/modules/outpost-3d/worldRegions') return world;
+    throw new Error(`Unexpected terrain-layer import: ${id}`);
+  });
+  const rendered = terrain.NewTerrainMapLayer({ center: { x: -240, z: 240 }, range: 450 });
+  assert.equal(rendered.props.viewBox, '-690 -210 900 900');
+  assert.equal(rendered.props.children[0].props.x, -300);
+  assert.equal(rendered.props.children[0].props.y, -300);
+});
+
 test('north stays fixed and player arrow unwraps camera yaw through the right-facing wrap', () => {
   reset({ cameraYaw: Math.PI - 0.05 });
   let nodes = visible(render());
@@ -102,5 +120,8 @@ test('north stays fixed and player arrow unwraps camera yaw through the right-fa
   arrow = nodes.find((node) => node.props?.['data-testid'] === 'minimap-player-arrow');
   const angle = Number(/rotate\(([-\d.]+)deg\)/.exec(arrow.props.style.transform)[1]);
   assert.ok(Math.abs(angle + 182.865) < 0.02, `expected continuous clockwise sign, received ${angle}`);
+  const terrain = nodes.find((node) => node.props?.['data-testid'] === 'sampled-terrain-map-layer');
+  assert.match(terrain.props.viewBox, /-450 -450 900 900/);
+  assert.equal(naturalSites.PRIMARY_NATURAL_LANDMARKS.length, 5);
   assert.ok(nodes.some((node) => node.props.children === 'N'));
 });

@@ -9,52 +9,92 @@
  * - Vertical clearance & platform top landing (jump over or onto obstacles with [Space])
  */
 
-import {
-  ADDITIVE_OUTER_COLLIDERS,
-  OUTER_HERO_LANDMARKS,
-  OUTER_HERO_ROCKS,
-  WORLD_BOUNDS,
-  WORLD_REGIONS,
-  getOuterHeroVerticalPlacement,
-  sampleWorldGround,
-} from '../outpost-3d/worldRegions';
+import { NATURAL_INSPECTION_PROXIES, NATURAL_LANDMARK_SUPPORTS, NATURAL_ROCK_SCATTER } from '../outpost-3d/naturalSiteDefinitions';
+import { SCIENTIFIC_ELEMENTS } from '../outpost-3d/scienceCatalog';
+import { WORLD_BOUNDS, sampleWorldGround } from '../outpost-3d/worldRegions';
 
 const PARKED_ROVER_COLLIDER_RADIUS = 1.55;
 const PARKED_ROVER_COLLIDER_TOP_OFFSET = 1.6;
 
-/** The renderer uses a unit dodecahedron, whose vertices fit within its circumradius. */
-export function buildOuterPhysicsAdapter(): ObstacleCollider[] {
-  return OUTER_HERO_LANDMARKS.flatMap((landmark) => {
-    const groundY = sampleWorldGround(landmark.position.x, landmark.position.z);
-    const hero = {
-      id: `outer-hero-${landmark.id}`,
-      label: `${landmark.regionId} ${landmark.id}`,
-      type: 'box' as const,
-      x: landmark.position.x,
-      z: landmark.position.z,
-      halfX: landmark.halfX,
-      halfZ: landmark.halfZ,
-      rotationY: -landmark.yaw,
-      topY: getOuterHeroVerticalPlacement(landmark, groundY).topY,
+/** Colliders for the canonical outcrop meshes; atmospheric plume particles stay intangible. */
+export function buildCanonicalScienceColliders(): ObstacleCollider[] {
+  return SCIENTIFIC_ELEMENTS.flatMap((element) => {
+    const proxy = NATURAL_INSPECTION_PROXIES.find((candidate) =>
+      candidate.scienceId === element.id && candidate.regionId === element.regionId && candidate.radius < 3
+    );
+    if (!proxy) return [];
+    const radius = Math.min(1.25, proxy.radius - PHYSICS_CONSTANTS.PLAYER_RADIUS - 0.1);
+    if (radius <= 0) return [];
+    // Dust-devil particles remain intangible; their low-opacity illustration has no ground barrier.
+    const visibleHeight = element.kind === 'dust-devil' ? -0.5 : element.kind === 'crater' ? 0.45 : element.kind === 'ice-layer' ? 1.1 : 0.9;
+    return [{
+      id: `solid-${element.id}`,
+      label: element.title,
+      type: 'circle',
+      x: proxy.position.x,
+      z: proxy.position.z,
+      radius,
+      topY: sampleWorldGround(proxy.position.x, proxy.position.z) + visibleHeight,
       jumpable: true,
-    };
-    const rocks = OUTER_HERO_ROCKS[landmark.id].map(([x, y, z, sx, sy, sz], index) => {
-      const cos = Math.cos(landmark.yaw);
-      const sin = Math.sin(landmark.yaw);
-      const localY = y + sy * 0.43;
+    }];
+  });
+}
+
+/** Local physical margins follow the exposed tube and vent rock meshes, not broad landforms. */
+function buildNaturalRimColliders(): ObstacleCollider[] {
+  const channel = { x: -260, z: 262 };
+  const vent = { x: -247, z: 254 };
+  const yaw = 0.42;
+  return [
+    ...([-1, 1] as const).map((side) => ({
+      id: `lava-tube-mouth-rock-${side}`,
+      label: 'Cooled lava-tube mouth rock',
+      type: 'box' as const,
+      x: channel.x + side * 5.8,
+      z: channel.z,
+      halfX: 2.2,
+      halfZ: 6.5,
+      topY: sampleWorldGround(channel.x + side * 5.8, channel.z) + 0.83,
+      jumpable: true,
+    })),
+    ...([-1, 1] as const).map((side) => {
+      const x = vent.x + side * Math.cos(yaw) * 1.1;
+      const z = vent.z - side * Math.sin(yaw) * 1.1;
       return {
-        id: `outer-hero-${landmark.id}-rock-${index + 1}`,
-        label: `${landmark.regionId} ${landmark.id} rock ${index + 1}`,
-        type: 'circle' as const,
-        x: landmark.position.x + cos * x + sin * z,
-        z: landmark.position.z - sin * x + cos * z,
-        radius: Math.max(sx, sy, sz),
-        topY: groundY + localY + Math.max(sx, sy, sz),
+        id: `ancient-vent-rock-${side}`,
+        label: 'Ancient vent basalt rim',
+        type: 'box' as const,
+        x,
+        z,
+        halfX: 1.3,
+        halfZ: 2.2,
+        rotationY: yaw,
+        topY: sampleWorldGround(x, z) + 0.74,
         jumpable: true,
       };
-    });
-    return [hero, ...rocks];
-  });
+    }),
+  ];
+}
+
+export function buildOuterPhysicsAdapter(): ObstacleCollider[] {
+  const rocks: ObstacleCollider[] = NATURAL_ROCK_SCATTER.map((rock) => ({
+    id: rock.id,
+    label: rock.label,
+    type: 'circle',
+    x: rock.position.x,
+    z: rock.position.z,
+    radius: rock.radius * 0.9,
+    topY: sampleWorldGround(rock.position.x, rock.position.z) + rock.height * 0.8,
+    jumpable: true,
+  }));
+  const supports: ObstacleCollider[] = NATURAL_LANDMARK_SUPPORTS.map((feature) => ({
+    id: feature.id, label: feature.label, type: 'box',
+    x: feature.position.x, z: feature.position.z, halfX: feature.halfX, halfZ: feature.halfZ,
+    rotationY: feature.rotationY,
+    topY: sampleWorldGround(feature.position.x, feature.position.z) + feature.height,
+    jumpable: true,
+  }));
+  return [...rocks, ...buildCanonicalScienceColliders(), ...buildNaturalRimColliders(), ...supports];
 }
 
 export const PHYSICS_CONSTANTS = {
@@ -473,16 +513,7 @@ export const STATIC_WORLD_COLLIDERS: ObstacleCollider[] = [
     topY: 0.82,
     jumpable: true
   },
-  ...ADDITIVE_OUTER_COLLIDERS.map((collider) => ({
-    id: collider.id,
-    label: `${collider.regionId} ${collider.kind}`,
-    type: 'circle' as const,
-    x: collider.x,
-    z: collider.z,
-    radius: collider.radius,
-    topY: sampleWorldGround(collider.x, collider.z) + 3.4,
-    jumpable: false
-  })),
+  // 29–54 remain the unchanged original core collider sequence, including the parked rover.
   // The authored legacy rover remains parked at this original scene location.
   {
     id: 'legacy-mars-rover-exhibit',
@@ -495,17 +526,6 @@ export const STATIC_WORLD_COLLIDERS: ObstacleCollider[] = [
     jumpable: true
   },
   ...buildOuterPhysicsAdapter(),
-  ...WORLD_REGIONS.map((region) => ({
-    id: `${region.id}-base-console`,
-    label: `${region.name} Console`,
-    type: 'box' as const,
-    x: region.baseConsole.x,
-    z: region.baseConsole.z,
-    halfX: 0.96,
-    halfZ: 0.96,
-    topY: sampleWorldGround(region.baseConsole.x, region.baseConsole.z) + 1.72,
-    jumpable: true
-  }))
 ];
 
 /**

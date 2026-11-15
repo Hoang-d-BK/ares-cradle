@@ -10,7 +10,8 @@ import {
   WORLD_REGIONS,
   createOuterTerrainGrid,
 } from './worldRegions';
-import { RegionConsole, RegionHero } from './RegionLandmarks';
+import { RegionHero } from './RegionLandmarks';
+import { addWorldSurfaceUVs, createMarsSurfaceMaterial } from './marsSurfaceMaterials';
 
 const DUNE_BAND = new THREE.Color('#BD8965');
 const ICE_SHELF_BAND = new THREE.Color('#C9E1DF');
@@ -18,14 +19,15 @@ const BASALT_BAND = new THREE.Color('#25282A');
 const SEDIMENT_BENCH_BAND = new THREE.Color('#B18A69');
 const CHANNEL_CUT_BAND = new THREE.Color('#81604C');
 const EJECTA_BAND = new THREE.Color('#B17952');
+const IMPACT_ROCK = new THREE.Color('#343638');
+const ICE_LAYER = new THREE.Color('#B6C5BE');
+const BASALT_FLOW = new THREE.Color('#24282A');
+const LAKE_SEDIMENT = new THREE.Color('#A27B63');
+const WIND_DUST = new THREE.Color('#B07B58');
+const ORIGINAL_HOME = new THREE.Color('#752405');
 
-const TERRAIN_MATERIAL = new THREE.MeshStandardMaterial({
-  vertexColors: true,
-  emissive: '#584236',
-  emissiveIntensity: 0.06,
-  roughness: 0.9,
-  metalness: 0.02,
-  flatShading: true,
+const TERRAIN_MATERIAL = createMarsSurfaceMaterial({
+  color: '#ffffff', vertexColors: true, roughness: 0.94, metalness: 0.01, bumpScale: 0.13,
 });
 
 function colorTerrain(positions: Float32Array): Float32Array {
@@ -36,7 +38,7 @@ function colorTerrain(positions: Float32Array): Float32Array {
     terrain: new THREE.Color(region.palette.terrain),
     rock: new THREE.Color(region.palette.rock),
   }));
-  const home = new THREE.Color('#752405');
+  const home = ORIGINAL_HOME;
   const color = new THREE.Color();
 
   for (let i = 0; i < positions.length; i += 3) {
@@ -84,33 +86,32 @@ function colorTerrain(positions: Float32Array): Float32Array {
     const impactX = x + 256;
     const impactZ = z + 257;
     const craterRadius = Math.hypot(impactX, impactZ);
-    const impactRock = new THREE.Color('#343638');
-    if (craterRadius < 14) color.lerp(impactRock, 0.58 * (1 - craterRadius / 14));
+    if (craterRadius < 14) color.lerp(IMPACT_ROCK, 0.68 * (1 - craterRadius / 14));
     const rimWeight = Math.exp(-((craterRadius - 18) ** 2) / (2 * 3.4 * 3.4));
-    color.lerp(new THREE.Color('#AA725A'), rimWeight * 0.42);
+    color.lerp(EJECTA_BAND, rimWeight * 0.55);
     const iceX = x - 256;
     const iceZ = z + 258;
     const iceBand = iceZ + 0.18 * iceX + 3.5;
     const icePatch = Math.exp(-(iceX * iceX + iceZ * iceZ) / (2 * 36 * 36));
-    color.lerp(new THREE.Color('#B6C5BE'), Math.exp(-(iceBand * iceBand) / (2 * 3.2 * 3.2)) * icePatch * 0.48);
+    color.lerp(ICE_LAYER, Math.exp(-(iceBand * iceBand) / (2 * 3.2 * 3.2)) * icePatch * 0.48);
 
     const volcanoX = x + 247;
     const volcanoZ = z - 254;
     const terraceRadius = Math.hypot(volcanoX, volcanoZ * 0.78);
     const terraceBand = 0.5 + 0.5 * Math.cos(terraceRadius * Math.PI / 3.6);
-    color.lerp(new THREE.Color('#24282A'), terraceBand * Math.exp(-((terraceRadius - 16) ** 2) / (2 * 12 * 12)) * 0.24);
+    color.lerp(BASALT_FLOW, terraceBand * Math.exp(-((terraceRadius - 16) ** 2) / (2 * 12 * 12)) * 0.24);
     const lakeX = x - 240;
     const lakeZ = z - 240;
     const lakePatch = Math.exp(-(lakeX * lakeX + lakeZ * lakeZ) / (2 * 42 * 42));
     const braid = Math.sin((lakeX + lakeZ * 0.4) * 0.11) + 0.45 * Math.sin((lakeZ - lakeX * 0.3) * 0.16);
     const sedimentBand = Math.exp(-(braid * braid) / (2 * 0.18 * 0.18)) * lakePatch;
-    color.lerp(new THREE.Color('#A27B63'), sedimentBand * 0.22);
+    color.lerp(LAKE_SEDIMENT, sedimentBand * 0.22);
 
     const dustX = x;
     const dustZ = z + 255;
     const dustPatch = Math.exp(-(dustX * dustX / (2 * 49 * 49) + dustZ * dustZ / (2 * 42 * 42)));
     const duneFace = 0.5 + 0.5 * Math.sin((dustZ + 0.24 * dustX) * 0.2);
-    color.lerp(new THREE.Color('#B07B58'), dustPatch * duneFace * 0.16);
+    color.lerp(WIND_DUST, dustPatch * duneFace * 0.16);
     color.multiplyScalar(0.97 + 0.035 * Math.sin(x * 0.019) * Math.cos(z * 0.023));
     colors[i] = color.r;
     colors[i + 1] = color.g;
@@ -124,6 +125,7 @@ function makeTerrainGeometry(): THREE.BufferGeometry {
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(grid.positions, 3));
   geometry.setAttribute('color', new THREE.BufferAttribute(colorTerrain(grid.positions), 3));
+  addWorldSurfaceUVs(geometry, grid.positions);
   geometry.setIndex(new THREE.BufferAttribute(grid.indices, 1));
   geometry.computeVertexNormals();
   geometry.computeBoundingSphere();
@@ -219,7 +221,6 @@ export const OuterRegions: React.FC = () => {
       {OUTER_HERO_LANDMARKS.filter((landmark) => landmark.regionId === region.id).map((landmark) => (
         <RegionHero key={landmark.id} landmark={landmark} region={region} />
       ))}
-      <RegionConsole region={region} />
     </React.Fragment>)}
   </group>;
 };

@@ -3,6 +3,8 @@ import { House, ZoomIn, ZoomOut } from 'lucide-react';
 import { useOutpostStore } from '@/modules/store/useOutpostStore';
 import { soundEngine } from '@/modules/audio/soundEngine';
 import { WORLD_REGIONS } from '@/modules/outpost-3d/worldRegions';
+import { PRIMARY_NATURAL_LANDMARKS } from '@/modules/outpost-3d/naturalSiteDefinitions';
+import NewTerrainMapLayer from '@/modules/mission-control/newTerrainMapLayer';
 
 const ZOOM_SCALES = [25, 50, 80, 300, 450] as const;
 
@@ -37,6 +39,7 @@ export const MinimapRadar: React.FC = () => {
     const distance = Math.hypot(px - region.baseConsole.x, pz - region.baseConsole.z);
     return { region, index, x, y, distance, active: completed.has(region.id), isTarget: activeWaypointRegionId === region.id };
   });
+  const landmarkBlips = PRIMARY_NATURAL_LANDMARKS.map((site) => ({ site, ...projectToRadar(site.position.x, site.position.z) }));
   const cycleZoom = (delta: number) => {
     soundEngine.playClick(1000);
     setZoomIndex((prev) => Math.max(0, Math.min(ZOOM_SCALES.length - 1, prev + delta)));
@@ -46,6 +49,7 @@ export const MinimapRadar: React.FC = () => {
   return (
     <div className="fixed top-3 right-3 z-30 pointer-events-auto flex flex-col items-end select-none font-mono">
       <div className="relative w-28 h-28 rounded-full hud-theme-shell border-2 flex items-center justify-center overflow-hidden" aria-label="North-up minimap">
+        <NewTerrainMapLayer center={{ x: px, z: pz }} range={currentScale} />
         <div className="absolute inset-2 rounded-full border border-cyan-500/20" />
         <div className="absolute inset-6 rounded-full border border-cyan-500/30 border-dashed" />
         <div className="absolute inset-10 rounded-full border border-cyan-500/40" />
@@ -54,6 +58,7 @@ export const MinimapRadar: React.FC = () => {
         <div style={{ transform: `translate(${projectToRadar(0, 0).x}px, ${projectToRadar(0, 0).y}px)` }} className="absolute z-10 w-4 h-4 -ml-2 -mt-2 flex items-center justify-center text-cyan-300" title={`Ares Cradle habitat — ${distToBase.toFixed(0)}m`}>
           <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 border border-white shadow-[0_0_8px_#00F0FF] flex items-center justify-center"><House className="h-2 w-2" aria-hidden="true" /></span>
         </div>
+        {landmarkBlips.map(({ site, x, y, isOutside }) => <div key={`landmark-${site.regionId}`} data-testid={`minimap-landmark-${site.regionId}`} style={{ transform: `translate(${x}px, ${y}px)` }} className={`absolute z-[8] -ml-1 -mt-1 h-2 w-2 rotate-45 border border-amber-100 bg-amber-400 shadow-[0_0_5px_rgba(255,193,106,.7)] ${isOutside ? 'opacity-45' : ''}`} title={`${site.label} natural feature`} />)}
         {stationBlips.map(({ region, index, x, y, distance, active, isTarget }) => (
           <div key={region.id} style={{ transform: `translate(${x}px, ${y}px)` }} className={`absolute z-10 w-4 h-4 -ml-2 -mt-2 flex items-center justify-center text-[7px] font-bold transition-transform duration-100 ${isTarget ? 'text-amber-200' : active ? 'text-cyan-100' : 'text-cyan-300'}`} title={`${region.name} — ${distance.toFixed(0)}m — ${isTarget ? 'waypoint' : active ? 'surveyed' : 'unvisited'}`}>
             <span className={`w-2.5 h-2.5 flex items-center justify-center border ${active ? 'rounded-full bg-cyan-400 border-white shadow-[0_0_8px_#00F0FF]' : 'rotate-45 rounded-sm bg-slate-900 border-cyan-300'} ${isTarget ? 'ring-1 ring-amber-300 shadow-[0_0_8px_#F59E0B]' : ''}`}><span className={active ? '' : '-rotate-45'}>{index + 1}</span></span>

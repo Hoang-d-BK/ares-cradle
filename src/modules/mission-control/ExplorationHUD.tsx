@@ -25,7 +25,7 @@ const IconButton: React.FC<{ label: string; shortcut: string; onClick: () => voi
     aria-label={label}
     title={`${label} (${shortcut})`}
     onClick={onClick}
-    className="flex h-11 w-11 items-center justify-center rounded-lg border border-white/20 bg-[#151a1d]/90 text-[#f1d5be] shadow-[0_3px_12px_rgba(0,0,0,.32)] transition-colors hover:border-amber-300/70 hover:bg-[#25201c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300 touch-manipulation"
+    className="flex h-12 w-12 items-center justify-center rounded-lg border border-white/20 bg-[#151a1d]/90 text-[#f1d5be] shadow-[0_3px_12px_rgba(0,0,0,.32)] transition-colors hover:border-amber-300/70 hover:bg-[#25201c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300 touch-manipulation"
   >{children}</button>
 );
 
@@ -69,7 +69,9 @@ export const ExplorationHUD: React.FC<ExplorationHUDProps> = ({
       <ResourceSegments label="Energy" value={energyEU} capacity={100} segments={10} icon={<Zap className="h-2.5 w-2.5 max-[400px]:h-2 max-[400px]:w-2" />} />
     </div>
 
-    {remote && <button type="button" onClick={onExitRemote} className="pointer-events-auto absolute right-3 top-44 min-h-10 rounded-md border border-cyan-200/40 bg-[#122328]/95 px-3 text-xs font-medium text-cyan-100 hover:bg-[#183139] focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300">Exit remote scout</button>}
+    {remote && <button type="button" onClick={onExitRemote} className="pointer-events-auto absolute right-3 top-44 min-h-12 min-w-12 rounded-md border border-cyan-200/40 bg-[#122328]/95 px-4 text-base font-medium text-cyan-100 hover:bg-[#183139] focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300 touch-manipulation">Return to Leo</button>}
+
+
 
     <nav aria-label="Exploration tools" className="pointer-events-auto absolute bottom-[14rem] left-3 flex gap-2 lg:bottom-3">
       <IconButton label="Backpack" shortcut="E" onClick={onBackpack}><Backpack className="h-5 w-5" /></IconButton>

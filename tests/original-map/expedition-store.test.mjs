@@ -44,11 +44,16 @@ const makeHarness = ({ initialEntries = [], failWrites = false, isBriefingOpen =
       state = initialize(set, get);
       return { getState: get, setState: set };
     } };
+    if (id === '@/modules/session/gameSession') return { getGameplayStarted: () => true };
     if (id === '@/modules/character/physicsEngine') return compile(resolve(root, 'src/modules/character/physicsEngine.ts'), localRequire, cache);
     if (id === '@/modules/outpost-3d/worldRegions') return compile(resolve(root, 'src/modules/outpost-3d/worldRegions.ts'), localRequire, cache);
     if (id === './expeditionProgress') return compile(resolve(root, 'src/modules/store/expeditionProgress.ts'), localRequire, cache);
     if (id === './explorationProgress') return compile(resolve(root, 'src/modules/store/explorationProgress.ts'), localRequire, cache);
     if (id === '../outpost-3d/scienceCatalog') return compile(resolve(root, 'src/modules/outpost-3d/scienceCatalog.ts'), localRequire, cache);
+    if (id === './scienceInteraction') return compile(resolve(root, 'src/modules/outpost-3d/scienceInteraction.ts'), localRequire, cache);
+    if (id === '../outpost-3d/scienceInteraction') return compile(resolve(root, 'src/modules/outpost-3d/scienceInteraction.ts'), localRequire, cache);
+    if (id === './naturalSiteDefinitions') return compile(resolve(root, 'src/modules/outpost-3d/naturalSiteDefinitions.ts'), localRequire, cache);
+    if (id === '../outpost-3d/naturalSiteDefinitions') return compile(resolve(root, 'src/modules/outpost-3d/naturalSiteDefinitions.ts'), localRequire, cache);
     if (id === '../../game/mission/activities/rules') return compile(resolve(root, 'src/game/mission/activities/rules.ts'), localRequire, cache);
     if (id === '../outpost-3d/worldRegions' || id === './worldRegions') return compile(resolve(root, 'src/modules/outpost-3d/worldRegions.ts'), localRequire, cache);
     if (id === '@/modules/simulation-engine/formulas') return {
@@ -78,7 +83,8 @@ const makeHarness = ({ initialEntries = [], failWrites = false, isBriefingOpen =
   const progress = compile(resolve(root, 'src/modules/store/expeditionProgress.ts'), localRequire, cache);
   const exploration = compile(resolve(root, 'src/modules/store/explorationProgress.ts'), localRequire, cache);
   const science = compile(resolve(root, 'src/modules/outpost-3d/scienceCatalog.ts'), localRequire, cache);
-  return { store: storeModule.useOutpostStore, values, writes, world, progress, exploration, science };
+  const naturalSites = compile(resolve(root, 'src/modules/outpost-3d/naturalSiteDefinitions.ts'), localRequire, cache);
+  return { store: storeModule.useOutpostStore, values, writes, world, progress, exploration, science, naturalSites };
 };
 
 const STORAGE_KEY = 'ares-cradle-expedition-v1';
@@ -244,25 +250,38 @@ test('Impact store actions reject invalid context, stale evidence, and terminal 
 
 test('scientific inspection uses the actual rover pose, persists full progress, and rewards a region once', () => {
   const harness = makeHarness({ initialEntries: LEGACY_KEYS });
-  const { store, values, writes, science, world } = harness;
+  const { store, values, writes, science, world, naturalSites: harnessSites } = harness;
   const first = science.SCIENTIFIC_ELEMENTS.find((element) => element.regionId === 'dust');
-  const secondAndThird = science.SCIENTIFIC_ELEMENTS.filter((element) => element.regionId === 'dust').slice(1);
+  const allScience = science.SCIENTIFIC_ELEMENTS.filter((element) => element.regionId === 'dust');
   const region = world.WORLD_REGIONS.find(({ id }) => id === 'dust');
   store.setState({
+    expeditionProgress: { ...store.getState().expeditionProgress, enabled: true, transactions: ['campaign:start', 'base:activate:impact', 'base:activate:dust', 'base:activate:ice', 'base:activate:volcano', 'base:activate:lake'], revision: 6, bases: Object.fromEntries(world.WORLD_REGIONS.map(({ id }) => [id, { ...store.getState().expeditionProgress.bases[id], active: true }])) },
     isManualOpen: false,
     exploration: { ...store.getState().exploration, survival: { air: 85, meals: 10, energyEU: 80 } },
     playerPos: [region.baseConsole.x, world.sampleWorldGround(region.baseConsole.x, region.baseConsole.z), region.baseConsole.z],
     isPlayerGrounded: true
   });
   store.getState().toggleDrivingRover();
-  const pose = (element) => ({ x: element.position.x, y: world.sampleWorldGround(element.position.x, element.position.z), z: element.position.z, heading: 0 });
+  const pose = (element) => {
+    const proxy = harnessSites.NATURAL_INSPECTION_PROXIES.find(({ scienceId, radius }) => scienceId === element.id && radius < 3);
+    const z = proxy.position.z;
+    const region = world.WORLD_REGIONS.find(({ id }) => id === element.regionId);
+    const candidates = [proxy.position.x + proxy.radius, proxy.position.x - proxy.radius, region.center.x + 70, region.center.x - 70];
+    const valid = candidates.map((x) => ({ x, distance: Math.hypot(x - region.center.x, z - region.center.z) }))
+      .filter(({ distance }) => distance <= 75)
+      .sort((a, b) => Math.abs(a.x - proxy.position.x) - Math.abs(b.x - proxy.position.x));
+    const x = valid[0]?.x ?? region.center.x;
+    return { x, y: world.sampleWorldGround(x, z), z, heading: 0 };
+  };
   store.getState().publishRoverState(pose(first), 0);
-  assert.equal(store.getState().inspectScientificElement(first.id), true);
+  assert.equal(store.getState().inspectScientificElement(first.id), true, `collect ${first.id}: ${store.getState().explorationNotice}`);
   assert.equal(store.getState().playerPos[0], region.baseConsole.x, 'actual human actor remains at console');
   assert.equal(store.getState().exploration.collected.includes(first.id), true);
-  for (const element of secondAndThird) {
-    store.getState().publishRoverState(pose(element), 0);
-    assert.equal(store.getState().inspectScientificElement(element.id), true);
+  for (const element of allScience.slice(1)) {
+    const target = pose(element);
+    store.setState({ remoteRegionId: element.regionId, activeScienceEntryId: null });
+    store.getState().publishRoverState(target, 0);
+    assert.equal(store.getState().inspectScientificElement(element.id), true, `collect ${element.id}: ${store.getState().explorationNotice}`);
   }
   const saved = JSON.parse(values.get(EXPLORATION_KEY));
   assert.deepEqual(saved, store.getState().exploration, 'complete nested progress snapshot is persisted');
@@ -270,23 +289,25 @@ test('scientific inspection uses the actual rover pose, persists full progress, 
   assert.deepEqual(saved.rewardedRegions, ['dust']);
   assert.deepEqual(saved.survival, { air: 100, meals: 12, energyEU: 100 }, 'reward is capped at capacity');
   const beforeDuplicate = writes.filter(([key]) => key === EXPLORATION_KEY).length;
+  store.setState({ remoteRegionId: first.regionId, activeScienceEntryId: null });
   store.getState().publishRoverState(pose(first), 0);
-  assert.equal(store.getState().inspectScientificElement(first.id), true, 'already-unlocked entry can be reopened');
+  assert.equal(store.getState().inspectScientificElement(first.id), true, 'already-unlocked entry can be reopened locally');
   assert.equal(writes.filter(([key]) => key === EXPLORATION_KEY).length, beforeDuplicate, 'duplicate inspect does not persist or reward again');
   assert.equal(store.getState().activeScienceEntryId, first.id);
   assert.deepEqual([...values.entries()].filter(([key]) => key !== EXPLORATION_KEY), LEGACY_KEYS);
 });
 
 test('science inspection checks range, grounding and remote region, and failure does not persist', () => {
-  const { store, values, writes, science, world } = makeHarness({ initialEntries: LEGACY_KEYS });
+  const { store, values, writes, science, world, naturalSites } = makeHarness({ initialEntries: LEGACY_KEYS });
   const element = science.SCIENTIFIC_ELEMENTS.find((candidate) => candidate.regionId === 'ice');
+  const proxy = naturalSites.NATURAL_INSPECTION_PROXIES.find(({ scienceId, radius }) => scienceId === element.id && radius < 3);
   const before = store.getState().exploration;
   const position = (x, z, y = world.sampleWorldGround(x, z)) => [x, y, z];
-  store.setState({ playerPos: position(element.position.x - 6, element.position.z), isPlayerGrounded: true });
-  assert.equal(store.getState().inspectScientificElement(element.id), false, 'inspection is out of 4.5m range');
-  store.setState({ playerPos: position(element.position.x, element.position.z), isPlayerGrounded: false });
+  store.setState({ playerPos: position(proxy.position.x + proxy.radius + 4.6, proxy.position.z), isPlayerGrounded: true });
+  assert.equal(store.getState().inspectScientificElement(element.id), false, 'inspection is outside the 4.5m edge range');
+  store.setState({ playerPos: position(proxy.position.x + proxy.radius, proxy.position.z), isPlayerGrounded: false });
   assert.equal(store.getState().inspectScientificElement(element.id), false, 'airborne on-foot actor cannot inspect');
-  store.setState({ playerPos: position(element.position.x, element.position.z), isPlayerGrounded: true, isDrivingRover: true, remoteRegionId: 'dust', roverPos: position(element.position.x, element.position.z) });
+  store.setState({ playerPos: position(proxy.position.x + proxy.radius, proxy.position.z), isPlayerGrounded: true, isDrivingRover: true, remoteRegionId: 'dust', roverPos: position(proxy.position.x + proxy.radius, proxy.position.z) });
   assert.equal(store.getState().inspectScientificElement(element.id), false, 'wrong remote sector is rejected');
   assert.strictEqual(store.getState().exploration, before);
   assert.equal(values.has(EXPLORATION_KEY), false);
