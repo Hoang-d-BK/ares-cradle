@@ -12,6 +12,7 @@
 import { NATURAL_INSPECTION_PROXIES, NATURAL_LANDMARK_SUPPORTS, NATURAL_ROCK_SCATTER } from '../outpost-3d/naturalSiteDefinitions';
 import { SCIENTIFIC_ELEMENTS } from '../outpost-3d/scienceCatalog';
 import { WORLD_BOUNDS, sampleWorldGround } from '../outpost-3d/worldRegions';
+import { sampleHabitatFloorSupport } from '../outpost-3d/habitatFloorDefinitions';
 
 const PARKED_ROVER_COLLIDER_RADIUS = 1.55;
 const PARKED_ROVER_COLLIDER_TOP_OFFSET = 1.6;
@@ -870,6 +871,22 @@ export function stepPlayerPhysics(
         supportLabel = col.label;
       }
     }
+  }
+
+  const habitatSupport = sampleHabitatFloorSupport(
+    targetX,
+    targetZ,
+    playerRadius * 0.6,
+    Math.max(prevY, y) + PHYSICS_CONSTANTS.STEP_UP_TOLERANCE
+  );
+  const wasAboveHabitatSupport = habitatSupport &&
+    (prevY >= habitatSupport.topY - PHYSICS_CONSTANTS.STEP_UP_TOLERANCE ||
+     y >= habitatSupport.topY - PHYSICS_CONSTANTS.STEP_UP_TOLERANCE);
+  const canStepOntoHabitatSupport = habitatSupport && isGrounded &&
+    habitatSupport.topY <= prevY + PHYSICS_CONSTANTS.STEP_UP_TOLERANCE;
+  if (habitatSupport && (wasAboveHabitatSupport || canStepOntoHabitatSupport) && habitatSupport.topY > supportY) {
+    supportY = habitatSupport.topY;
+    supportLabel = habitatSupport.label;
   }
 
   // Land on support surface when descending onto it, or fall when walking off a ledge

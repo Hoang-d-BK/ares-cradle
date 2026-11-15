@@ -2,6 +2,12 @@ import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useOutpostStore } from '@/modules/store/useOutpostStore';
+import {
+  HABITAT_OBSERVATION_DECK,
+  HABITAT_OBSERVATION_DECK_LOCAL_POSITION,
+  HABITAT_STAIR_GROUP_POSITION,
+  HABITAT_STAIR_TREADS,
+} from './habitatFloorDefinitions';
 
 /**
  * NASA Mars Habitat Interior (Ares Cradle v3.0 Multi-Zone Architecture)
@@ -251,7 +257,7 @@ export const HabitatInterior: React.FC = () => {
       {/* ========================================================
           SPIRAL STAIRCASE & 2ND-STORY STARGAZING OBSERVATION DECK
           ======================================================== */}
-      <group position={[1.4, 0.45, -1.0]}>
+      <group position={[HABITAT_STAIR_GROUP_POSITION[0], 0.45, HABITAT_STAIR_GROUP_POSITION[2]]}>
         {/* Central Spiral Mast */}
         <mesh position={[0, 0.9, 0]}>
           <cylinderGeometry args={[0.08, 0.08, 1.8, 12]} />
@@ -259,27 +265,22 @@ export const HabitatInterior: React.FC = () => {
         </mesh>
 
         {/* Spiral Step Treads */}
-        {[0, 1, 2, 3, 4, 5, 6].map((stepIdx) => {
-          const stepAngle = (stepIdx / 7) * Math.PI * 1.3;
-          const stepY = 0.15 + stepIdx * 0.18;
-          const radius = 0.45;
-          return (
-            <mesh
-              key={`step-${stepIdx}`}
-              position={[Math.cos(stepAngle) * radius, stepY, Math.sin(stepAngle) * radius]}
-              rotation={[0, -stepAngle, 0]}
-            >
-              <boxGeometry args={[0.42, 0.04, 0.16]} />
-              <meshStandardMaterial color="#334155" metalness={0.85} roughness={0.3} />
-            </mesh>
-          );
-        })}
+        {HABITAT_STAIR_TREADS.map((tread, stepIdx) => (
+          <mesh
+            key={`step-${stepIdx}`}
+            position={tread.position}
+            rotation={[0, tread.rotationY, 0]}
+          >
+            <boxGeometry args={tread.size as [number, number, number]} />
+            <meshStandardMaterial color="#334155" metalness={0.85} roughness={0.3} />
+          </mesh>
+        ))}
 
         {/* Elevated 2nd-Story Observation Deck (y = 1.45) */}
-        <group position={[0.6, 1.42, 0.8]}>
+        <group position={HABITAT_OBSERVATION_DECK_LOCAL_POSITION}>
           {/* Deck Floor Plate */}
           <mesh>
-            <cylinderGeometry args={[1.1, 1.1, 0.08, 20]} />
+            <cylinderGeometry args={[HABITAT_OBSERVATION_DECK.radius, HABITAT_OBSERVATION_DECK.radius, HABITAT_OBSERVATION_DECK.thickness, 20]} />
             <meshStandardMaterial color="#0F172A" metalness={0.85} roughness={0.25} />
           </mesh>
 

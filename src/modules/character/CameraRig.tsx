@@ -9,6 +9,7 @@ import {
   cameraLookFromPosition,
   clampCameraPitch,
   clampCameraPitchToFrame,
+  constrainCameraToHabitatInterior,
   findCameraPosition,
   MIN_CAMERA_SEPARATION,
   MIN_HABITAT_CAMERA_SEPARATION,
@@ -169,15 +170,11 @@ export const CameraRig: React.FC = () => {
       z: actor[2],
     };
     const colliders = buildWorldColliders(store.roverPos, remote);
-    const insideHabitat = !remote && !!store.isInsideHabitat &&
-      Math.hypot(actor[0], actor[2]) < 3.55;
-    const distance = remote ? ROVER_DISTANCE : insideHabitat ? 2.8 : HUMAN_DISTANCE;
+    const habitatBlend = remote ? 0 : 1 - THREE.MathUtils.smoothstep(Math.hypot(actor[0], actor[2]), 3.2, 4.1);
+    const distance = remote ? ROVER_DISTANCE : THREE.MathUtils.lerp(HUMAN_DISTANCE, 2.8, habitatBlend);
     const minimumSeparation = remote ? MIN_ROVER_CAMERA_SEPARATION
-      : insideHabitat ? MIN_HABITAT_CAMERA_SEPARATION : MIN_CAMERA_SEPARATION;
-    const candidateVisible = (candidate: { x: number; y: number; z: number }) =>
-      !insideHabitat || (Math.hypot(candidate.x, candidate.z) < 3.55 &&
-        Math.hypot(candidate.x - pivot.x, candidate.y - pivot.y, candidate.z - pivot.z) > 1e-4);
-    const safeTarget = findCameraPosition(
+      : THREE.MathUtils.lerp(MIN_CAMERA_SEPARATION, MIN_HABITAT_CAMERA_SEPARATION, habitatBlend);
+    const foundTarget = findCameraPosition(
       pivot,
       actualYaw.current,
       actualPitch.current,
@@ -185,15 +182,14 @@ export const CameraRig: React.FC = () => {
       minimumSeparation,
       sampleWorldGround,
       colliders,
-      candidateVisible,
-      insideHabitat ? 1.0 : undefined,
+      () => true,
+      remote ? undefined : THREE.MathUtils.lerp(0.75, 1.05, habitatBlend),
+      remote,
     );
-    const obstructionShortened = Math.hypot(
-      safeTarget.x - actualPosition.current.x,
-      safeTarget.y - actualPosition.current.y,
-      safeTarget.z - actualPosition.current.z
-    ) > 1.5;
-    if (!cameraInitialized.current || obstructionShortened) {
+    const safeTarget = !remote && habitatBlend > 0
+      ? constrainCameraToHabitatInterior(pivot, foundTarget)
+      : foundTarget;
+    if (!cameraInitialized.current) {
       actualPosition.current.set(safeTarget.x, safeTarget.y, safeTarget.z);
       cameraInitialized.current = true;
     } else {

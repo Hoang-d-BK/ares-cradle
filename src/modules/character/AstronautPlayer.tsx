@@ -449,7 +449,7 @@ export const AstronautPlayer: React.FC = () => {
       groupRef.current.position.y =
         nextPhysics.y + Math.abs(Math.sin(walkCycle.current)) * (canSprint ? 0.075 : 0.05);
     } else {
-      groupRef.current.position.y = nextPhysics.y + Math.sin(state.clock.getElapsedTime() * 2.5) * 0.015;
+      groupRef.current.position.y = nextPhysics.y + (Math.sin(state.clock.getElapsedTime() * 2.5) + 1) * 0.015;
       if (leftLegRef.current && rightLegRef.current) {
         leftLegRef.current.rotation.x *= 0.85;
         rightLegRef.current.rotation.x *= 0.85;
@@ -549,7 +549,7 @@ export const AstronautPlayer: React.FC = () => {
         />
       </mesh>
 
-      <group ref={bodyScaleRef}>
+      <group ref={bodyScaleRef} position={[0, 0.05, 0]}>
         {/* Head & Helmet */}
         <group ref={headRef} position={[0, 0.95, 0]}>
           {/* White Spacesuit Helmet Box */}

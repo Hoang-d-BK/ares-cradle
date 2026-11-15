@@ -223,6 +223,11 @@ function renderedOccluders() {
   return [wall, collar, table[0]];
 }
 
+function isActuallyVisible(object) {
+  for (let current = object; current; current = current.parent) if (!current.visible) return false;
+  return true;
+}
+
 function visibleActorPoints(actor) {
   actor.root.updateMatrixWorld(true);
   const head = actor.refs[2]?.current;
@@ -243,7 +248,7 @@ function visibleActorPoints(actor) {
   const headTop = new THREE.Vector3();
   let maxY = -Infinity;
   actor.root.traverse((object) => {
-    if (!object.isMesh || !object.visible || !object.geometry?.getAttribute('position')) return;
+    if (!object.isMesh || !isActuallyVisible(object) || !object.geometry?.getAttribute('position')) return;
     const position = object.geometry.getAttribute('position');
     for (let i = 0; i < position.count; i += 1) {
       const point = new THREE.Vector3(position.getX(i), position.getY(i), position.getZ(i)).applyMatrix4(object.matrixWorld);
@@ -264,7 +269,7 @@ function inspectActualView(label, rig, actor, occluders) {
   actor.root.updateMatrixWorld(true);
   const projected = [];
   actor.root.traverse((object) => {
-    if (!object.isMesh || !object.visible || !object.geometry?.getAttribute('position')) return;
+    if (!object.isMesh || !isActuallyVisible(object) || !object.geometry?.getAttribute('position')) return;
     const position = object.geometry.getAttribute('position');
     for (let i = 0; i < position.count; i += 1) {
       projected.push(new THREE.Vector3(position.getX(i), position.getY(i), position.getZ(i)).applyMatrix4(object.matrixWorld).project(camera));

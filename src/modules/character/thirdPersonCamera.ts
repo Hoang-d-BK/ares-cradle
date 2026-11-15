@@ -59,7 +59,7 @@ export function isCameraPointClear(
       const localZ = -dx * sin + dz * cos;
       if (Math.abs(localX) <= collider.halfX + CAMERA_RADIUS && Math.abs(localZ) <= collider.halfZ + CAMERA_RADIUS) return false;
     }
-    if (collider.type === 'ring' && collider.id !== 'habitat-dome-wall' && !inRingOpening(point.x, point.z, collider)) {
+    if (collider.type === 'ring' && !inRingOpening(point.x, point.z, collider)) {
       const distance = Math.hypot(point.x - collider.x, point.z - collider.z);
       if (distance >= collider.innerRadius - CAMERA_RADIUS && distance <= collider.outerRadius + CAMERA_RADIUS) return false;
     }
@@ -119,6 +119,21 @@ export function chaseCameraPosition(
 }
 
 /** Chooses the clearest practical orbit without letting a blocked boom collapse into the actor. */
+/** Keeps a camera endpoint on its requested ray inside the opaque habitat shell. */
+export function constrainCameraToHabitatInterior(pivot: CameraPoint, camera: CameraPoint, radius = 3.7): CameraPoint {
+  const actorRadius = Math.hypot(pivot.x, pivot.z);
+  const dx = camera.x - pivot.x;
+  const dz = camera.z - pivot.z;
+  const horizontal = Math.hypot(dx, dz);
+  if (actorRadius >= radius || horizontal < 1e-6) return camera;
+  const ux = dx / horizontal;
+  const uz = dz / horizontal;
+  const projection = pivot.x * ux + pivot.z * uz;
+  const exit = -projection + Math.sqrt(Math.max(0, projection * projection + radius * radius - actorRadius * actorRadius));
+  const safeHorizontal = Math.min(horizontal, Math.max(0, exit - 0.05));
+  return { x: pivot.x + ux * safeHorizontal, y: camera.y, z: pivot.z + uz * safeHorizontal };
+}
+
 export function findCameraPosition(
   pivot: CameraPoint,
   yaw: number,
@@ -129,8 +144,9 @@ export function findCameraPosition(
   colliders: readonly ObstacleCollider[],
   isCandidateAllowed: (point: CameraPoint) => boolean = () => true,
   boomHeight = BOOM_HEIGHT,
+  allowYawOffsets = true,
 ): CameraPoint {
-  const offsets = [0, 0.45, -0.45, 0.9, -0.9, 1.35, -1.35, 1.8, -1.8, Math.PI];
+  const offsets = allowYawOffsets ? [0, 0.45, -0.45, 0.9, -0.9, 1.35, -1.35, 1.8, -1.8, Math.PI] : [0];
   let best = pivot;
   let bestScore = -Infinity;
   for (const offset of offsets) {
@@ -160,8 +176,8 @@ export function clampCameraPitchToFrame(
 ): number {
   const horizontal = Math.hypot(camera.x - pivot.x, camera.z - pivot.z);
   if (!Number.isFinite(horizontal) || horizontal < 1e-4) return clampCameraPitch(desiredPitch);
-  const highest = isRover ? 1.7 : 1.4;
-  const lowest = isRover ? -0.35 : -0.4;
+  const highest = isRover ? 1.7 : 1.12;
+  const lowest = isRover ? -0.35 : -0.175;
   const headAngle = Math.atan2(pivot.y + highest - camera.y, horizontal);
   const feetAngle = Math.atan2(pivot.y + lowest - camera.y, horizontal);
   const halfFov = Math.max(0.05, (verticalFovDegrees * Math.PI) / 360 - 0.025);

@@ -5,6 +5,7 @@ import { useOutpostStore } from '@/modules/store/useOutpostStore';
 import { soundEngine } from '@/modules/audio/soundEngine';
 import { STATIC_WORLD_COLLIDERS } from '@/modules/character/physicsEngine';
 import { createHabitatFoundationGeometry } from './habitatFoundationGeometry';
+import { HABITAT_RAMP } from './habitatFloorDefinitions';
 
 /**
  * NASA Mars Habitat Camp (Ares Cradle v3.0 Expanded 3.85m Base)
@@ -237,10 +238,10 @@ export const HabitatDome: React.FC = () => {
       {/* ========================================================
           4. ROVER CHARGING RAMP WITH INDUCTION DOCK (Toward +Z)
           ======================================================== */}
-      <group position={[dockTargetX, -0.15, dockTargetZ - 0.4]}>
+      <group position={[dockTargetX, HABITAT_RAMP.groupPosition[1], HABITAT_RAMP.groupPosition[2]]}>
         {/* Sloped Ramp Platform */}
-        <mesh position={[0, -0.05, 0]} rotation={[0.18, 0, 0]} receiveShadow>
-          <boxGeometry args={[2.2, 0.16, 2.8]} />
+        <mesh position={HABITAT_RAMP.meshPosition} rotation={[HABITAT_RAMP.rotationX, 0, 0]} receiveShadow>
+          <boxGeometry args={HABITAT_RAMP.size as [number, number, number]} />
           <meshStandardMaterial color="#1E293B" roughness={0.8} metalness={0.3} />
         </mesh>
 
@@ -316,20 +317,30 @@ export const HabitatDome: React.FC = () => {
           ======================================================== */}
       <group position={[3.85, 0.55, 0]} rotation={[0, 0, -Math.PI / 2]}>
         <mesh castShadow receiveShadow>
-          <cylinderGeometry args={[0.65, 0.65, 1.6, 16]} />
-          <meshStandardMaterial color="#64748B" metalness={0.8} roughness={0.25} />
+          <cylinderGeometry args={[0.65, 0.65, 1.6, 16, 1, true, Math.PI, Math.PI]} />
+          <meshStandardMaterial color="#64748B" metalness={0.8} roughness={0.25} side={THREE.DoubleSide} />
         </mesh>
-        {/* Hatch */}
-        <mesh position={[0, -0.81, 0]}>
-          <cylinderGeometry args={[0.5, 0.5, 0.08, 16]} />
-          <meshStandardMaterial color="#0F172A" metalness={0.9} roughness={0.2} />
+        {/* Open airlock passage rim */}
+        <mesh position={[0, -0.81, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.5, 0.65, 16, 1, Math.PI / 2, Math.PI]} />
+          <meshStandardMaterial color="#0F172A" metalness={0.9} roughness={0.2} side={THREE.DoubleSide} />
         </mesh>
+        {[-0.65, 0.65].map((z) => (
+          <mesh key={`airlock-jamb-${z}`} position={[0.475, -0.81, z]}>
+            <boxGeometry args={[0.95, 0.1, 0.1]} />
+            <meshStandardMaterial color="#64748B" metalness={0.8} roughness={0.25} />
+          </mesh>
+        ))}
         {/* LED Indicator */}
         <mesh position={[0.35, -0.83, 0]}>
           <sphereGeometry args={[0.05, 8, 8]} />
           <meshStandardMaterial color="#10B981" emissive="#10B981" emissiveIntensity={1.0} />
         </mesh>
       </group>
+      <mesh position={[3.85, -0.44, 0]}>
+        <boxGeometry args={[1.6, 0.08, 1.3]} />
+        <meshStandardMaterial color="#334155" metalness={0.65} roughness={0.45} />
+      </mesh>
 
       {/* ========================================================
           7. PERIMETER SAFETY FLOODLIGHTS
