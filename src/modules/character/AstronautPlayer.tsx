@@ -11,6 +11,99 @@ import { useOutpostStore } from '@/modules/store/useOutpostStore';
  * - Walking leg/arm swing & footstep bounce
  * - Dual space airlock proximity detection
  */
+/**
+ * 4 NASA Research Bases: Central Command Hub [0,0] & 3 Regional Outposts at R=28m
+ */
+const FOUR_BASES = [
+  { id: 'hub', x: 0, z: 0, rot: 0 },
+  { id: 'ice', x: 0, z: -28, rot: 0 },
+  { id: 'lake', x: 26, z: 15, rot: -(2 * Math.PI) / 3 },
+  { id: 'dust', x: -26, z: 15, rot: (2 * Math.PI) / 3 },
+];
+
+/**
+ * High-Precision Physics Resolution:
+ * - Stand securely on base deck at y=0.52 (Never sink under floor / chui xuống gầm)
+ * - 3 Walk-in Entrance Ramps (Front +Z, Right +X, Left -X): smooth grade from -0.40 to +0.52
+ * - Hard radial collision clamps: prevents clipping through outer foundation or interior dome glass
+ * - Doorway threshold detector: automatically sets isInside=true on door approach
+ */
+function resolvePlayerPhysics(px: number, pz: number) {
+  let nearest = FOUR_BASES[0];
+  let minDist = Infinity;
+  for (const b of FOUR_BASES) {
+    const d = Math.hypot(px - b.x, pz - b.z);
+    if (d < minDist) {
+      minDist = d;
+      nearest = b;
+    }
+  }
+
+  // Outside base zone entirely
+  if (minDist > 12.0) {
+    return { x: px, z: pz, floorY: -0.4, isInside: false };
+  }
+
+  const wx = px - nearest.x;
+  const wz = pz - nearest.z;
+  const cosT = Math.cos(nearest.rot);
+  const sinT = Math.sin(nearest.rot);
+  let lx = wx * cosT - wz * sinT;
+  let lz = wx * sinT + wz * cosT;
+  const r = Math.hypot(lx, lz);
+
+  // 3 Entrance Ramp Corridors (Portal 0: Front +Z, Portal 1: Right +X, Portal 2: Left -X)
+  const inFrontRamp = Math.abs(lx) <= 1.25 && lz >= 4.5 && lz <= 7.95;
+  const inRightRamp = Math.abs(lz) <= 1.25 && lx >= 4.5 && lx <= 7.95;
+  const inLeftRamp  = Math.abs(lz) <= 1.25 && lx <= -4.5 && lx >= -7.95;
+
+  let floorY = -0.4;
+  let isInside = false;
+
+  if (r <= 4.65) {
+    // Inside base dome deck
+    floorY = 0.52;
+    isInside = true;
+
+    // Hard wall collision from inside: cannot walk through dome wall except via the 3 doorways
+    if (r > 4.58) {
+      const atFrontDoor = Math.abs(lx) <= 1.15 && lz > 4.2;
+      const atRightDoor = Math.abs(lz) <= 1.15 && lx > 4.2;
+      const atLeftDoor  = Math.abs(lz) <= 1.15 && lx < -4.2;
+      if (!atFrontDoor && !atRightDoor && !atLeftDoor) {
+        lx = (lx / r) * 4.58;
+        lz = (lz / r) * 4.58;
+      }
+    }
+  } else if (inFrontRamp) {
+    const rampProgress = Math.max(0, Math.min(1, (7.95 - lz) / (7.95 - 4.6)));
+    floorY = -0.4 + rampProgress * 0.92;
+    lx = Math.max(-1.18, Math.min(1.18, lx));
+    if (rampProgress > 0.45) isInside = true;
+  } else if (inRightRamp) {
+    const rampProgress = Math.max(0, Math.min(1, (7.95 - lx) / (7.95 - 4.6)));
+    floorY = -0.4 + rampProgress * 0.92;
+    lz = Math.max(-1.18, Math.min(1.18, lz));
+    if (rampProgress > 0.45) isInside = true;
+  } else if (inLeftRamp) {
+    const rampProgress = Math.max(0, Math.min(1, (7.95 - (-lx)) / (7.95 - 4.6)));
+    floorY = -0.4 + rampProgress * 0.92;
+    lz = Math.max(-1.18, Math.min(1.18, lz));
+    if (rampProgress > 0.45) isInside = true;
+  } else {
+    floorY = -0.4;
+    // Hard wall collision from outside: cannot penetrate into base dome
+    if (r < 4.95) {
+      lx = (lx / r) * 4.95;
+      lz = (lz / r) * 4.95;
+    }
+  }
+
+  const finalX = nearest.x + lx * cosT + lz * sinT;
+  const finalZ = nearest.z - lx * sinT + lz * cosT;
+  return { x: finalX, z: finalZ, floorY, isInside };
+}
+
 export const AstronautPlayer: React.FC = () => {
   const groupRef = useRef<THREE.Group>(null);
   const headRef = useRef<THREE.Group>(null);
@@ -128,57 +221,14 @@ export const AstronautPlayer: React.FC = () => {
       newX = Math.max(-295, Math.min(295, newX));
       newZ = Math.max(-295, Math.min(295, newZ));
 
-      // Physical Base Collisions & Walk-in Entrance Ramps (5 Bases: Center [0,0] & 4 at R=25m)
-      const BASES = [
-        { x: 0, z: 0, rot: 0 },
-        { x: 0, z: -25, rot: 0 },
-        { x: 25, z: 0, rot: -Math.PI / 2 },
-        { x: 0, z: 25, rot: Math.PI },
-        { x: -25, z: 0, rot: Math.PI / 2 },
-      ];
+      // Physical Base Collisions & Walk-in Entrance Ramps (4 Bases: Hub [0,0], Ice [0,-28], Lake [26,15], Dust [-26,15])
+      const resolved = resolvePlayerPhysics(newX, newZ);
+      newX = resolved.x;
+      newZ = resolved.z;
+      const targetFloor = resolved.floorY;
 
-      let targetFloor = -0.4;
-
-      for (const b of BASES) {
-        const cosT = Math.cos(b.rot);
-        const sinT = Math.sin(b.rot);
-        const wx = newX - b.x;
-        const wz = newZ - b.z;
-        let lx = wx * cosT - wz * sinT;
-        let lz = wx * sinT + wz * cosT;
-        const dist = Math.hypot(lx, lz);
-
-        // Door corridor directly in front of base (local +Z entrance)
-        const inCorridor = Math.abs(lx) <= 1.15 && lz >= 3.5 && lz <= 6.5;
-
-        if (dist < 3.6) {
-          // Inside habitat base dome: Cadet Leo stands securely on deck at y=0.52
-          targetFloor = 0.52;
-
-          // Wall collision: cannot walk through curved dome wall except through the front doorway
-          if (dist > 3.52 && !(Math.abs(lx) <= 1.10 && lz >= 3.2)) {
-            const angle = Math.atan2(lx, lz);
-            lx = Math.sin(angle) * 3.52;
-            lz = Math.cos(angle) * 3.52;
-            newX = b.x + lx * cosT + lz * sinT;
-            newZ = b.z - lx * sinT + lz * cosT;
-          }
-        } else if (inCorridor) {
-          // Walking on entrance ramp: smooth elevation from ground (-0.4) to deck (+0.52)
-          const rampProgress = Math.max(0, Math.min(1, (6.4 - lz) / (6.4 - 3.6)));
-          targetFloor = -0.4 + rampProgress * 0.92;
-        } else {
-          // Outside on Martian terrain
-          // Wall collision: cannot penetrate or clip into base from outside
-          if (dist < 3.88) {
-            const angle = Math.atan2(lx, lz);
-            lx = Math.sin(angle) * 3.88;
-            lz = Math.cos(angle) * 3.88;
-            newX = b.x + lx * cosT + lz * sinT;
-            newZ = b.z - lx * sinT + lz * cosT;
-            targetFloor = -0.4;
-          }
-        }
+      if (resolved.isInside !== isInsideHabitat) {
+        setIsInsideHabitat(resolved.isInside);
       }
 
       groupRef.current.position.x = newX;
@@ -211,32 +261,12 @@ export const AstronautPlayer: React.FC = () => {
       // Bobbing head & body bounce relative to current floor height
       groupRef.current.position.y = targetFloor + Math.abs(Math.sin(walkCycle.current)) * 0.06;
     } else {
-      // Re-evaluate target floor in idle pose (5 Bases: Center [0,0] & 4 at R=25m)
-      const BASES = [
-        { x: 0, z: 0, rot: 0 },
-        { x: 0, z: -25, rot: 0 },
-        { x: 25, z: 0, rot: -Math.PI / 2 },
-        { x: 0, z: 25, rot: Math.PI },
-        { x: -25, z: 0, rot: Math.PI / 2 },
-      ];
-      let targetFloor = -0.4;
+      // Re-evaluate target floor in idle pose
+      const resolved = resolvePlayerPhysics(groupRef.current.position.x, groupRef.current.position.z);
+      const targetFloor = resolved.floorY;
 
-      for (const b of BASES) {
-        const cosT = Math.cos(b.rot);
-        const sinT = Math.sin(b.rot);
-        const wx = groupRef.current.position.x - b.x;
-        const wz = groupRef.current.position.z - b.z;
-        const lx = wx * cosT - wz * sinT;
-        const lz = wx * sinT + wz * cosT;
-        const dist = Math.hypot(lx, lz);
-        const inCorridor = Math.abs(lx) <= 1.15 && lz >= 3.5 && lz <= 6.5;
-
-        if (dist < 3.6) {
-          targetFloor = 0.52;
-        } else if (inCorridor) {
-          const rampProgress = Math.max(0, Math.min(1, (6.4 - lz) / (6.4 - 3.6)));
-          targetFloor = -0.4 + rampProgress * 0.92;
-        }
+      if (resolved.isInside !== isInsideHabitat) {
+        setIsInsideHabitat(resolved.isInside);
       }
 
       // Idle pose reset relative to current floor height
@@ -261,21 +291,6 @@ export const AstronautPlayer: React.FC = () => {
       groupRef.current.position.y,
       groupRef.current.position.z
     ]);
-
-    // Update inside habitat state
-    const px = groupRef.current.position.x;
-    const pz = groupRef.current.position.z;
-    const BASES = [
-      { x: 0, z: 0 },
-      { x: 0, z: -25 },
-      { x: 25, z: 0 },
-      { x: 0, z: 25 },
-      { x: -25, z: 0 },
-    ];
-    const isInside = BASES.some((b) => Math.hypot(px - b.x, pz - b.z) < 3.6);
-    if (isInside !== isInsideHabitat) {
-      setIsInsideHabitat(isInside);
-    }
   });
 
   return (

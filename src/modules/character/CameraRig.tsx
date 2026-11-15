@@ -133,13 +133,14 @@ export const CameraRig: React.FC = () => {
       const targetHeightOffset = isDrivingRover ? 0.6 : 0.8;
 
       if (isInsideHabitat) {
-        // Interior Dome View: Closer intimate distance
-        const domeDist = Math.min(distance.current, 5.5);
-        targetLookAt.current.set(targetPos[0], targetPos[1] + 0.6, targetPos[2]);
+        // Interior Dome View: Intimate distance inside the 4.8m dome, never clips floor or shell
+        const domeDist = Math.min(distance.current, 2.8);
+        const safePitch = Math.max(0.08, Math.min(0.75, pitch.current));
+        targetLookAt.current.set(targetPos[0], targetPos[1] + 0.85, targetPos[2]);
         targetCamPos.current.set(
-          targetPos[0] + domeDist * Math.cos(pitch.current) * Math.sin(yaw.current),
-          targetPos[1] + domeDist * Math.sin(pitch.current) + 0.4,
-          targetPos[2] + domeDist * Math.cos(pitch.current) * Math.cos(yaw.current)
+          targetPos[0] + domeDist * Math.cos(safePitch) * Math.sin(yaw.current),
+          Math.max(targetPos[1] + 0.95, targetPos[1] + domeDist * Math.sin(safePitch) + 0.55),
+          targetPos[2] + domeDist * Math.cos(safePitch) * Math.cos(yaw.current)
         );
       } else {
         // Exterior 360° Orbit View with Stargazing elevation

@@ -95,15 +95,15 @@ interface MissionStoreState {
 }
 
 const REGION_COORDINATES: Record<RegionId, [number, number, number]> = {
-  dust: [0, 0, 0],
-  ice: [0, 0, -25],
-  lake: [25, 0, 0],
+  dust: [-26, 0, 15],
+  ice: [0, 0, -28],
+  lake: [26, 0, 15],
 };
 
 const DEFAULT_ROVER_POSES: Record<RegionId, [number, number, number]> = {
-  dust: [3.6, 0, 6.0],
-  ice: [4.0, 0, -20.0],
-  lake: [20.0, 0, 4.0],
+  dust: [-22, 0, 19],
+  ice: [4, 0, -24],
+  lake: [30, 0, 19],
 };
 
 const createInitialBases = (): Record<RegionId, BaseState> => ({

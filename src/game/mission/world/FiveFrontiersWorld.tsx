@@ -13,34 +13,26 @@ export const SURROUNDING_BASES = [
   {
     id: 'ice' as const,
     name: 'Sealed Ice Cliff',
-    position: [0, 0, -25] as [number, number, number],
-    rotationY: 0, // Faces South (+Z) towards center
+    position: [0, 0, -28] as [number, number, number],
+    rotationY: 0, // Faces South (+Z) towards central hub
     themeColor: '#00D2FF',
     landmarkType: 'drill' as const,
   },
   {
     id: 'lake' as const,
     name: 'Ancient Lake Shore',
-    position: [25, 0, 0] as [number, number, number],
-    rotationY: -Math.PI / 2, // Faces West (-X) towards center
+    position: [26, 0, 15] as [number, number, number],
+    rotationY: -(2 * Math.PI) / 3, // Inward facing
     themeColor: '#2A9D8F',
     landmarkType: 'arch' as const,
   },
   {
-    id: 'impact' as const,
-    name: 'Echo Crater',
-    position: [0, 0, 25] as [number, number, number],
-    rotationY: Math.PI, // Faces North (-Z) towards center
-    themeColor: '#FF5A1F',
-    landmarkType: 'radar' as const,
-  },
-  {
-    id: 'volcano' as const,
-    name: 'Black Rock Terrace',
-    position: [-25, 0, 0] as [number, number, number],
-    rotationY: Math.PI / 2, // Faces East (+X) towards center
-    themeColor: '#E63946',
-    landmarkType: 'bridge' as const,
+    id: 'dust' as const,
+    name: 'Wind Basin Outpost',
+    position: [-26, 0, 15] as [number, number, number],
+    rotationY: (2 * Math.PI) / 3, // Inward facing
+    themeColor: '#F59E0B',
+    landmarkType: 'tower' as const,
   },
 ];
 
@@ -48,23 +40,23 @@ const REGIONS = [
   {
     id: 'dust' as RegionId,
     name: 'Wind Basin',
-    coords: [0, 0, 0] as [number, number, number],
+    coords: [-26, 0, 15] as [number, number, number],
     color: '#FFB800',
     landmark: 'Wind Tower',
     focalPoints: [
-      { id: 'D1', title: 'Sand Streaks Wake', offset: [8, 0, -6] as [number, number, number] },
-      { id: 'D2', title: 'Dusted Solar Mast', offset: [-6, 0, 8] as [number, number, number] },
-      { id: 'D3', title: 'Dust Devil Tracks', offset: [8, 0, 8] as [number, number, number] },
+      { id: 'D1', title: 'Sand Streaks Wake', offset: [6, 0, -6] as [number, number, number] },
+      { id: 'D2', title: 'Dusted Solar Mast', offset: [-6, 0, 6] as [number, number, number] },
+      { id: 'D3', title: 'Dust Devil Tracks', offset: [6, 0, 6] as [number, number, number] },
     ],
     branches: [
-      { id: 'D_opt1', title: 'Dune Crest Post', perkId: 'perk_dust_arrows', offset: [-12, 0, -8] as [number, number, number] },
-      { id: 'D_opt2', title: 'Space Weather Lab', perkId: 'perk_dust_preview', offset: [12, 0, -8] as [number, number, number] },
+      { id: 'D_opt1', title: 'Dune Crest Post', perkId: 'perk_dust_arrows', offset: [-8, 0, -6] as [number, number, number] },
+      { id: 'D_opt2', title: 'Space Weather Lab', perkId: 'perk_dust_preview', offset: [8, 0, -6] as [number, number, number] },
     ]
   },
   {
     id: 'ice' as RegionId,
     name: 'Sealed Ice Cliff',
-    coords: [0, 0, -25] as [number, number, number],
+    coords: [0, 0, -28] as [number, number, number],
     color: '#00D2FF',
     landmark: 'Glacier Core Rig',
     focalPoints: [
@@ -80,7 +72,7 @@ const REGIONS = [
   {
     id: 'lake' as RegionId,
     name: 'Ancient Lake Shore',
-    coords: [25, 0, 0] as [number, number, number],
+    coords: [26, 0, 15] as [number, number, number],
     color: '#2A9D8F',
     landmark: 'Telemetry Arch',
     focalPoints: [

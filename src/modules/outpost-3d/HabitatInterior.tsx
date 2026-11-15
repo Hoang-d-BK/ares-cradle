@@ -12,6 +12,50 @@ import { useOutpostStore } from '@/modules/store/useOutpostStore';
  * - Spiral Staircase & 2nd-Story Stargazing Observation Deck with Telescope
  * - Pressurized Airlock Decontamination Mist Effect
  */
+/**
+ * Ergonomic Crew Swivel Chair Component
+ */
+const CrewSeat: React.FC<{ position: [number, number, number]; rotationY: number; accentColor: string }> = ({
+  position,
+  rotationY,
+  accentColor,
+}) => {
+  return (
+    <group position={position} rotation={[0, rotationY, 0]}>
+      {/* Base Caster Pedestal */}
+      <mesh position={[0, 0.15, 0]} castShadow>
+        <cylinderGeometry args={[0.04, 0.22, 0.3, 8]} />
+        <meshStandardMaterial color="#1E293B" metalness={0.9} />
+      </mesh>
+      {/* Seat Cushion */}
+      <mesh position={[0, 0.35, 0]} castShadow>
+        <boxGeometry args={[0.55, 0.08, 0.52]} />
+        <meshStandardMaterial color="#0F172A" roughness={0.4} />
+      </mesh>
+      {/* High Backrest with Lumbar & Headrest */}
+      <mesh position={[0, 0.72, -0.22]} rotation={[0.08, 0, 0]} castShadow>
+        <boxGeometry args={[0.52, 0.65, 0.08]} />
+        <meshStandardMaterial color="#1E293B" roughness={0.3} />
+      </mesh>
+      {/* Accent Lumbar Stripe */}
+      <mesh position={[0, 0.65, -0.17]} rotation={[0.08, 0, 0]}>
+        <boxGeometry args={[0.42, 0.05, 0.02]} />
+        <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.8} />
+      </mesh>
+      {/* Left Armrest */}
+      <mesh position={[-0.30, 0.50, -0.05]}>
+        <boxGeometry args={[0.06, 0.22, 0.38]} />
+        <meshStandardMaterial color="#334155" metalness={0.8} />
+      </mesh>
+      {/* Right Armrest */}
+      <mesh position={[0.30, 0.50, -0.05]}>
+        <boxGeometry args={[0.06, 0.22, 0.38]} />
+        <meshStandardMaterial color="#334155" metalness={0.8} />
+      </mesh>
+    </group>
+  );
+};
+
 export const HabitatInterior: React.FC = () => {
   const marsHoloRef = useRef<THREE.Group>(null);
   const sabatierBubblesRef = useRef<THREE.Mesh>(null);
@@ -95,6 +139,10 @@ export const HabitatInterior: React.FC = () => {
             </mesh>
           </group>
         ))}
+
+        {/* Crew Ergonomic Swivel Seats facing Command Table */}
+        <CrewSeat position={[-0.8, 0, -1.2]} rotationY={0.4} accentColor="#00D2FF" />
+        <CrewSeat position={[0.8, 0, -1.2]} rotationY={-0.4} accentColor="#00D2FF" />
 
         {/* Holo Projector Ring */}
         <mesh position={[0, 0.36, 0]} rotation={[-Math.PI / 2, 0, 0]}>
