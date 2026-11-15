@@ -9,7 +9,7 @@ import { useOutpostStore } from '@/modules/store/useOutpostStore';
  * - Zone 2: Sabatier Oxygen Generator (Bubbling Gas LED Cylinders)
  * - Zone 3: Multi-Tier Vertical Hydroponic Farm (Violet/Green Bio-Grow Lights)
  * - Zone 4: Chemical Specimen Analysis Workbench (Centrifuge & Diagnostic Laser)
- * - Spiral Staircase & 2nd-Story Stargazing Observation Deck with Telescope
+ * - Spacious Unobstructed Floor Plan with 360° Panoramic Dome Vistas
  * - Pressurized Airlock Decontamination Mist Effect
  */
 /**
@@ -308,74 +308,6 @@ export const HabitatInterior: React.FC = () => {
           <boxGeometry args={[0.02, 0.01, 0.4]} />
           <meshBasicMaterial color="#00F0FF" />
         </mesh>
-      </group>
-
-      {/* ========================================================
-          SPIRAL STAIRCASE & 2ND-STORY STARGAZING OBSERVATION DECK
-          ======================================================== */}
-      <group position={[1.4, 0.52, -1.0]}>
-        {/* Central Spiral Mast */}
-        <mesh position={[0, 0.9, 0]}>
-          <cylinderGeometry args={[0.08, 0.08, 1.8, 12]} />
-          <meshStandardMaterial color="#64748B" metalness={0.9} roughness={0.2} />
-        </mesh>
-
-        {/* Spiral Step Treads */}
-        {[0, 1, 2, 3, 4, 5, 6].map((stepIdx) => {
-          const stepAngle = (stepIdx / 7) * Math.PI * 1.3;
-          const stepY = 0.15 + stepIdx * 0.18;
-          const radius = 0.45;
-          return (
-            <mesh
-              key={`step-${stepIdx}`}
-              position={[Math.cos(stepAngle) * radius, stepY, Math.sin(stepAngle) * radius]}
-              rotation={[0, -stepAngle, 0]}
-            >
-              <boxGeometry args={[0.42, 0.04, 0.16]} />
-              <meshStandardMaterial color="#334155" metalness={0.85} roughness={0.3} />
-            </mesh>
-          );
-        })}
-
-        {/* Elevated 2nd-Story Observation Deck (y = 1.45) */}
-        <group position={[0.6, 1.42, 0.8]}>
-          {/* Deck Floor Plate */}
-          <mesh>
-            <cylinderGeometry args={[1.1, 1.1, 0.08, 20]} />
-            <meshStandardMaterial color="#0F172A" metalness={0.85} roughness={0.25} />
-          </mesh>
-
-          {/* Transparent Glass Safety Railing */}
-          <mesh position={[0, 0.25, 0]}>
-            <cylinderGeometry args={[1.08, 1.08, 0.45, 20, 1, true]} />
-            <meshStandardMaterial
-              color="#00F0FF"
-              transparent
-              opacity={0.3}
-              roughness={0.1}
-              metalness={0.9}
-            />
-          </mesh>
-
-          {/* Astronomical Stargazing Telescope on Tripod */}
-          <group position={[0, 0.35, 0.4]} rotation={[-0.45, 0.3, 0]}>
-            {/* Telescope Tube (Pointed Upward Toward Glass Dome Roof) */}
-            <mesh>
-              <cylinderGeometry args={[0.06, 0.09, 0.75, 16]} />
-              <meshStandardMaterial color="#E2E8F0" metalness={0.9} roughness={0.2} />
-            </mesh>
-            {/* Telescope Lens */}
-            <mesh position={[0, 0.38, 0]}>
-              <cylinderGeometry args={[0.062, 0.062, 0.02, 16]} />
-              <meshBasicMaterial color="#38BDF8" />
-            </mesh>
-            {/* Tripod Legs */}
-            <mesh position={[0, -0.3, 0]}>
-              <cylinderGeometry args={[0.02, 0.18, 0.4, 3]} />
-              <meshStandardMaterial color="#1E293B" metalness={0.8} />
-            </mesh>
-          </group>
-        </group>
       </group>
 
       {/* ========================================================

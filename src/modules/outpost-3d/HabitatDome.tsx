@@ -260,16 +260,16 @@ export const HabitatDome: React.FC = () => {
     // 6. Reactive Atmospheric Color
     let targetColor = '#00F0FF';
     let pulseFrequency = 1.8;
-    let baseOpacity = 0.12;
+    let baseOpacity = 0.02;
 
     if (oxygen < 19.5) {
       targetColor = '#EF4444';
       pulseFrequency = 6.0;
-      baseOpacity = 0.22;
+      baseOpacity = 0.05;
     } else if (temperature < 5.0) {
       targetColor = '#4FD0E3';
       pulseFrequency = 2.0;
-      baseOpacity = 0.16;
+      baseOpacity = 0.03;
     } else if (isStormShutterClosed || emergencySaver) {
       targetColor = '#FFB020';
       pulseFrequency = 2.5;
@@ -279,7 +279,7 @@ export const HabitatDome: React.FC = () => {
 
     if (atmosphereRef.current) {
       atmosphereRef.current.color.lerp(new THREE.Color(targetColor), safeDelta * 4.0);
-      atmosphereRef.current.opacity = baseOpacity + (oxygen < 19.5 ? Math.sin(elapsed * 6.0) * 0.08 : 0);
+      atmosphereRef.current.opacity = baseOpacity + (oxygen < 19.5 ? Math.sin(elapsed * 6.0) * 0.02 : 0);
     }
 
     if (pointLightRef.current) {
@@ -351,17 +351,17 @@ export const HabitatDome: React.FC = () => {
       {/* ========================================================
           3. SPACIOUS AEROGEL GEODESIC DOME & CORONA GLOW (R=4.85m)
           ======================================================== */}
-      {/* Outer Pressurized Aerogel Observation Glass */}
+      {/* Outer Pressurized Aerogel Observation Glass - Crystal Clear */}
       <mesh ref={outerDomeRef} position={[0, 0.52, 0]} castShadow receiveShadow>
-        <sphereGeometry args={[4.85, 36, 22, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <sphereGeometry args={[4.85, 48, 28, 0, Math.PI * 2, 0, Math.PI / 2]} />
         <meshStandardMaterial
-          color="#94A3B8"
-          metalness={0.9}
-          roughness={0.1}
+          color="#E0F2FE"
+          metalness={0.05}
+          roughness={0.02}
           transparent
-          opacity={0.22}
+          opacity={0.06}
           depthWrite={false}
-          side={THREE.FrontSide}
+          side={THREE.DoubleSide}
         />
       </mesh>
 
@@ -373,15 +373,22 @@ export const HabitatDome: React.FC = () => {
           side={THREE.BackSide}
           color="#00F0FF"
           transparent
-          opacity={0.12}
+          opacity={0.02}
           depthWrite={false}
         />
       </mesh>
 
-      {/* Geodesic Structural Lattice Frame */}
+      {/* Geodesic Structural Lattice Frame - Slender Clean Ribs */}
       <mesh position={[0, 0.52, 0]}>
-        <sphereGeometry args={[4.86, 24, 14, 0, Math.PI * 2, 0, Math.PI / 2]} />
-        <meshStandardMaterial color="#334155" metalness={0.92} roughness={0.2} wireframe />
+        <sphereGeometry args={[4.86, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial
+          color="#64748B"
+          metalness={0.8}
+          roughness={0.3}
+          wireframe
+          transparent
+          opacity={0.16}
+        />
       </mesh>
 
       {/* ========================================================

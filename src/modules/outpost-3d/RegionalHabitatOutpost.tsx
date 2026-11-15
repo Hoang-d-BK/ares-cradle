@@ -361,17 +361,17 @@ export const RegionalHabitatOutpost: React.FC<RegionalHabitatProps> = ({
       {/* ========================================================
           3. EXPANDED GEODESIC OBSERVATION GLASS DOME (R=4.85m)
           ======================================================== */}
-      {/* Outer Aerogel Dome */}
+      {/* Outer Aerogel Dome - Crystal Clear */}
       <mesh position={[0, 0.52, 0]} castShadow receiveShadow>
-        <sphereGeometry args={[4.85, 36, 22, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <sphereGeometry args={[4.85, 48, 28, 0, Math.PI * 2, 0, Math.PI / 2]} />
         <meshStandardMaterial
-          color="#94A3B8"
-          metalness={0.9}
-          roughness={0.1}
+          color="#E0F2FE"
+          metalness={0.05}
+          roughness={0.02}
           transparent
-          opacity={0.22}
+          opacity={0.06}
           depthWrite={false}
-          side={THREE.FrontSide}
+          side={THREE.DoubleSide}
         />
       </mesh>
 
@@ -382,15 +382,22 @@ export const RegionalHabitatOutpost: React.FC<RegionalHabitatProps> = ({
           side={THREE.BackSide}
           color={themeColor}
           transparent
-          opacity={0.12}
+          opacity={0.02}
           depthWrite={false}
         />
       </mesh>
 
-      {/* Dome Structural Lattice Frame */}
+      {/* Dome Structural Lattice Frame - Slender Clean Ribs */}
       <mesh position={[0, 0.52, 0]}>
-        <sphereGeometry args={[4.86, 24, 14, 0, Math.PI * 2, 0, Math.PI / 2]} />
-        <meshStandardMaterial color="#334155" metalness={0.92} roughness={0.2} wireframe />
+        <sphereGeometry args={[4.86, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial
+          color="#64748B"
+          metalness={0.8}
+          roughness={0.3}
+          wireframe
+          transparent
+          opacity={0.16}
+        />
       </mesh>
 
       {/* Protective Storm Shutters at non-door quadrant sectors */}
@@ -455,74 +462,6 @@ export const RegionalHabitatOutpost: React.FC<RegionalHabitatProps> = ({
       {/* Ergonomic Crew Swivel Chairs (Facing Console) */}
       <CrewSeat position={[-0.7, 0.52, -1.8]} rotationY={0} accentColor={themeColor} />
       <CrewSeat position={[0.7, 0.52, -1.8]} rotationY={0} accentColor={themeColor} />
-
-      {/* ========================================================
-          5. INTERIOR: SPIRAL STAIRCASE & PANORAMIC OBSERVATION DECK
-          ======================================================== */}
-      <group position={[2.2, 0.52, 1.4]}>
-        {/* Central Spiral Mast */}
-        <mesh position={[0, 1.0, 0]}>
-          <cylinderGeometry args={[0.08, 0.08, 2.0, 12]} />
-          <meshStandardMaterial color="#64748B" metalness={0.9} roughness={0.2} />
-        </mesh>
-
-        {/* Spiral Step Treads */}
-        {[0, 1, 2, 3, 4, 5, 6].map((stepIdx) => {
-          const stepAngle = (stepIdx / 7) * Math.PI * 1.3;
-          const stepY = 0.15 + stepIdx * 0.18;
-          const radius = 0.48;
-          return (
-            <mesh
-              key={`spiral-step-${stepIdx}`}
-              position={[Math.cos(stepAngle) * radius, stepY, Math.sin(stepAngle) * radius]}
-              rotation={[0, -stepAngle, 0]}
-            >
-              <boxGeometry args={[0.45, 0.04, 0.18]} />
-              <meshStandardMaterial color="#334155" metalness={0.85} roughness={0.3} />
-            </mesh>
-          );
-        })}
-
-        {/* Elevated Panoramic Cupola Deck (y = 1.45) */}
-        <group position={[0.7, 1.45, 0.8]}>
-          {/* Deck Floor Plate */}
-          <mesh receiveShadow>
-            <cylinderGeometry args={[1.25, 1.25, 0.08, 24]} />
-            <meshStandardMaterial color="#0F172A" metalness={0.85} roughness={0.25} />
-          </mesh>
-
-          {/* Semi-Transparent Glass Guardrail */}
-          <mesh position={[0, 0.28, 0]}>
-            <cylinderGeometry args={[1.22, 1.22, 0.5, 24, 1, true]} />
-            <meshStandardMaterial
-              color={themeColor}
-              transparent
-              opacity={0.35}
-              roughness={0.1}
-              metalness={0.9}
-            />
-          </mesh>
-
-          {/* Astronomical Stargazing Telescope on Tripod */}
-          <group position={[0, 0.4, 0.45]} rotation={[-0.48, 0.35, 0]}>
-            {/* Telescope Main Tube */}
-            <mesh castShadow>
-              <cylinderGeometry args={[0.07, 0.10, 0.85, 16]} />
-              <meshStandardMaterial color="#E2E8F0" metalness={0.9} roughness={0.2} />
-            </mesh>
-            {/* Optical Sensor Lens */}
-            <mesh position={[0, 0.43, 0]}>
-              <cylinderGeometry args={[0.072, 0.072, 0.02, 16]} />
-              <meshBasicMaterial color="#38BDF8" />
-            </mesh>
-            {/* Tripod Stand */}
-            <mesh position={[0, -0.32, 0]}>
-              <cylinderGeometry args={[0.02, 0.2, 0.45, 3]} />
-              <meshStandardMaterial color="#1E293B" metalness={0.8} />
-            </mesh>
-          </group>
-        </group>
-      </group>
 
       {/* ========================================================
           6. THEMED INTERIOR SPECIMEN CORE (Center x=0, z=0)

@@ -12,18 +12,20 @@ import { useOutpostStore } from '@/modules/store/useOutpostStore';
  * - Dual space airlock proximity detection
  */
 /**
- * 4 NASA Research Bases: Central Command Hub [0,0] & 3 Regional Outposts at R=28m
+ * NASA Research Bases across Mars Simulation Grid
  */
 const FOUR_BASES = [
   { id: 'hub', x: 0, z: 0, rot: 0 },
   { id: 'ice', x: 0, z: -28, rot: 0 },
   { id: 'lake', x: 26, z: 15, rot: -(2 * Math.PI) / 3 },
   { id: 'dust', x: -26, z: 15, rot: (2 * Math.PI) / 3 },
+  { id: 'impact', x: -200, z: -170, rot: 0 },
+  { id: 'volcano', x: -210, z: 180, rot: 0 },
 ];
 
 /**
  * High-Precision Physics Resolution:
- * - Stand securely on base deck at y=0.52 (Never sink under floor / chui xuống gầm)
+ * - Stand securely on base deck at y=0.52 (Never sink below deck floor)
  * - 3 Walk-in Entrance Ramps (Front +Z, Right +X, Left -X): smooth grade from -0.40 to +0.52
  * - Hard radial collision clamps: prevents clipping through outer foundation or interior dome glass
  * - Doorway threshold detector: automatically sets isInside=true on door approach

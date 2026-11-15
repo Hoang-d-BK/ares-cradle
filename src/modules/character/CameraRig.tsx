@@ -11,6 +11,21 @@ import { useOutpostStore } from '@/modules/store/useOutpostStore';
  * - Drives character/rover forward when holding Left Mouse Button
  * - Touch pan/orbit for mobile & touch screens
  */
+/**
+ * Outpost base locations across the Mars simulation grid
+ * Elevated foundations sit at y=0.52m with radius ~4.95m
+ */
+const BASE_CENTERS: [number, number][] = [
+  [0, 0],
+  [0, -28],
+  [26, 15],
+  [-26, 15],
+  [-200, -170],
+  [-210, 180],
+  [210, -180],
+  [200, 170]
+];
+
 export const CameraRig: React.FC = () => {
   const { camera, gl } = useThree();
   const playerPos = useOutpostStore((state) => state.playerPos);
@@ -81,8 +96,8 @@ export const CameraRig: React.FC = () => {
       // Keep yaw within [0, 2*PI]
       yaw.current = (yaw.current % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
 
-      // Stargazing pitch: allow tilting up into the sky (-0.48 rad) up to top-down view (1.35 rad)
-      pitch.current = Math.max(-0.48, Math.min(1.35, pitch.current - dy * rotSpeed));
+      // Clamped pitch: [0.08, 1.25] rad (~4.6° to ~71.6°) strictly prevents camera from dipping below floor level / under base
+      pitch.current = Math.max(0.08, Math.min(1.25, pitch.current - dy * rotSpeed));
 
       dragStart.current = { x: e.clientX, y: e.clientY };
     };
@@ -133,30 +148,37 @@ export const CameraRig: React.FC = () => {
       const targetHeightOffset = isDrivingRover ? 0.6 : 0.8;
 
       if (isInsideHabitat) {
-        // Interior Dome View: Intimate distance inside the 4.8m dome, never clips floor or shell
-        const domeDist = Math.min(distance.current, 2.8);
-        const safePitch = Math.max(0.08, Math.min(0.75, pitch.current));
+        // Interior Dome View: Intimate distance inside the 4.8m dome, crystal-clear panoramic view
+        const domeDist = Math.min(distance.current, 2.6);
+        const safePitch = Math.max(0.10, Math.min(0.60, pitch.current));
         targetLookAt.current.set(targetPos[0], targetPos[1] + 0.85, targetPos[2]);
         targetCamPos.current.set(
           targetPos[0] + domeDist * Math.cos(safePitch) * Math.sin(yaw.current),
-          Math.max(targetPos[1] + 0.95, targetPos[1] + domeDist * Math.sin(safePitch) + 0.55),
+          Math.max(1.10, targetPos[1] + domeDist * Math.sin(safePitch) + 0.55),
           targetPos[2] + domeDist * Math.cos(safePitch) * Math.cos(yaw.current)
         );
       } else {
-        // Exterior 360° Orbit View with Stargazing elevation
-        const lookUpElevation = pitch.current < 0 ? -pitch.current * 4.8 : 0;
+        // Exterior 360° Orbit View
         targetLookAt.current.set(
           targetPos[0],
-          targetPos[1] + targetHeightOffset + lookUpElevation,
+          targetPos[1] + targetHeightOffset,
           targetPos[2]
         );
         const curDist = isDrivingRover ? Math.max(distance.current, 7.5) : distance.current;
 
-        targetCamPos.current.set(
-          targetPos[0] + curDist * Math.cos(pitch.current) * Math.sin(yaw.current),
-          Math.max(0.15, targetPos[1] + curDist * Math.sin(pitch.current) + targetHeightOffset),
-          targetPos[2] + curDist * Math.cos(pitch.current) * Math.cos(yaw.current)
+        const camX = targetPos[0] + curDist * Math.cos(pitch.current) * Math.sin(yaw.current);
+        const camZ = targetPos[2] + curDist * Math.cos(pitch.current) * Math.cos(yaw.current);
+
+        // Clearance calculation: base foundations sit elevated at y = 0.52m with radius ~4.95m.
+        // If the camera is anywhere near an outpost boundary (R < 6.8m), enforce minimum height of 0.95m
+        // so the camera can NEVER dip under the base foundation or into the crawlspace.
+        const isNearBase = BASE_CENTERS.some(
+          ([bx, bz]) => Math.hypot(camX - bx, camZ - bz) < 6.8
         );
+        const minAllowedY = isNearBase ? 0.95 : Math.max(0.65, targetPos[1] + 0.45);
+        const rawCamY = targetPos[1] + curDist * Math.sin(pitch.current) + targetHeightOffset;
+
+        targetCamPos.current.set(camX, Math.max(minAllowedY, rawCamY), camZ);
       }
     }
 
