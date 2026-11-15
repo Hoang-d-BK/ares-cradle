@@ -1,6 +1,5 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
 import { useMissionStore } from '../state/store';
 import { RegionId } from '../contract';
 import RegionalHabitatOutpost from '@/modules/outpost-3d/RegionalHabitatOutpost';
@@ -88,60 +87,6 @@ const REGIONS = [
 ];
 
 /**
- * Sol Robot Companion - Floating autonomous AI sphere accompanying Cadet Leo
- */
-function SolRobotCompanion() {
-  const solRef = useRef<THREE.Group>(null);
-  const activeControl = useMissionStore((s) => s.activeControl);
-  const currentRegion = useMissionStore((s) => s.currentRegion);
-  const leoPose = useMissionStore((s) => s.leoPose);
-  const roverPoses = useMissionStore((s) => s.roverPoses);
-
-  useFrame((state) => {
-    if (!solRef.current) return;
-    const t = state.clock.getElapsedTime();
-
-    // Target position depends on whether Leo is on foot or driving rover
-    const targetPose = activeControl === 'rover'
-      ? roverPoses[currentRegion] || [0, 0, 0]
-      : leoPose;
-
-    // Smooth hover alongside with sinusoidal bobbing
-    const hoverY = 1.4 + Math.sin(t * 2.5) * 0.15;
-    const targetX = targetPose[0] + 1.2 + Math.cos(t * 1.2) * 0.2;
-    const targetZ = targetPose[2] + 0.8 + Math.sin(t * 1.2) * 0.2;
-
-    solRef.current.position.lerp(new THREE.Vector3(targetX, hoverY, targetZ), 0.08);
-    solRef.current.rotation.y = t * 0.8;
-  });
-
-  return (
-    <group ref={solRef}>
-      {/* Sol Body - Matte white sphere with orange trim */}
-      <mesh castShadow>
-        <sphereGeometry args={[0.24, 16, 16]} />
-        <meshStandardMaterial color="#F4F1EA" roughness={0.3} metalness={0.2} />
-      </mesh>
-
-      {/* Blue sensor lens eye */}
-      <mesh position={[0, 0.05, 0.2]}>
-        <sphereGeometry args={[0.08, 16, 16]} />
-        <meshBasicMaterial color="#00D2FF" />
-      </mesh>
-
-      {/* Soft blue luminescent glow point light */}
-      <pointLight color="#00D2FF" intensity={0.4} distance={4} />
-
-      {/* Hover propulsion ring */}
-      <mesh position={[0, -0.18, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[0.18, 0.02, 8, 24]} />
-        <meshStandardMaterial color="#FF5A1F" />
-      </mesh>
-    </group>
-  );
-}
-
-/**
  * FiveFrontiersWorld - Manages 3D landmarks, outposts, and interactive points
  */
 export const FiveFrontiersWorld: React.FC = () => {
@@ -176,9 +121,6 @@ export const FiveFrontiersWorld: React.FC = () => {
 
   return (
     <group name="FiveFrontiersWorld">
-      {/* Sol AI Companion */}
-      <SolRobotCompanion />
-
       {/* Wind Basin Landmark Silhouette (Central base at [0,0,0]) */}
       <group position={[14, 0, -14]}>
         <mesh position={[0, 4, 0]}>
