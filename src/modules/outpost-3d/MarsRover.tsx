@@ -181,11 +181,13 @@ export const MarsRover: React.FC<{ openingStep: OpeningStep }> = ({ openingStep 
       newX = Math.max(-295, Math.min(295, newX));
       newZ = Math.max(-295, Math.min(295, newZ));
 
-      // Physical Base Collisions (Prevent rover from driving through base habitat domes)
+      // Physical Base Collisions (Prevent rover from driving through 5 base habitat domes)
       const BASES = [
         { x: 0, z: 0 },
-        { x: 210, z: -180 },
-        { x: 200, z: 170 },
+        { x: 0, z: -25 },
+        { x: 25, z: 0 },
+        { x: 0, z: 25 },
+        { x: -25, z: 0 },
       ];
       for (const b of BASES) {
         const bdx = newX - b.x;

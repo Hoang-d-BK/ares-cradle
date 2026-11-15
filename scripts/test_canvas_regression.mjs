@@ -45,9 +45,9 @@ async function startViteServer() {
     console.error(`[Vite Error] ${data}`);
   });
 
-  // Wait until server responds
+  // Wait until server responds (allow up to 35 seconds for cold start)
   let attempts = 0;
-  while (attempts < 25) {
+  while (attempts < 55) {
     await new Promise((r) => setTimeout(r, 600));
     if (await isPortReachable(3000)) {
       console.log('✅ Vite dev server is live at http://localhost:3000/');
@@ -55,7 +55,7 @@ async function startViteServer() {
     }
     attempts++;
   }
-  throw new Error('Vite dev server failed to start within 15 seconds.');
+  throw new Error('Vite dev server failed to start within 35 seconds.');
 }
 
 async function runRegressionSuite() {
