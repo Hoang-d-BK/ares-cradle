@@ -181,22 +181,69 @@ export const MarsRover: React.FC<{ openingStep: OpeningStep }> = ({ openingStep 
       newX = Math.max(-295, Math.min(295, newX));
       newZ = Math.max(-295, Math.min(295, newZ));
 
-      // Physical Base Collisions (Prevent rover from driving through the 4 base habitat domes)
+      // Physical Base & Infrastructure Collisions (Prevent rover from clipping into domes, ramps, solar array)
       const BASES = [
-        { x: 0, z: 0 },
-        { x: 0, z: -28 },
-        { x: 26, z: 15 },
-        { x: -26, z: 15 },
+        { x: 0, z: 0, rot: 0, id: 'hub' },
+        { x: 0, z: -28, rot: 0, id: 'ice' },
+        { x: 26, z: 15, rot: -(2 * Math.PI) / 3, id: 'lake' },
+        { x: -26, z: 15, rot: (2 * Math.PI) / 3, id: 'dust' },
       ];
       for (const b of BASES) {
         const bdx = newX - b.x;
         const bdz = newZ - b.z;
         const bdist = Math.hypot(bdx, bdz);
-        if (bdist < 5.2) {
+
+        // 1. Base Dome Perimeter
+        if (bdist < 5.3) {
           const bAngle = Math.atan2(bdx, bdz);
-          newX = b.x + Math.sin(bAngle) * 5.2;
-          newZ = b.z + Math.cos(bAngle) * 5.2;
+          newX = b.x + Math.sin(bAngle) * 5.3;
+          newZ = b.z + Math.cos(bAngle) * 5.3;
         }
+
+        // 2. Base Entrance Ramps (Front, Right, Left)
+        const cosT = Math.cos(b.rot);
+        const sinT = Math.sin(b.rot);
+        let lx = (newX - b.x) * cosT - (newZ - b.z) * sinT;
+        let lz = (newX - b.x) * sinT + (newZ - b.z) * cosT;
+
+        // Front Ramp: x in [-1.4, 1.4], z in [4.8, 8.2]
+        if (Math.abs(lx) < 1.4 && lz >= 4.8 && lz <= 8.2) {
+          if (lz > 7.5) lz = 8.25;
+          else if (lx >= 0) lx = 1.45;
+          else lx = -1.45;
+          newX = b.x + lx * cosT + lz * sinT;
+          newZ = b.z - lx * sinT + lz * cosT;
+        }
+        // Right Ramp: z in [-1.4, 1.4], x in [4.8, 8.2]
+        if (Math.abs(lz) < 1.4 && lx >= 4.8 && lx <= 8.2) {
+          if (lx > 7.5) lx = 8.25;
+          else if (lz >= 0) lz = 1.45;
+          else lz = -1.45;
+          newX = b.x + lx * cosT + lz * sinT;
+          newZ = b.z - lx * sinT + lz * cosT;
+        }
+        // Left Ramp: z in [-1.4, 1.4], x in [-8.2, -4.8]
+        if (Math.abs(lz) < 1.4 && lx <= -4.8 && lx >= -8.2) {
+          if (lx < -7.5) lx = -8.25;
+          else if (lz >= 0) lz = 1.45;
+          else lz = -1.45;
+          newX = b.x + lx * cosT + lz * sinT;
+          newZ = b.z - lx * sinT + lz * cosT;
+        }
+      }
+
+      // Hub Utility Yard Collision (Solar Array & Battery Bank)
+      const dSolarRover = Math.hypot(newX - (-9.5), newZ - (-6.5));
+      if (dSolarRover < 2.5) {
+        const s = 2.5 / Math.max(0.001, dSolarRover);
+        newX = -9.5 + (newX - (-9.5)) * s;
+        newZ = -6.5 + (newZ - (-6.5)) * s;
+      }
+      const dBatRover = Math.hypot(newX - (-7.2), newZ - (-6.5));
+      if (dBatRover < 1.6) {
+        const s = 1.6 / Math.max(0.001, dBatRover);
+        newX = -7.2 + (newX - (-7.2)) * s;
+        newZ = -6.5 + (newZ - (-6.5)) * s;
       }
 
       groupRef.current.position.x = newX;

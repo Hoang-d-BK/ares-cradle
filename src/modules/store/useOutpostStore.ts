@@ -313,7 +313,7 @@ export const useOutpostStore = create<OutpostStoreState>((set, get) => ({
 
   // Exploration Rover & Orrery Sky View Implementation
   isDrivingRover: false,
-  roverPos: [3.8, -0.32, -2.2],
+  roverPos: [4.2, -0.32, 5.6],
   roverHeadlightMode: 'low',
   isSkyViewActive: false,
   toggleRoverHeadlightMode: () => {

@@ -27,14 +27,14 @@ export const OpeningSequence3D: React.FC<OpeningSequence3DProps> = ({ step, onLa
     if (step !== 'complete') {
       if (!reducedMotion.current) {
         const shot = elapsed < 2.4
-          ? { position: new THREE.Vector3(12, 22, 34), target: new THREE.Vector3(0, 18, 8) }
+          ? { position: new THREE.Vector3(12, 22, 42), target: new THREE.Vector3(0, 18, 16.5) }
           : elapsed < 4.8
-            ? { position: new THREE.Vector3(7, 10, 22), target: new THREE.Vector3(0, 4, 9) }
-            : { position: new THREE.Vector3(10, 7, 19), target: new THREE.Vector3(0, 3, 9) };
+            ? { position: new THREE.Vector3(8, 10, 28), target: new THREE.Vector3(0, 4, 16.5) }
+            : { position: new THREE.Vector3(10, 7, 25), target: new THREE.Vector3(0, 3, 16.5) };
         camera.position.lerp(shot.position, safeDelta * 1.6);
         camera.lookAt(shot.target);
       } else {
-        camera.lookAt(0, 3, 8);
+        camera.lookAt(0, 3, 16.5);
       }
     }
 
@@ -82,7 +82,7 @@ export const OpeningSequence3D: React.FC<OpeningSequence3DProps> = ({ step, onLa
 
   return (
     <group>
-      <group ref={lander} position={[0, 22, 9]}>
+      <group ref={lander} position={[0, 22, 16.5]}>
         {/* CRADLE-01 cargo lander */}
         <mesh castShadow>
           <cylinderGeometry args={[1.15, 1.35, 3.4, 8]} />
@@ -127,11 +127,11 @@ export const OpeningSequence3D: React.FC<OpeningSequence3DProps> = ({ step, onLa
         <pointLight position={[0, -1.9, 0]} color="#ff9c4a" intensity={4} distance={9} />
       </group>
       {/* Landing marker and cargo footprint */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.43, 9]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.43, 16.5]}>
         <ringGeometry args={[2.5, 2.64, 48]} />
         <meshBasicMaterial color="#f59e0b" transparent opacity={0.7} />
       </mesh>
-      <mesh position={[0, -0.37, 9]}>
+      <mesh position={[0, -0.37, 16.5]}>
         <cylinderGeometry args={[1.9, 2.2, 0.12, 24]} />
         <meshStandardMaterial color="#303b45" metalness={0.7} roughness={0.45} />
       </mesh>

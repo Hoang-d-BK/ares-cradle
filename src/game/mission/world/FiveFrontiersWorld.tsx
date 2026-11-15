@@ -62,7 +62,7 @@ const REGIONS = [
     focalPoints: [
       { id: 'I1', title: 'Protective Debris Mantle', offset: [-6, 0, 6] as [number, number, number] },
       { id: 'I2', title: 'SHARAD Radar Reflection', offset: [6, 0, -6] as [number, number, number] },
-      { id: 'I3', title: 'Water Ice vs CO2 Frost', offset: [0, 0, 6] as [number, number, number] },
+      { id: 'I3', title: 'Water Ice vs CO2 Frost', offset: [-7, 0, 8] as [number, number, number] },
     ],
     branches: [
       { id: 'I_opt1', title: 'Water Reclamation Station', perkId: 'perk_ice_band', offset: [8, 0, 6] as [number, number, number] },
@@ -78,7 +78,7 @@ const REGIONS = [
     focalPoints: [
       { id: 'L1', title: 'Delta Mudstone Cross-Bedding', offset: [-6, 0, -6] as [number, number, number] },
       { id: 'L2', title: 'Robotic Arm Diagnostics', offset: [6, 0, 6] as [number, number, number] },
-      { id: 'L3', title: 'Witness Tube Audit', offset: [4, 0, 0] as [number, number, number] },
+      { id: 'L3', title: 'Witness Tube Audit', offset: [8, 0, -6] as [number, number, number] },
     ],
     branches: [
       { id: 'L_opt1', title: 'Dry Meander Overlook', perkId: 'perk_lake_filter', offset: [8, 0, 6] as [number, number, number] },

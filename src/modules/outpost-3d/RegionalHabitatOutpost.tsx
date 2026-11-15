@@ -460,8 +460,8 @@ export const RegionalHabitatOutpost: React.FC<RegionalHabitatProps> = ({
       </group>
 
       {/* Ergonomic Crew Swivel Chairs (Facing Console) */}
-      <CrewSeat position={[-0.7, -0.32, -1.8]} rotationY={0} accentColor={themeColor} />
-      <CrewSeat position={[0.7, -0.32, -1.8]} rotationY={0} accentColor={themeColor} />
+      <CrewSeat position={[-0.7, -0.32, -1.8]} rotationY={Math.PI} accentColor={themeColor} />
+      <CrewSeat position={[0.7, -0.32, -1.8]} rotationY={Math.PI} accentColor={themeColor} />
 
       {/* ========================================================
           6. THEMED INTERIOR SPECIMEN CORE (Center x=0, z=0 at y=-0.32)

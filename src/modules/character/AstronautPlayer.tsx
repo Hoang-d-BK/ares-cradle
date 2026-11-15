@@ -24,11 +24,13 @@ const FOUR_BASES = [
 ];
 
 /**
- * High-Precision Physics Resolution:
- * - Stand securely on base deck at y=0.52 (Never sink below deck floor)
- * - 3 Walk-in Entrance Ramps (Front +Z, Right +X, Left -X): smooth grade from -0.40 to +0.52
- * - Hard radial collision clamps: prevents clipping through outer foundation or interior dome glass
- * - Doorway threshold detector: automatically sets isInside=true on door approach
+ * High-Precision Multi-Layer Physical Collision System:
+ * - Stand securely on grounded deck floor (y = -0.32)
+ * - 3 Walk-in Entrance Ramps (Front +Z, Right +X, Left -X) with railing clamps
+ * - Central Command & Specimen Research Station Desk Collisions (radius clamp at 1.55m)
+ * - Interior Heavy Life Support & Scientific Workstation AABB clamps
+ * - Hard radial dome wall collision prevents clipping through outer glass
+ * - Parked Rover & Martian Regolith Boulder avoidance in world coordinates
  */
 function resolvePlayerPhysics(px: number, pz: number) {
   let nearest = FOUR_BASES[0];
@@ -41,9 +43,24 @@ function resolvePlayerPhysics(px: number, pz: number) {
     }
   }
 
-  // Outside base zone entirely
-  if (minDist > 12.0) {
-    return { x: px, z: pz, floorY: -0.4, isInside: false };
+  // Outside base zone entirely - apply world obstacles only
+  if (minDist > 14.0) {
+    let finalX = px;
+    let finalZ = pz;
+
+    // 1. Parked Rover Collision
+    const storeState = useOutpostStore.getState();
+    if (!storeState.isDrivingRover) {
+      const [rx, , rz] = storeState.roverPos;
+      const dRover = Math.hypot(finalX - rx, finalZ - rz);
+      if (dRover < 1.65) {
+        const s = 1.65 / Math.max(0.001, dRover);
+        finalX = rx + (finalX - rx) * s;
+        finalZ = rz + (finalZ - rz) * s;
+      }
+    }
+
+    return { x: finalX, z: finalZ, floorY: -0.4, isInside: false };
   }
 
   const wx = px - nearest.x;
@@ -52,7 +69,7 @@ function resolvePlayerPhysics(px: number, pz: number) {
   const sinT = Math.sin(nearest.rot);
   let lx = wx * cosT - wz * sinT;
   let lz = wx * sinT + wz * cosT;
-  const r = Math.hypot(lx, lz);
+  let r = Math.hypot(lx, lz);
 
   // 3 Entrance Ramp Corridors (Portal 0: Front +Z, Portal 1: Right +X, Portal 2: Left -X)
   const inFrontRamp = Math.abs(lx) <= 1.25 && lz >= 4.5 && lz <= 7.95;
@@ -67,42 +84,162 @@ function resolvePlayerPhysics(px: number, pz: number) {
     floorY = -0.32;
     isInside = true;
 
-    // Hard wall collision from inside: cannot walk through dome wall except via the 3 doorways
-    if (r > 4.58) {
-      const atFrontDoor = Math.abs(lx) <= 1.15 && lz > 4.2;
-      const atRightDoor = Math.abs(lz) <= 1.15 && lx > 4.2;
-      const atLeftDoor  = Math.abs(lz) <= 1.15 && lx < -4.2;
+    // 1. Central Command / Research Station Table & Hologram Core (Radius = 1.55m)
+    // Prevents Cadet Leo from walking through central desk & hologram in all 4 bases
+    if (r < 1.55) {
+      const safeR = r > 0.001 ? r : 0.001;
+      lx = (lx / safeR) * 1.55;
+      lz = (lz / safeR) * 1.55;
+      r = 1.55;
+    }
+
+    // 2. Interior Workstations & Machinery
+    if (nearest.id === 'hub') {
+      // Hydroponic Farm (North at lz = -3.1, width = 2.4, depth = 0.5)
+      if (Math.abs(lx) < 1.45 && lz < -2.65 && lz > -3.45) {
+        lz = -2.65;
+      }
+      // Sabatier Oxygen Generator (North-West at [-2.2, -2.0], radius = 0.95)
+      const dSab = Math.hypot(lx - (-2.2), lz - (-2.0));
+      if (dSab < 0.95) {
+        const s = 0.95 / Math.max(0.001, dSab);
+        lx = -2.2 + (lx - (-2.2)) * s;
+        lz = -2.0 + (lz - (-2.0)) * s;
+      }
+      // Chemical Specimen Workbench (North-East at [2.2, -2.0], radius = 0.95)
+      const dChem = Math.hypot(lx - 2.2, lz - (-2.0));
+      if (dChem < 0.95) {
+        const s = 0.95 / Math.max(0.001, dChem);
+        lx = 2.2 + (lx - 2.2) * s;
+        lz = -2.0 + (lz - (-2.0)) * s;
+      }
+      // Command Chairs at [-0.8, -1.2] and [0.8, -1.2]
+      for (const cx of [-0.8, 0.8]) {
+        const dChair = Math.hypot(lx - cx, lz - (-1.2));
+        if (dChair < 0.38) {
+          const s = 0.38 / Math.max(0.001, dChair);
+          lx = cx + (lx - cx) * s;
+          lz = -1.2 + (lz - (-1.2)) * s;
+        }
+      }
+    } else {
+      // Regional Outpost: Flight Telemetry Consoles (North at lz = -2.8, width = 2.8, depth = 0.85)
+      if (Math.abs(lx) < 1.60 && lz < -2.25 && lz > -3.35) {
+        lz = -2.25;
+      }
+      // Regional Crew Chairs at [-0.7, -1.8] and [0.7, -1.8]
+      for (const cx of [-0.7, 0.7]) {
+        const dChair = Math.hypot(lx - cx, lz - (-1.8));
+        if (dChair < 0.38) {
+          const s = 0.38 / Math.max(0.001, dChair);
+          lx = cx + (lx - cx) * s;
+          lz = -1.8 + (lz - (-1.8)) * s;
+        }
+      }
+    }
+
+    // 3. Hard wall collision from inside: cannot walk through dome glass except via 3 doorways
+    r = Math.hypot(lx, lz);
+    if (r > 4.52) {
+      const atFrontDoor = Math.abs(lx) <= 1.10 && lz > 4.2;
+      const atRightDoor = Math.abs(lz) <= 1.10 && lx > 4.2;
+      const atLeftDoor  = Math.abs(lz) <= 1.10 && lx < -4.2;
       if (!atFrontDoor && !atRightDoor && !atLeftDoor) {
-        lx = (lx / r) * 4.58;
-        lz = (lz / r) * 4.58;
+        lx = (lx / r) * 4.52;
+        lz = (lz / r) * 4.52;
       }
     }
   } else if (inFrontRamp) {
     const rampProgress = Math.max(0, Math.min(1, (7.95 - lz) / (7.95 - 4.6)));
     floorY = -0.4 + rampProgress * 0.08;
-    lx = Math.max(-1.18, Math.min(1.18, lx));
+    lx = Math.max(-1.12, Math.min(1.12, lx));
     if (rampProgress > 0.45) isInside = true;
   } else if (inRightRamp) {
     const rampProgress = Math.max(0, Math.min(1, (7.95 - lx) / (7.95 - 4.6)));
     floorY = -0.4 + rampProgress * 0.08;
-    lz = Math.max(-1.18, Math.min(1.18, lz));
+    lz = Math.max(-1.12, Math.min(1.12, lz));
     if (rampProgress > 0.45) isInside = true;
   } else if (inLeftRamp) {
     const rampProgress = Math.max(0, Math.min(1, (7.95 - (-lx)) / (7.95 - 4.6)));
     floorY = -0.4 + rampProgress * 0.08;
-    lz = Math.max(-1.18, Math.min(1.18, lz));
+    lz = Math.max(-1.12, Math.min(1.12, lz));
     if (rampProgress > 0.45) isInside = true;
   } else {
     floorY = -0.4;
     // Hard wall collision from outside: solid foundation seals base; cannot penetrate under/into base dome
-    if (r < 5.0) {
-      lx = (lx / r) * 5.0;
-      lz = (lz / r) * 5.0;
+    if (r < 5.05) {
+      lx = (lx / r) * 5.05;
+      lz = (lz / r) * 5.05;
+    }
+
+    // Exterior Utility Yard Equipment Collisions
+    if (nearest.id === 'hub') {
+      // Solar Array at [-9.5, -6.5]
+      const dSolar = Math.hypot(lx - (-9.5), lz - (-6.5));
+      if (dSolar < 2.2) {
+        const s = 2.2 / Math.max(0.001, dSolar);
+        lx = -9.5 + (lx - (-9.5)) * s;
+        lz = -6.5 + (lz - (-6.5)) * s;
+      }
+      // Battery Bank at [-7.2, -6.5]
+      const dBat = Math.hypot(lx - (-7.2), lz - (-6.5));
+      if (dBat < 1.3) {
+        const s = 1.3 / Math.max(0.001, dBat);
+        lx = -7.2 + (lx - (-7.2)) * s;
+        lz = -6.5 + (lz - (-6.5)) * s;
+      }
+    } else {
+      // Regional Landmark at [-6.8, -6.5]
+      const dMark = Math.hypot(lx - (-6.8), lz - (-6.5));
+      if (dMark < 1.6) {
+        const s = 1.6 / Math.max(0.001, dMark);
+        lx = -6.8 + (lx - (-6.8)) * s;
+        lz = -6.5 + (lz - (-6.5)) * s;
+      }
     }
   }
 
-  const finalX = nearest.x + lx * cosT + lz * sinT;
-  const finalZ = nearest.z - lx * sinT + lz * cosT;
+  let finalX = nearest.x + lx * cosT + lz * sinT;
+  let finalZ = nearest.z - lx * sinT + lz * cosT;
+
+  // World-Space Parked Rover Collision Check
+  const storeState = useOutpostStore.getState();
+  if (!storeState.isDrivingRover) {
+    const [rx, , rz] = storeState.roverPos;
+    const dRover = Math.hypot(finalX - rx, finalZ - rz);
+    if (dRover < 1.65) {
+      const s = 1.65 / Math.max(0.001, dRover);
+      finalX = rx + (finalX - rx) * s;
+      finalZ = rz + (finalZ - rz) * s;
+    }
+  }
+
+  // World-Space CRADLE-01 Cargo Lander Collision
+  const dLander = Math.hypot(finalX - 0, finalZ - 16.5);
+  if (dLander < 2.0) {
+    const s = 2.0 / Math.max(0.001, dLander);
+    finalX = 0 + (finalX - 0) * s;
+    finalZ = 16.5 + (finalZ - 16.5) * s;
+  }
+
+  // World-Space Martian Boulders Collision Check (Around Central Outpost)
+  const BOULDERS = [
+    { x: -7.5, z: -3.2, r: 0.8 },
+    { x: -6.8, z: -2.1, r: 0.6 },
+    { x: 6.2, z: -4.5, r: 0.9 },
+    { x: 8.1, z: -1.8, r: 0.7 },
+    { x: -4.2, z: 6.5, r: 0.8 },
+    { x: 3.5, z: 7.2, r: 0.7 },
+  ];
+  for (const b of BOULDERS) {
+    const db = Math.hypot(finalX - b.x, finalZ - b.z);
+    if (db < b.r) {
+      const s = b.r / Math.max(0.001, db);
+      finalX = b.x + (finalX - b.x) * s;
+      finalZ = b.z + (finalZ - b.z) * s;
+    }
+  }
+
   return { x: finalX, z: finalZ, floorY, isInside };
 }
 

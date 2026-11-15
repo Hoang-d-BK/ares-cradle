@@ -189,9 +189,10 @@ export const HabitatInterior: React.FC = () => {
       </group>
 
       {/* ========================================================
-          ZONE 2: SABATIER OXYGEN ELECTROLYSIS SCRUBBER (West)
+          ZONE 2: SABATIER OXYGEN ELECTROLYSIS SCRUBBER (North-West Quadrant)
+          Clears Left Doorway corridor completely
           ======================================================== */}
-      <group position={[-2.4, -0.32, 0]}>
+      <group position={[-2.2, -0.32, -2.0]} rotation={[0, Math.PI / 4, 0]}>
         {/* Heavy Machine Housing Base */}
         <mesh position={[0, 0.25, 0]} castShadow>
           <boxGeometry args={[1.2, 0.7, 0.9]} />
@@ -233,9 +234,9 @@ export const HabitatInterior: React.FC = () => {
       </group>
 
       {/* ========================================================
-          ZONE 3: MULTI-TIER VERTICAL HYDROPONIC FARM (North)
+          ZONE 3: MULTI-TIER VERTICAL HYDROPONIC FARM (Flush North Wall)
           ======================================================== */}
-      <group position={[0, -0.32, -2.4]}>
+      <group position={[0, -0.32, -3.1]}>
         {/* Hydroponic Rack Frame */}
         <mesh position={[0, 0.9, 0]} castShadow>
           <boxGeometry args={[2.4, 1.8, 0.5]} />
@@ -270,9 +271,10 @@ export const HabitatInterior: React.FC = () => {
       </group>
 
       {/* ========================================================
-          ZONE 4: CHEMICAL SPECIMEN ANALYZER WORKBENCH (South-West)
+          ZONE 4: CHEMICAL SPECIMEN ANALYZER WORKBENCH (North-East Quadrant)
+          Clears Front & Right Doorways completely
           ======================================================== */}
-      <group position={[-1.7, -0.32, 1.7]} rotation={[0, Math.PI / 4, 0]}>
+      <group position={[2.2, -0.32, -2.0]} rotation={[0, -Math.PI / 4, 0]}>
         {/* Lab Countertop Desk */}
         <mesh position={[0, 0.3, 0]} castShadow>
           <boxGeometry args={[1.5, 0.6, 0.7]} />
