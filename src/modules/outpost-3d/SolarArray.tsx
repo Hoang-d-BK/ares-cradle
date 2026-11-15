@@ -79,8 +79,8 @@ export const SolarArray: React.FC = () => {
   return (
     <group
       ref={groupRef}
-      position={[-4.5, 0, 1.4]}
-      rotation={[0, 0.3, 0]}
+      position={[-9.5, 0, -6.5]}
+      rotation={[0, 0.45, 0]}
     >
       {/* Heavy Base Anchor Footing */}
       <mesh position={[0, -0.42, 0]}>

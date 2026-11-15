@@ -13,12 +13,12 @@ interface CrystalDef {
 }
 
 const CRYSTAL_NODES: CrystalDef[] = [
-  { id: 1, position: [-2.8, -0.25, 4.2], scale: [0.35, 0.65, 0.35], color: '#00F0FF' },
-  { id: 2, position: [-2.5, -0.3, 4.5], scale: [0.25, 0.45, 0.25], color: '#00F0FF' },
-  { id: 3, position: [5.2, -0.25, 1.8], scale: [0.4, 0.75, 0.4], color: '#FFB020' },
-  { id: 4, position: [5.5, -0.3, 2.1], scale: [0.22, 0.42, 0.22], color: '#FFB020' },
-  { id: 5, position: [-5.2, -0.25, -2.5], scale: [0.38, 0.7, 0.38], color: '#00F0FF' },
-  { id: 6, position: [2.2, -0.25, -4.8], scale: [0.32, 0.6, 0.32], color: '#00F0FF' }
+  { id: 1, position: [-5.5, -0.38, 6.5], scale: [0.35, 0.65, 0.35], color: '#00F0FF' },
+  { id: 2, position: [-6.2, -0.38, 7.2], scale: [0.25, 0.45, 0.25], color: '#00F0FF' },
+  { id: 3, position: [6.5, -0.38, 4.5], scale: [0.4, 0.75, 0.4], color: '#FFB020' },
+  { id: 4, position: [7.2, -0.38, 5.0], scale: [0.22, 0.42, 0.22], color: '#FFB020' },
+  { id: 5, position: [-6.5, -0.38, -4.5], scale: [0.38, 0.7, 0.38], color: '#00F0FF' },
+  { id: 6, position: [5.5, -0.38, -5.5], scale: [0.32, 0.6, 0.32], color: '#00F0FF' }
 ];
 
 /**

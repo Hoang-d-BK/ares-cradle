@@ -22,16 +22,16 @@ const RampPortal: React.FC<RampPortalProps> = ({
 }) => {
   return (
     <group rotation={[0, angle, 0]}>
-      {/* Walk-in Entrance Ramp (From y=-0.40, z=7.95 to y=0.52, z=4.75) */}
-      <group position={[0, 0.06, 6.35]}>
-        <mesh rotation={[0.2796, 0, 0]} receiveShadow>
-          <boxGeometry args={[2.4, 0.12, 3.33]} />
+      {/* Walk-in Entrance Threshold Apron (Gentle transition from ground y=-0.40 to deck y=-0.32) */}
+      <group position={[0, -0.36, 6.35]}>
+        <mesh rotation={[0.025, 0, 0]} receiveShadow>
+          <boxGeometry args={[2.4, 0.08, 3.3]} />
           <meshStandardMaterial color="#1E293B" roughness={0.6} metalness={0.5} />
         </mesh>
 
         {/* Transverse Anti-Slip Traction Treads */}
         {[-1.2, -0.6, 0.0, 0.6, 1.2].map((tZ, idx) => (
-          <mesh key={`ramp-tread-${idx}`} position={[0, 0.07, tZ]} rotation={[0.2796, 0, 0]}>
+          <mesh key={`ramp-tread-${idx}`} position={[0, 0.05, tZ]} rotation={[0.025, 0, 0]}>
             <boxGeometry args={[2.2, 0.02, 0.14]} />
             <meshStandardMaterial color="#334155" roughness={0.9} />
           </mesh>
@@ -40,39 +40,39 @@ const RampPortal: React.FC<RampPortalProps> = ({
         {/* Safety Guide Railings with Cyan LED Strips */}
         {[-1.24, 1.24].map((rx, rIdx) => (
           <group key={`ramp-rail-${rIdx}`} position={[rx, 0, 0]}>
-            <mesh position={[0, 0.07, 0]} rotation={[0.2796, 0, 0]}>
-              <boxGeometry args={[0.08, 0.04, 3.33]} />
+            <mesh position={[0, 0.05, 0]} rotation={[0.025, 0, 0]}>
+              <boxGeometry args={[0.08, 0.04, 3.3]} />
               <meshStandardMaterial color={themeColor} emissive={themeColor} emissiveIntensity={1.2} />
             </mesh>
             {[-1.3, -0.4, 0.5, 1.3].map((pz, pIdx) => (
               <mesh
                 key={`post-${pIdx}`}
-                position={[0, 0.35 + pz * Math.sin(0.2796), pz * Math.cos(0.2796)]}
+                position={[0, 0.35 + pz * Math.sin(0.025), pz * Math.cos(0.025)]}
               >
                 <cylinderGeometry args={[0.025, 0.025, 0.65, 8]} />
                 <meshStandardMaterial color="#64748B" metalness={0.9} />
               </mesh>
             ))}
-            <mesh position={[0, 0.45, 0]} rotation={[0.2796, 0, 0]}>
-              <boxGeometry args={[0.06, 0.06, 3.33]} />
+            <mesh position={[0, 0.45, 0]} rotation={[0.025, 0, 0]}>
+              <boxGeometry args={[0.06, 0.06, 3.3]} />
               <meshStandardMaterial color="#94A3B8" metalness={0.8} />
             </mesh>
           </group>
         ))}
 
-        {/* Ground Transition Threshold Pad */}
-        <mesh position={[0, -0.42, 1.75]} receiveShadow>
+        {/* Ground Transition Threshold Pad flush with Martian dirt */}
+        <mesh position={[0, -0.04, 1.75]} receiveShadow>
           <boxGeometry args={[2.8, 0.06, 0.55]} />
           <meshStandardMaterial color="#C1440E" roughness={0.8} />
         </mesh>
-        <mesh position={[0, -0.38, 1.9]}>
+        <mesh position={[0, -0.01, 1.9]}>
           <boxGeometry args={[2.6, 0.01, 0.1]} />
           <meshStandardMaterial color="#F59E0B" emissive="#F59E0B" emissiveIntensity={1.0} />
         </mesh>
       </group>
 
-      {/* Pressurized Airlock Portal Frame & Sliding Blast Doors */}
-      <group position={[0, 0.52, 4.80]}>
+      {/* Pressurized Airlock Portal Frame & Sliding Blast Doors (At y=-0.32, z=4.80) */}
+      <group position={[0, -0.32, 4.80]}>
         <mesh position={[-1.25, 1.25, 0]} castShadow receiveShadow>
           <boxGeometry args={[0.35, 2.5, 0.45]} />
           <meshStandardMaterial color="#0F172A" roughness={0.4} metalness={0.8} />
@@ -291,32 +291,32 @@ export const HabitatDome: React.FC = () => {
   return (
     <group position={[0, 0, 0]}>
       {/* ========================================================
-          1. 3D-PRINTED SINTERED FOUNDATION WALLS & INTERIOR FLOOR (R=4.95m)
+          1. 3D-PRINTED SINTERED FOUNDATION WALLS & INTERIOR FLOOR (Ground Level)
           ======================================================== */}
-      {/* Heavy Sintered Composite Foundation Ring */}
-      <mesh position={[0, 0.24, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[4.92, 5.12, 0.55, 36]} />
+      {/* Heavy Sintered Composite Foundation Skirt - Embedded deep into Martian soil (-1.0m to -0.30m) */}
+      <mesh position={[0, -0.65, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[4.95, 5.25, 0.70, 36]} />
         <meshStandardMaterial color="#1E293B" roughness={0.7} metalness={0.4} />
       </mesh>
 
-      {/* Perimeter Cyan Glowing Accent Strip */}
-      <mesh position={[0, 0.48, 0]}>
-        <cylinderGeometry args={[4.94, 4.94, 0.06, 36]} />
+      {/* Perimeter Cyan Glowing Accent Strip at Deck Rim */}
+      <mesh position={[0, -0.30, 0]}>
+        <cylinderGeometry args={[4.94, 4.94, 0.04, 36]} />
         <meshStandardMaterial color="#00D2FF" emissive="#00D2FF" emissiveIntensity={0.9} />
       </mesh>
 
-      {/* Solid Pressurized Interior Floor Deck (Cadet Leo stands on this at y=0.52) */}
-      <mesh position={[0, 0.50, 0]} receiveShadow>
+      {/* Solid Pressurized Interior Floor Deck (Cadet Leo stands on this at y=-0.32) */}
+      <mesh position={[0, -0.32, 0]} receiveShadow>
         <cylinderGeometry args={[4.75, 4.75, 0.04, 36]} />
         <meshStandardMaterial color="#0F172A" roughness={0.3} metalness={0.8} />
       </mesh>
 
-      {/* Interior Deck Guidance Rings at y=0.522 */}
-      <mesh position={[0, 0.522, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      {/* Interior Deck Guidance Rings at y=-0.30 */}
+      <mesh position={[0, -0.30, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[1.8, 1.86, 36]} />
         <meshBasicMaterial color="#00D2FF" transparent opacity={0.6} />
       </mesh>
-      <mesh position={[0, 0.522, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh position={[0, -0.30, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[3.4, 3.46, 36]} />
         <meshBasicMaterial color="#00D2FF" transparent opacity={0.3} />
       </mesh>
@@ -349,10 +349,10 @@ export const HabitatDome: React.FC = () => {
       />
 
       {/* ========================================================
-          3. SPACIOUS AEROGEL GEODESIC DOME & CORONA GLOW (R=4.85m)
+          3. SPACIOUS AEROGEL GEODESIC DOME & CORONA GLOW (R=4.85m at Ground Level)
           ======================================================== */}
       {/* Outer Pressurized Aerogel Observation Glass - Crystal Clear */}
-      <mesh ref={outerDomeRef} position={[0, 0.52, 0]} castShadow receiveShadow>
+      <mesh ref={outerDomeRef} position={[0, -0.32, 0]} castShadow receiveShadow>
         <sphereGeometry args={[4.85, 48, 28, 0, Math.PI * 2, 0, Math.PI / 2]} />
         <meshStandardMaterial
           color="#E0F2FE"
@@ -366,7 +366,7 @@ export const HabitatDome: React.FC = () => {
       </mesh>
 
       {/* Atmospheric Interior BackSide Corona Glow */}
-      <mesh position={[0, 0.52, 0]}>
+      <mesh position={[0, -0.32, 0]}>
         <sphereGeometry args={[4.82, 36, 22, 0, Math.PI * 2, 0, Math.PI / 2]} />
         <meshBasicMaterial
           ref={atmosphereRef}
@@ -379,7 +379,7 @@ export const HabitatDome: React.FC = () => {
       </mesh>
 
       {/* Geodesic Structural Lattice Frame - Slender Clean Ribs */}
-      <mesh position={[0, 0.52, 0]}>
+      <mesh position={[0, -0.32, 0]}>
         <sphereGeometry args={[4.86, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
         <meshStandardMaterial
           color="#64748B"
@@ -401,7 +401,7 @@ export const HabitatDome: React.FC = () => {
             ref={(el) => {
               if (el) shuttersRef.current[idx] = el;
             }}
-            position={[0, 0.6, 4.86]}
+            position={[0, -0.24, 4.86]}
           >
             <mesh position={[0, 1.25, 0]} castShadow>
               <boxGeometry args={[2.8, 2.3, 0.12]} />
@@ -477,7 +477,7 @@ export const HabitatDome: React.FC = () => {
       {/* ========================================================
           6. ROTATING SATELLITE DISH & COMMS MAST
           ======================================================== */}
-      <group position={[-3.4, 0.45, -3.4]}>
+      <group position={[-3.4, -0.32, -3.4]}>
         <mesh position={[0, 1.6, 0]} castShadow>
           <cylinderGeometry args={[0.06, 0.14, 3.2, 8]} />
           <meshStandardMaterial color="#64748B" metalness={0.9} roughness={0.2} />
@@ -537,12 +537,12 @@ export const HabitatDome: React.FC = () => {
         intensity={1.5}
         distance={10}
         decay={2}
-        position={[0, 1.8, 0]}
+        position={[0, 1.0, 0]}
       />
 
       {/* Visual Evolution Level 3+: Circulating Glowing Water Conduits Ring */}
       {domeEvolutionLevel >= 3 && (
-        <group position={[0, 0.45, 0]}>
+        <group position={[0, -0.32, 0]}>
           <mesh rotation={[Math.PI / 2, 0, 0]}>
             <torusGeometry args={[4.82, 0.04, 8, 36]} />
             <meshStandardMaterial
@@ -557,7 +557,7 @@ export const HabitatDome: React.FC = () => {
 
       {/* Visual Evolution Level 5: Ares-1 Sky Laser Landing Beacon Column */}
       {domeEvolutionLevel >= 5 && (
-        <group position={[0, 5.2, 0]}>
+        <group position={[0, 4.53, 0]}>
           <mesh position={[0, 16, 0]}>
             <cylinderGeometry args={[0.08, 0.25, 32, 12]} />
             <meshBasicMaterial color="#00D2FF" transparent opacity={0.65} />

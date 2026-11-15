@@ -119,7 +119,7 @@ export const HabitatInterior: React.FC = () => {
       {/* ========================================================
           ZONE 1: CENTRAL COMMAND TABLE & 3D ROTATING MARS GLOBE
           ======================================================== */}
-      <group position={[0, 0.52, 0]}>
+      <group position={[0, -0.32, 0]}>
         {/* Hexagonal Command Console Base */}
         <mesh position={[0, 0.12, 0]} castShadow receiveShadow>
           <cylinderGeometry args={[0.95, 1.15, 0.45, 6]} />
@@ -191,7 +191,7 @@ export const HabitatInterior: React.FC = () => {
       {/* ========================================================
           ZONE 2: SABATIER OXYGEN ELECTROLYSIS SCRUBBER (West)
           ======================================================== */}
-      <group position={[-2.4, 0.52, 0]}>
+      <group position={[-2.4, -0.32, 0]}>
         {/* Heavy Machine Housing Base */}
         <mesh position={[0, 0.25, 0]} castShadow>
           <boxGeometry args={[1.2, 0.7, 0.9]} />
@@ -235,7 +235,7 @@ export const HabitatInterior: React.FC = () => {
       {/* ========================================================
           ZONE 3: MULTI-TIER VERTICAL HYDROPONIC FARM (North)
           ======================================================== */}
-      <group position={[0, 0.52, -2.4]}>
+      <group position={[0, -0.32, -2.4]}>
         {/* Hydroponic Rack Frame */}
         <mesh position={[0, 0.9, 0]} castShadow>
           <boxGeometry args={[2.4, 1.8, 0.5]} />
@@ -272,7 +272,7 @@ export const HabitatInterior: React.FC = () => {
       {/* ========================================================
           ZONE 4: CHEMICAL SPECIMEN ANALYZER WORKBENCH (South-West)
           ======================================================== */}
-      <group position={[-1.7, 0.52, 1.7]} rotation={[0, Math.PI / 4, 0]}>
+      <group position={[-1.7, -0.32, 1.7]} rotation={[0, Math.PI / 4, 0]}>
         {/* Lab Countertop Desk */}
         <mesh position={[0, 0.3, 0]} castShadow>
           <boxGeometry args={[1.5, 0.6, 0.7]} />

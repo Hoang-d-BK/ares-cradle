@@ -63,8 +63,8 @@ function resolvePlayerPhysics(px: number, pz: number) {
   let isInside = false;
 
   if (r <= 4.65) {
-    // Inside base dome deck
-    floorY = 0.52;
+    // Inside base dome deck (grounded level at y=-0.32)
+    floorY = -0.32;
     isInside = true;
 
     // Hard wall collision from inside: cannot walk through dome wall except via the 3 doorways
@@ -79,25 +79,25 @@ function resolvePlayerPhysics(px: number, pz: number) {
     }
   } else if (inFrontRamp) {
     const rampProgress = Math.max(0, Math.min(1, (7.95 - lz) / (7.95 - 4.6)));
-    floorY = -0.4 + rampProgress * 0.92;
+    floorY = -0.4 + rampProgress * 0.08;
     lx = Math.max(-1.18, Math.min(1.18, lx));
     if (rampProgress > 0.45) isInside = true;
   } else if (inRightRamp) {
     const rampProgress = Math.max(0, Math.min(1, (7.95 - lx) / (7.95 - 4.6)));
-    floorY = -0.4 + rampProgress * 0.92;
+    floorY = -0.4 + rampProgress * 0.08;
     lz = Math.max(-1.18, Math.min(1.18, lz));
     if (rampProgress > 0.45) isInside = true;
   } else if (inLeftRamp) {
     const rampProgress = Math.max(0, Math.min(1, (7.95 - (-lx)) / (7.95 - 4.6)));
-    floorY = -0.4 + rampProgress * 0.92;
+    floorY = -0.4 + rampProgress * 0.08;
     lz = Math.max(-1.18, Math.min(1.18, lz));
     if (rampProgress > 0.45) isInside = true;
   } else {
     floorY = -0.4;
-    // Hard wall collision from outside: cannot penetrate into base dome
-    if (r < 4.95) {
-      lx = (lx / r) * 4.95;
-      lz = (lz / r) * 4.95;
+    // Hard wall collision from outside: solid foundation seals base; cannot penetrate under/into base dome
+    if (r < 5.0) {
+      lx = (lx / r) * 5.0;
+      lz = (lz / r) * 5.0;
     }
   }
 

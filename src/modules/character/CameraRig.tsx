@@ -154,7 +154,7 @@ export const CameraRig: React.FC = () => {
         targetLookAt.current.set(targetPos[0], targetPos[1] + 0.85, targetPos[2]);
         targetCamPos.current.set(
           targetPos[0] + domeDist * Math.cos(safePitch) * Math.sin(yaw.current),
-          Math.max(1.10, targetPos[1] + domeDist * Math.sin(safePitch) + 0.55),
+          Math.max(0.35, targetPos[1] + domeDist * Math.sin(safePitch) + 0.65),
           targetPos[2] + domeDist * Math.cos(safePitch) * Math.cos(yaw.current)
         );
       } else {
@@ -169,13 +169,13 @@ export const CameraRig: React.FC = () => {
         const camX = targetPos[0] + curDist * Math.cos(pitch.current) * Math.sin(yaw.current);
         const camZ = targetPos[2] + curDist * Math.cos(pitch.current) * Math.cos(yaw.current);
 
-        // Clearance calculation: base foundations sit elevated at y = 0.52m with radius ~4.95m.
-        // If the camera is anywhere near an outpost boundary (R < 6.8m), enforce minimum height of 0.95m
-        // so the camera can NEVER dip under the base foundation or into the crawlspace.
+        // Clearance calculation: base foundations sit grounded at y = -0.32m with radius ~4.95m.
+        // If the camera is anywhere near an outpost boundary (R < 6.8m), enforce minimum height of 0.15m
+        // so the camera is always safely above deck level and can NEVER dip under the base foundation.
         const isNearBase = BASE_CENTERS.some(
           ([bx, bz]) => Math.hypot(camX - bx, camZ - bz) < 6.8
         );
-        const minAllowedY = isNearBase ? 0.95 : Math.max(0.65, targetPos[1] + 0.45);
+        const minAllowedY = isNearBase ? 0.15 : Math.max(0.10, targetPos[1] + 0.45);
         const rawCamY = targetPos[1] + curDist * Math.sin(pitch.current) + targetHeightOffset;
 
         targetCamPos.current.set(camX, Math.max(minAllowedY, rawCamY), camZ);

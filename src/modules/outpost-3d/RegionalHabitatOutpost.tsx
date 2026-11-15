@@ -34,17 +34,17 @@ const RampPortal: React.FC<RampPortalProps> = ({
 }) => {
   return (
     <group rotation={[0, angle, 0]}>
-      {/* 1. WALK-IN ENTRANCE RAMP (From y=-0.40, z=7.95 to y=0.52, z=4.75) */}
-      <group position={[0, 0.06, 6.35]}>
-        {/* Main Ramp Surface (Length 3.33m along 0.2796 rad slope) */}
-        <mesh rotation={[0.2796, 0, 0]} receiveShadow>
-          <boxGeometry args={[2.4, 0.12, 3.33]} />
+      {/* 1. WALK-IN ENTRANCE RAMP (Gentle transition from ground y=-0.40 to deck y=-0.32) */}
+      <group position={[0, -0.36, 6.35]}>
+        {/* Main Ramp Surface */}
+        <mesh rotation={[0.025, 0, 0]} receiveShadow>
+          <boxGeometry args={[2.4, 0.08, 3.3]} />
           <meshStandardMaterial color="#1E293B" roughness={0.6} metalness={0.5} />
         </mesh>
 
         {/* Transverse Anti-Slip Traction Treads */}
         {[-1.2, -0.6, 0.0, 0.6, 1.2].map((tZ, idx) => (
-          <mesh key={`tread-${idx}`} position={[0, 0.07, tZ]} rotation={[0.2796, 0, 0]}>
+          <mesh key={`tread-${idx}`} position={[0, 0.05, tZ]} rotation={[0.025, 0, 0]}>
             <boxGeometry args={[2.2, 0.02, 0.14]} />
             <meshStandardMaterial color="#334155" roughness={0.9} />
           </mesh>
@@ -54,8 +54,8 @@ const RampPortal: React.FC<RampPortalProps> = ({
         {[-1.24, 1.24].map((rx, rIdx) => (
           <group key={`ramp-rail-${rIdx}`} position={[rx, 0, 0]}>
             {/* Base Glowing LED Channel */}
-            <mesh position={[0, 0.07, 0]} rotation={[0.2796, 0, 0]}>
-              <boxGeometry args={[0.08, 0.04, 3.33]} />
+            <mesh position={[0, 0.05, 0]} rotation={[0.025, 0, 0]}>
+              <boxGeometry args={[0.08, 0.04, 3.3]} />
               <meshStandardMaterial
                 color={themeColor}
                 emissive={themeColor}
@@ -66,27 +66,27 @@ const RampPortal: React.FC<RampPortalProps> = ({
             {[-1.3, -0.4, 0.5, 1.3].map((pz, pIdx) => (
               <mesh
                 key={`post-${pIdx}`}
-                position={[0, 0.35 + pz * Math.sin(0.2796), pz * Math.cos(0.2796)]}
+                position={[0, 0.35 + pz * Math.sin(0.025), pz * Math.cos(0.025)]}
               >
                 <cylinderGeometry args={[0.025, 0.025, 0.65, 8]} />
                 <meshStandardMaterial color="#64748B" metalness={0.9} />
               </mesh>
             ))}
             {/* Top Tubular Handrail */}
-            <mesh position={[0, 0.45, 0]} rotation={[0.2796, 0, 0]}>
-              <boxGeometry args={[0.06, 0.06, 3.33]} />
+            <mesh position={[0, 0.45, 0]} rotation={[0.025, 0, 0]}>
+              <boxGeometry args={[0.06, 0.06, 3.3]} />
               <meshStandardMaterial color="#94A3B8" metalness={0.8} />
             </mesh>
           </group>
         ))}
 
         {/* Ground Transition Threshold Pad at Martian Dirt Level */}
-        <mesh position={[0, -0.42, 1.75]} receiveShadow>
+        <mesh position={[0, -0.04, 1.75]} receiveShadow>
           <boxGeometry args={[2.8, 0.06, 0.55]} />
           <meshStandardMaterial color="#C1440E" roughness={0.8} />
         </mesh>
         {/* Warning Hazard Caution Line */}
-        <mesh position={[0, -0.38, 1.9]}>
+        <mesh position={[0, -0.01, 1.9]}>
           <boxGeometry args={[2.6, 0.01, 0.1]} />
           <meshStandardMaterial
             color="#F59E0B"
@@ -96,8 +96,8 @@ const RampPortal: React.FC<RampPortalProps> = ({
         </mesh>
       </group>
 
-      {/* 2. PRESSURIZED AIRLOCK PORTAL FRAME & SLIDING BLAST DOORS (At z=4.80, y=0.52) */}
-      <group position={[0, 0.52, 4.80]}>
+      {/* 2. PRESSURIZED AIRLOCK PORTAL FRAME & SLIDING BLAST DOORS (At z=4.80, y=-0.32) */}
+      <group position={[0, -0.32, 4.80]}>
         {/* Left Arch Jamb Pillar */}
         <mesh position={[-1.25, 1.25, 0]} castShadow receiveShadow>
           <boxGeometry args={[0.35, 2.5, 0.45]} />
@@ -297,17 +297,17 @@ export const RegionalHabitatOutpost: React.FC<RegionalHabitatProps> = ({
   return (
     <group position={position} rotation={[0, rotationY, 0]}>
       {/* ========================================================
-          1. SINTERED FOUNDATION RING & INTERIOR FLOOR DECK (y=0.52)
+          1. SINTERED FOUNDATION RING & INTERIOR FLOOR DECK (Ground Level)
           ======================================================== */}
-      {/* Foundation Base Cylinder (R=4.95m) */}
-      <mesh position={[0, 0.24, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[4.92, 5.12, 0.55, 36]} />
+      {/* Heavy Sintered Composite Foundation Skirt - Embedded deep into soil */}
+      <mesh position={[0, -0.65, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[4.95, 5.25, 0.70, 36]} />
         <meshStandardMaterial color="#1E293B" roughness={0.7} metalness={0.4} />
       </mesh>
 
-      {/* Perimeter Themed Glowing Accent Strip */}
-      <mesh position={[0, 0.48, 0]}>
-        <cylinderGeometry args={[4.94, 4.94, 0.06, 36]} />
+      {/* Perimeter Themed Glowing Accent Strip at Deck Rim */}
+      <mesh position={[0, -0.30, 0]}>
+        <cylinderGeometry args={[4.94, 4.94, 0.04, 36]} />
         <meshStandardMaterial
           color={themeColor}
           emissive={themeColor}
@@ -315,18 +315,18 @@ export const RegionalHabitatOutpost: React.FC<RegionalHabitatProps> = ({
         />
       </mesh>
 
-      {/* Interior Floor Deck (R=4.75m at y=0.50) */}
-      <mesh position={[0, 0.50, 0]} receiveShadow>
+      {/* Interior Floor Deck (Cadet Leo stands on this at y=-0.32) */}
+      <mesh position={[0, -0.32, 0]} receiveShadow>
         <cylinderGeometry args={[4.75, 4.75, 0.04, 36]} />
         <meshStandardMaterial color="#0F172A" roughness={0.3} metalness={0.8} />
       </mesh>
 
       {/* Interior Guidance Rings */}
-      <mesh position={[0, 0.522, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh position={[0, -0.30, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[1.8, 1.86, 36]} />
         <meshBasicMaterial color={themeColor} transparent opacity={0.6} />
       </mesh>
-      <mesh position={[0, 0.522, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh position={[0, -0.30, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[3.4, 3.46, 36]} />
         <meshBasicMaterial color={themeColor} transparent opacity={0.3} />
       </mesh>
@@ -359,10 +359,10 @@ export const RegionalHabitatOutpost: React.FC<RegionalHabitatProps> = ({
       />
 
       {/* ========================================================
-          3. EXPANDED GEODESIC OBSERVATION GLASS DOME (R=4.85m)
+          3. EXPANDED GEODESIC OBSERVATION GLASS DOME (R=4.85m at Ground Level)
           ======================================================== */}
       {/* Outer Aerogel Dome - Crystal Clear */}
-      <mesh position={[0, 0.52, 0]} castShadow receiveShadow>
+      <mesh position={[0, -0.32, 0]} castShadow receiveShadow>
         <sphereGeometry args={[4.85, 48, 28, 0, Math.PI * 2, 0, Math.PI / 2]} />
         <meshStandardMaterial
           color="#E0F2FE"
@@ -376,7 +376,7 @@ export const RegionalHabitatOutpost: React.FC<RegionalHabitatProps> = ({
       </mesh>
 
       {/* Atmospheric Interior BackSide Glow */}
-      <mesh position={[0, 0.52, 0]}>
+      <mesh position={[0, -0.32, 0]}>
         <sphereGeometry args={[4.82, 36, 22, 0, Math.PI * 2, 0, Math.PI / 2]} />
         <meshBasicMaterial
           side={THREE.BackSide}
@@ -388,7 +388,7 @@ export const RegionalHabitatOutpost: React.FC<RegionalHabitatProps> = ({
       </mesh>
 
       {/* Dome Structural Lattice Frame - Slender Clean Ribs */}
-      <mesh position={[0, 0.52, 0]}>
+      <mesh position={[0, -0.32, 0]}>
         <sphereGeometry args={[4.86, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
         <meshStandardMaterial
           color="#64748B"
@@ -404,7 +404,7 @@ export const RegionalHabitatOutpost: React.FC<RegionalHabitatProps> = ({
       {[Math.PI / 4, (3 * Math.PI) / 4, (5 * Math.PI) / 4, (7 * Math.PI) / 4].map(
         (baseRot, idx) => (
           <group key={`shutter-${idx}`} rotation={[0, baseRot, 0]}>
-            <group position={[0, 0.6, 4.86]}>
+            <group position={[0, -0.24, 4.86]}>
               <mesh position={[0, 1.25, 0]} castShadow>
                 <boxGeometry args={[2.8, 2.3, 0.12]} />
                 <meshStandardMaterial color="#334155" metalness={0.9} roughness={0.25} />
@@ -425,8 +425,8 @@ export const RegionalHabitatOutpost: React.FC<RegionalHabitatProps> = ({
       {/* ========================================================
           4. INTERIOR: FLIGHT TELEMETRY CONSOLE & CREW SEATING
           ======================================================== */}
-      {/* Flight Control Consoles (North Wall Arc at z=-2.8) */}
-      <group position={[0, 0.52, -2.8]}>
+      {/* Flight Control Consoles (North Wall Arc at z=-2.8, Grounded at y=-0.32) */}
+      <group position={[0, -0.32, -2.8]}>
         {/* Main Curved Console Desk */}
         <mesh position={[0, 0.38, 0]} castShadow receiveShadow>
           <boxGeometry args={[2.8, 0.76, 0.85]} />
@@ -460,13 +460,13 @@ export const RegionalHabitatOutpost: React.FC<RegionalHabitatProps> = ({
       </group>
 
       {/* Ergonomic Crew Swivel Chairs (Facing Console) */}
-      <CrewSeat position={[-0.7, 0.52, -1.8]} rotationY={0} accentColor={themeColor} />
-      <CrewSeat position={[0.7, 0.52, -1.8]} rotationY={0} accentColor={themeColor} />
+      <CrewSeat position={[-0.7, -0.32, -1.8]} rotationY={0} accentColor={themeColor} />
+      <CrewSeat position={[0.7, -0.32, -1.8]} rotationY={0} accentColor={themeColor} />
 
       {/* ========================================================
-          6. THEMED INTERIOR SPECIMEN CORE (Center x=0, z=0)
+          6. THEMED INTERIOR SPECIMEN CORE (Center x=0, z=0 at y=-0.32)
           ======================================================== */}
-      <group position={[0, 0.52, 0]}>
+      <group position={[0, -0.32, 0]}>
         {/* Hexagonal Research Station Desk */}
         <mesh position={[0, 0.15, 0]} castShadow receiveShadow>
           <cylinderGeometry args={[1.0, 1.2, 0.45, 6]} />
@@ -538,9 +538,9 @@ export const RegionalHabitatOutpost: React.FC<RegionalHabitatProps> = ({
       </group>
 
       {/* ========================================================
-          7. EXTERIOR REGIONAL LANDMARK (Beside Outpost)
+          7. EXTERIOR REGIONAL LANDMARK (In Open Sector, Clear of Ramps)
           ======================================================== */}
-      <group position={[-6.8, 0, 1.5]}>
+      <group position={[-6.8, -0.40, -6.5]}>
         {landmarkType === 'drill' && (
           /* Glacial Core Drill Rig */
           <group>

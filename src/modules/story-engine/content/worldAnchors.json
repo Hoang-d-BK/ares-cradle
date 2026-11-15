@@ -10,7 +10,7 @@
     {
       "id": "anchor-solar",
       "label": "Photovoltaic Solar Array",
-      "position": [-6.0, 0, 4.0],
+      "position": [-9.5, -0.38, -6.5],
       "type": "solar",
       "icon": "☀️"
     },
@@ -50,7 +50,7 @@
       "category": "mineral",
       "icon": "🪨",
       "anchorId": "anchor-solar",
-      "position": [-5.5, 0, 5.0],
+      "position": [-7.5, -0.38, 5.5],
       "solAvailable": 1,
       "quickFact": "Martian soil is rich in iron oxide (rust), giving the Red Planet its signature fiery glow.",
       "capsuleId": "capsule-regolith-iron"
@@ -61,7 +61,7 @@
       "category": "mineral",
       "icon": "🪨",
       "anchorId": "anchor-solar",
-      "position": [-6.8, 0, 3.2],
+      "position": [-8.5, -0.38, 4.2],
       "solAvailable": 1,
       "quickFact": "NASA Opportunity rover ground into surface rocks using its Rock Abrasion Tool (RAT).",
       "capsuleId": "capsule-regolith-iron"

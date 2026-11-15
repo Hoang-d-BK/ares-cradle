@@ -64,7 +64,7 @@ export const BatteryBank: React.FC = () => {
   });
 
   return (
-    <group position={[3.8, 0, -1.6]} rotation={[0, -0.4, 0]}>
+    <group position={[-7.2, 0, -6.5]} rotation={[0, 0.25, 0]}>
       {/* Battery Container Substation Vault */}
       <mesh position={[0, 0.45, 0]} castShadow receiveShadow>
         <boxGeometry args={[1.6, 1.1, 2.2]} />
